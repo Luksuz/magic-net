@@ -127,22 +127,45 @@ export default function ContractTableEditor({
   ]
 
   // Basic user information fields
-  const userInfoFields = [
-    { key: "userId", label: "ID korisnika", type: "text" },
-    { key: "userName", label: "Ime korisnika", type: "text" },
-    { key: "legalEntity", label: "Pravna osoba", type: "text" },
-    { key: "residenceAddress", label: "Adresa prebivališta", type: "text" },
-    { key: "connectionAddress", label: "Adresa priključka", type: "text" },
-    { key: "oib", label: "OIB", type: "text" },
-    { key: "idCardNumber", label: "Broj osobne iskaznice", type: "text" },
-    { key: "contactPhone", label: "Kontakt telefon", type: "text" },
-    { key: "email", label: "Email", type: "text" },
-    { key: "contactPersonName", label: "Ime kontakt osobe", type: "text" },
-    { key: "contactPersonPhone", label: "Telefon kontakt osobe", type: "text" },
-    { key: "contactPersonEmail", label: "Email kontakt osobe", type: "text" },
-    { key: "additionalServices", label: "Dodatne usluge", type: "text" },
-    { key: "activationCost", label: "Trošak aktivacije", type: "text" },
-    { key: "externalWorksCost", label: "Trošak vanjskih radova", type: "text" }
+  const userInfoGroups = [
+    {
+      name: "Osnovni podaci korisnika", 
+      fields: [
+        { key: "userId", label: "ID korisnika", type: "text" },
+        { key: "userName", label: "Ime korisnika", type: "text" },
+        { key: "legalEntity", label: "Pravna osoba", type: "text" },
+        { key: "residenceAddress", label: "Adresa prebivališta", type: "text" },
+        { key: "connectionAddress", label: "Adresa priključka", type: "text" },
+        { key: "oib", label: "OIB", type: "text" },
+        { key: "idCardNumber", label: "Broj osobne iskaznice", type: "text" },
+        { key: "contactPhone", label: "Kontakt telefon", type: "text" },
+        { key: "email", label: "Email", type: "text" }
+      ]
+    },
+    {
+      name: "Kontakt osoba",
+      fields: [
+        { key: "contactPersonName", label: "Ime kontakt osobe", type: "text" },
+        { key: "contactPersonPhone", label: "Telefon kontakt osobe", type: "text" },
+        { key: "contactPersonEmail", label: "Email kontakt osobe", type: "text" }
+      ]
+    },
+    {
+      name: "Dodatne usluge i troškovi",
+      fields: [
+        { key: "additionalServices", label: "Dodatne usluge", type: "text" },
+        { key: "activationCost", label: "Trošak aktivacije", type: "text" },
+        { key: "externalWorksCost", label: "Trošak vanjskih radova", type: "text" }
+      ]
+    },
+    {
+      name: "Podaci o prodajnom mjestu",
+      fields: [
+        { key: "sellerCode", label: "Kod prodavatelja", type: "text" },
+        { key: "sellerPlace", label: "Mjesto", type: "text" },
+        { key: "sellerDate", label: "Datum", type: "date" }
+      ]
+    }
   ]
 
   const handleUserInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -264,30 +287,36 @@ export default function ContractTableEditor({
         <CardContent className="pt-6">
           <h2 className="text-xl font-bold mb-4">Osnovne informacije o korisniku</h2>
           <div className="w-full overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-300 px-4 py-2 text-left w-1/3">Polje</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left w-2/3">Vrijednost</th>
-                </tr>
-              </thead>
-              <tbody>
-                {userInfoFields.map((field) => (
-                  <tr key={field.key} className="border-b hover:bg-gray-50">
-                    <td className="border border-gray-300 px-4 py-2 font-medium">{field.label}</td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      <Input
-                        id={field.key}
-                        name={field.key}
-                        value={(userInfo as any)[field.key] || ""}
-                        onChange={handleUserInfoChange}
-                        className="w-full"
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {userInfoGroups.map((group) => (
+              <div key={group.name} className="mb-6">
+                <h3 className="text-lg font-medium mb-3">{group.name}</h3>
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="border border-gray-300 px-4 py-2 text-left w-1/3">Polje</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left w-2/3">Vrijednost</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.fields.map((field) => (
+                      <tr key={field.key} className="border-b hover:bg-gray-50">
+                        <td className="border border-gray-300 px-4 py-2 font-medium">{field.label}</td>
+                        <td className="border border-gray-300 px-4 py-2">
+                          <Input
+                            id={field.key}
+                            name={field.key}
+                            type={field.type === "date" ? "date" : "text"}
+                            value={(userInfo as any)[field.key] || ""}
+                            onChange={handleUserInfoChange}
+                            className="w-full"
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

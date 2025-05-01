@@ -66,6 +66,24 @@ export async function generatePDF(
   // Merge default options with provided options
   const options = { ...defaultStyleOptions, ...styleOptions }
 
+  // Generate agreement number with user's agreement_number if available
+  let agreementNumber = data.broj_ugovora || `${data.id}`
+  
+  // If userInfo has userId populated, use that with a hyphen and agreement_number from userInfo
+  if (userInfo?.userId) {
+    // Check if we should append agreement_number from profile
+    if (userInfo.userId && window.hasOwnProperty('profileData')) {
+      const profileData = (window as any).profileData
+      if (profileData && profileData.agreement_number) {
+        agreementNumber = `${userInfo.userId}-${profileData.agreement_number}`
+      } else {
+        agreementNumber = userInfo.userId
+      }
+    } else {
+      agreementNumber = userInfo.userId
+    }
+  }
+
   // Calculate payment amounts
   // Device payment calculation
   const devicePrice = data.uredaj_cijena || 0
@@ -287,10 +305,6 @@ export async function generatePDF(
         <tr>
           <td>OIB (fizička osoba/pravna osoba):</td>
           <td>${userInfo.oib || ""}</td>
-        </tr>
-        <tr>
-          <td>Broj osobne iskaznice (fizička osoba/ovlaštena osoba):</td>
-          <td>${userInfo.idCardNumber || ""}</td>
         </tr>
         <tr>
           <td>Kontakt telefon/mobitel (fizička osoba/ovlaštena osoba):</td>
@@ -969,7 +983,7 @@ export async function generatePDF(
   // Generate PDF
   const pdfOptions = {
     margin: [options.margins, options.margins, options.margins, options.margins] as [number, number, number, number],
-    filename: `contract-${data.broj_ugovora || data.id}.pdf`,
+    filename: `contract-${agreementNumber}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: {
       scale: 2,
@@ -983,7 +997,16 @@ export async function generatePDF(
       orientation: options.orientation,
       compress: true,
       hotfixes: ["px_scaling"],
-      autoPaging: 'text'
+      autoPaging: 'text',
+      encryption: userInfo?.oib && userInfo.oib.trim() !== '' ? {
+        userPassword: userInfo.oib,
+        ownerPassword: "magicnet123",
+        userPermissions: ["print", "modify", "copy", "annot-forms"],
+        ownerPermissions: ["print", "modify", "copy", "annot-forms"]
+      } : {
+        ownerPassword: "magicnet123",
+        ownerPermissions: ["print", "modify", "copy", "annot-forms"]
+      }
     },
     pagebreak: { mode: ["avoid", "css", "legacy"] },
   }
@@ -1000,6 +1023,9 @@ export async function generatePDF(
     // Use window.html2pdf instead of importing the library
     await window.html2pdf().from(container).set(pdfOptions).save()
     return true
+  } catch (error) {
+    console.error("Error generating PDF:", error)
+    return false
   } finally {
     // Clean up
     if (document.body.contains(container)) {

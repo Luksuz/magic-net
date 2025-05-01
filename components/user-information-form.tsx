@@ -7,6 +7,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useAuth } from "@/app/contexts/authContext"
+import { getAgreementNumber } from "@/lib/utils"
 
 export interface UserInformation {
   userId: string
@@ -28,7 +31,7 @@ export interface UserInformation {
   marketingContact: string[]
   generalTermsDelivery: "provided" | "selfDownload"
   paymentMethod: "oneTime" | "installments"
-  sellerCode: string
+  sellerCode: number
   sellerPlace: string
   sellerDate: string
 }
@@ -53,8 +56,8 @@ const defaultUserInfo: UserInformation = {
   marketingContact: [],
   generalTermsDelivery: "provided",
   paymentMethod: "oneTime",
-  sellerCode: "",
-  sellerPlace: "",
+  sellerCode: 0,
+  sellerPlace: "Koprivnička 17C, 42230 Ludbreg",
   sellerDate: new Date().toISOString().split("T")[0],
 }
 
@@ -71,10 +74,28 @@ export default function UserInformationForm({
   packageName,
   subscriptionNumber,
 }: UserInformationFormProps) {
+  const { profile } = useAuth()
+  if (!profile) {
+    return null
+  }
   const [userInfo, setUserInfo] = useState<UserInformation>({
     ...defaultUserInfo,
     ...initialData,
   })
+
+  useEffect(() => {
+    if (profile) {
+      // Only update if we have a profile and user_number exists
+      if (profile.user_number !== null) {
+        const updatedInfo = { 
+          ...userInfo, 
+          sellerCode: profile.user_number 
+        };
+        setUserInfo(updatedInfo);
+        onChange(updatedInfo);
+      }
+    }
+  }, [profile]);
 
   const handleChange = (field: keyof UserInformation, value: any) => {
     const updatedInfo = { ...userInfo, [field]: value }
@@ -95,9 +116,31 @@ export default function UserInformationForm({
     handleChange(field, newValues)
   }
 
+  // Format activation fees for display
+  const getActivationFeeOptions = () => {
+    // Default options if no profile data is available
+    if (!profile?.activation_fees?.length) {
+      return [
+        { value: "0,00", label: "0,00 EUR" },
+        { value: "16,59", label: "16,59 EUR" },
+        { value: "33,00", label: "33,00 EUR" }
+      ]
+    }
+    
+    // Format profile data for display
+    return profile.activation_fees.map(fee => {
+      const formattedFee = (fee / 100).toFixed(2).replace('.', ',')
+      return {
+        value: formattedFee,
+        label: `${formattedFee} EUR`
+      }
+    })
+  }
+
   useEffect(() => {
     onChange(userInfo)
   }, [onChange, userInfo])
+
 
   return (
     <Card className="mb-6">
@@ -168,7 +211,7 @@ export default function UserInformationForm({
             />
           </div>
 
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="idCardNumber">Broj osobne iskaznice</Label>
             <Input
               id="idCardNumber"
@@ -176,7 +219,7 @@ export default function UserInformationForm({
               onChange={(e) => handleChange("idCardNumber", e.target.value)}
               placeholder="npr. 123456789"
             />
-          </div>
+          </div> */}
 
           <div className="space-y-2">
             <Label htmlFor="contactPhone">Kontakt telefon/mobitel</Label>
@@ -261,13 +304,29 @@ export default function UserInformationForm({
             </div>
 
             <div className="space-y-2">
+              <Label>Broj ugovora</Label>
+              <div className="p-2 border rounded-md bg-muted/20">{getAgreementNumber(profile)}</div>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="activationCost">Trošak aktivacije usluge</Label>
-              <Input
-                id="activationCost"
+              <Select
                 value={userInfo.activationCost}
-                onChange={(e) => handleChange("activationCost", e.target.value)}
-                placeholder="npr. 1)0,00, 2)16,59 EUR, 3) 33,00 EUR"
-              />
+                onValueChange={(value) => handleChange("activationCost", value)}
+              >
+                <SelectTrigger id="activationCost" className="w-full">
+                  <SelectValue placeholder="Odaberite trošak aktivacije" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {getActivationFeeOptions().map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -414,20 +473,36 @@ export default function UserInformationForm({
               <Label htmlFor="sellerCode">Kod prodavatelja</Label>
               <Input
                 id="sellerCode"
-                value={userInfo.sellerCode}
-                onChange={(e) => handleChange("sellerCode", e.target.value)}
+                type="number"
+                value={userInfo.sellerCode || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Convert to number or 0 if empty
+                  const numericValue = value === '' ? 0 : parseInt(value, 10);
+                  handleChange("sellerCode", numericValue);
+                }}
                 placeholder="npr. 09"
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="sellerPlace">Mjesto</Label>
-              <Input
-                id="sellerPlace"
+              <Select
                 value={userInfo.sellerPlace}
-                onChange={(e) => handleChange("sellerPlace", e.target.value)}
-                placeholder="npr. TRNOVEC BARTOLOVEČKI"
-              />
+                onValueChange={(value) => handleChange("sellerPlace", value)}
+              >
+                <SelectTrigger id="sellerPlace" className="w-full">
+                  <SelectValue placeholder="Odaberite mjesto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Poslovnice</SelectLabel>
+                    <SelectItem value="Koprivnička 17C, 42230 Ludbreg">MAGIC NET D.O.O. - Koprivnička 17C, 42230 Ludbreg</SelectItem>
+                    <SelectItem value="Kratka 2, 42000 Varaždin">MAGIC NET D.O.O. - Kratka 2, 42000 Varaždin</SelectItem>
+                    <SelectItem value="Nepoznata adresa">MAGIC NET D.O.O. - Nepoznata adresa</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

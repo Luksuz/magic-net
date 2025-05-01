@@ -9,6 +9,8 @@ import { generatePDF, type TerminalEquipment } from "@/lib/pdf-generator"
 import PdfStyleOptionsComponent from "@/components/pdf-style-options"
 import type { PdfStyleOptions } from "@/components/pdf-style-options"
 import type { UserInformation } from "@/components/user-information-form"
+import { useAuth } from "@/app/contexts/authContext"
+import { toast } from "@/components/ui/use-toast"
 
 interface PdfButtonProps {
   formData: ContractData
@@ -23,6 +25,7 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
   const [isLibraryLoaded, setIsLibraryLoaded] = useState(false)
   const [showStyleOptions, setShowStyleOptions] = useState(false)
   const [styleOptions, setStyleOptions] = useState<PdfStyleOptions | null>(null)
+  const { profile, updateProfile } = useAuth()
 
   useEffect(() => {
     // Check if html2pdf is loaded
@@ -45,6 +48,19 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
       return () => clearTimeout(timer)
     }
   }, [])
+
+  // Store profile data on window for PDF generation access
+  useEffect(() => {
+    if (typeof window !== "undefined" && profile) {
+      (window as any).profileData = profile
+    }
+    
+    return () => {
+      if (typeof window !== "undefined") {
+        delete (window as any).profileData
+      }
+    }
+  }, [profile])
 
   // Load saved style options from localStorage
   useEffect(() => {
@@ -105,7 +121,24 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
       // Add a longer delay to ensure content is fully prepared before generation
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      await generatePDF(safeFormData, safeUserInfo, styleOptions || undefined, safeTerminalEquipment)
+      const success = await generatePDF(safeFormData, safeUserInfo, styleOptions || undefined, safeTerminalEquipment)
+      
+      // If PDF generation was successful and we have a profile with an agreement number
+      if (success && profile && profile.agreement_number !== null && profile.agreement_number !== undefined) {
+        try {
+          // Increment the agreement number
+          const newAgreementNumber = profile.agreement_number + 1
+          
+          // Update the user's profile with the new agreement number
+          await updateProfile({
+            agreement_number: newAgreementNumber,
+            activation_fees: profile.activation_fees // Keep existing activation fees
+          })
+        } catch (error) {
+          console.error("Greška pri generiranju PDF-a:", error)
+          alert("Neuspjelo generiranje PDF-a. Molimo pokušajte ponovno.")
+        }
+      }
     } catch (error) {
       console.error("Greška pri generiranju PDF-a:", error)
       alert("Neuspjelo generiranje PDF-a. Molimo pokušajte ponovno.")

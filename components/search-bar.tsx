@@ -3,6 +3,7 @@
 import { SearchIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { ChangeEvent } from "react"
+import { useAuth } from "@/app/contexts/authContext"
 
 interface SearchBarProps {
   value: string
@@ -17,6 +18,7 @@ export function SearchBar({
   placeholder = "Pretraži...", 
   className = "" 
 }: SearchBarProps) {
+  
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     onChange(e.target.value)
   }

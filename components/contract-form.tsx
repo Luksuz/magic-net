@@ -52,7 +52,7 @@ export default function ContractForm({
     marketingContact: [],
     generalTermsDelivery: "provided",
     paymentMethod: "oneTime",
-    sellerCode: "",
+    sellerCode: 0,
     sellerPlace: "",
     sellerDate: new Date().toISOString().split("T")[0],
   })

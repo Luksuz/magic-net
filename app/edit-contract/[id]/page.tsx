@@ -11,11 +11,16 @@ import Link from "next/link"
 import type { UserInformation } from "@/components/user-information-form"
 import type { ContractData } from "@/lib/supabase"
 import type { TerminalEquipment } from "@/lib/pdf-generator"
+import { useAuth } from "@/app/contexts/authContext"
+import { useParams } from "next/navigation" 
 
-export default function EditContractPage({ params }: { params: { id: string } }) {
-  const [contractId] = useState(Number.parseInt(params.id))
+
+export default function EditContractPage() {
+  const searchParams = useParams()
+  const contractId = searchParams.id
   const [contractData, setContractData] = useState<ContractData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [dataFetched, setDataFetched] = useState(false)
   const [userInfo, setUserInfo] = useState<UserInformation>({
     userId: "",
     userName: "",
@@ -36,7 +41,7 @@ export default function EditContractPage({ params }: { params: { id: string } })
     marketingContact: [],
     generalTermsDelivery: "provided",
     paymentMethod: "oneTime",
-    sellerCode: "",
+    sellerCode: 0,
     sellerPlace: "",
     sellerDate: new Date().toISOString().split("T")[0],
   })
@@ -53,23 +58,59 @@ export default function EditContractPage({ params }: { params: { id: string } })
   // Refs to store form data while switching views
   const formDataRef = useRef<ContractData | null>(null)
   const formTerminalEquipmentRef = useRef<TerminalEquipment[]>(terminalEquipment)
+  
+  // Get auth context with loading state
+  const { profile, loading: authLoading } = useAuth()
 
   // Fetch contract data on client side
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true)
-      try {
-        const data = await getContractById(contractId)
-        setContractData(data)
-      } catch (error) {
-        console.error("Greška pri dohvaćanju ugovora:", error)
-      } finally {
-        setLoading(false)
-      }
+  async function fetchData() {
+    if (authLoading) {
+      // Don't fetch data if auth is still loading
+      return
     }
+    
+    if (dataFetched) {
+      // Don't fetch again if we've already fetched data
+      return
+    }
+    
+    setLoading(true)
+    try {
+      const data = await getContractById(Number(contractId))
+      if (!data) {
+        setDataFetched(true)
+        return
+      }
+      
+      if (!profile) {
+        setDataFetched(true)
+        return
+      }
+      
+      const currentDate = new Date();
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      
+      if (profile.agreement_number) {
+        data.broj_ugovora = `UG-${year}-${month}-${profile.agreement_number}` // TODO: remove from db
+      }
+      
+      setContractData(data)
+      setDataFetched(true)
+    } catch (error) {
+      console.error("Greška pri dohvaćanju ugovora:", error)
+      setDataFetched(true)
+    } finally {
+      setLoading(false)
+    }
+  }
 
+  useEffect(() => {
     fetchData()
-  }, [contractId])
+  }, [contractId, profile, authLoading])
+
+  // Overall loading state combines auth loading and data loading
+  const isLoading = loading || authLoading || !dataFetched;
 
   // Handle PDF generation request from table view
   const handlePdfFromTableView = (data: ContractData, equipmentData: TerminalEquipment[]) => {
@@ -95,7 +136,7 @@ export default function EditContractPage({ params }: { params: { id: string } })
     }
   }, [isGeneratingPdf, useTableView])
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto py-8 px-4 text-center">
         <h1 className="text-3xl font-bold mb-4">Učitavanje...</h1>
@@ -128,9 +169,9 @@ export default function EditContractPage({ params }: { params: { id: string } })
     <main className="container mx-auto py-8 px-4">
       <div className="flex items-center mb-8 justify-between">
         <div className="flex items-center">
-          <Link href="/" className="mr-4">
+        <Link href="/" className="mr-4">
             <Button variant="outline">← Natrag na pakete</Button>
-          </Link>
+        </Link>
           <h1 className="text-3xl font-bold">Uredi detalje ugovora</h1>
         </div>
         

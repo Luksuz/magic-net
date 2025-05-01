@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { ModeToggle } from "./mode-toggle"
+import { ProfileDropdown } from "./profile-dropdown"
 
 export function Header() {
   return (
@@ -10,8 +11,9 @@ export function Header() {
         <Link href="/" className="font-bold text-lg">
           Magic Net
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <ModeToggle />
+          <ProfileDropdown />
         </div>
       </div>
     </header>

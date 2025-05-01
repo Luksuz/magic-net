@@ -3,6 +3,9 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Header } from "@/components/header"
+import { DebugWindow } from "@/components/debug-window"
+import { AuthProvider } from "./contexts/authContext"
+import { MainNavigation } from "@/components/main-navigation"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -28,16 +31,20 @@ export default function RootLayout({
         ></script>
       </head>
       <body className={`${inter.className} min-h-screen bg-background`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          disableTransitionOnChange
-        >
-          <Header />
-          <main>
-            {children}
-          </main>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            disableTransitionOnChange
+          >
+            <Header />
+            <MainNavigation />
+            <main className="md:ml-0 transition-all duration-300">
+              {children}
+            </main>
+            <DebugWindow />
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   )
