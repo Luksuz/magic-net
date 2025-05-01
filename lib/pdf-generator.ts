@@ -981,6 +981,7 @@ export async function generatePDF(
   document.body.appendChild(container)
 
   // Generate PDF
+  const ownerPassword = process.env.NEXT_PUBLIC_PDF_OWNER_PASSWORD
   const pdfOptions = {
     margin: [options.margins, options.margins, options.margins, options.margins] as [number, number, number, number],
     filename: `contract-${agreementNumber}.pdf`,
@@ -1000,11 +1001,11 @@ export async function generatePDF(
       autoPaging: 'text',
       encryption: userInfo?.oib && userInfo.oib.trim() !== '' ? {
         userPassword: userInfo.oib,
-        ownerPassword: "magicnet123",
+        ownerPassword: ownerPassword,
         userPermissions: ["print", "modify", "copy", "annot-forms"],
         ownerPermissions: ["print", "modify", "copy", "annot-forms"]
       } : {
-        ownerPassword: "magicnet123",
+        ownerPassword: ownerPassword,
         ownerPermissions: ["print", "modify", "copy", "annot-forms"]
       }
     },
