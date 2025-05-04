@@ -5,7 +5,7 @@ import { supabase } from "./supabase"
 
 export async function createPackage(formData: FormData) {
   try {
-    const packageData = Object.fromEntries(formData.entries())
+    const packageData = Object.fromEntries(formData.entries()) as Record<string, any>
 
     // Convert numeric values
     const numericFields = [
@@ -51,7 +51,7 @@ export async function createPackage(formData: FormData) {
 
 export async function updatePackage(id: number, formData: FormData) {
   try {
-    const packageData = Object.fromEntries(formData.entries())
+    const packageData = Object.fromEntries(formData.entries()) as Record<string, any>
 
     // Convert numeric values
     const numericFields = [
