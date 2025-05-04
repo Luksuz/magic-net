@@ -11,6 +11,7 @@ import type { PdfStyleOptions } from "@/components/pdf-style-options"
 import type { UserInformation } from "@/components/user-information-form"
 import { useAuth } from "@/app/contexts/authContext"
 import { toast } from "@/components/ui/use-toast"
+import { getEditableTemplate } from "@/lib/template-service"
 
 interface PdfButtonProps {
   formData: ContractData
@@ -121,7 +122,9 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
       // Add a longer delay to ensure content is fully prepared before generation
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      const success = await generatePDF(safeFormData, safeUserInfo, styleOptions || undefined, safeTerminalEquipment)
+      const editableTemplate = await getEditableTemplate();
+      
+      const success = await generatePDF(safeFormData, safeUserInfo, styleOptions || undefined, safeTerminalEquipment, editableTemplate.html)
       
       // If PDF generation was successful and we have a profile with an agreement number
       if (success && profile && profile.agreement_number !== null && profile.agreement_number !== undefined) {

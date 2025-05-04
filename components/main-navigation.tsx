@@ -2,9 +2,10 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { PackageIcon, Mail, Home } from "lucide-react"
+import { PackageIcon, Mail, Home, FileText, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
+import { useAuth } from "@/app/contexts/authContext"
 
 interface NavItem {
   title: string
@@ -63,6 +64,26 @@ export function MainNavigation() {
     }
   ]
   
+  // Get user to check if they're an admin
+  const { isAdmin } = useAuth()
+  
+  // Add admin links if user is admin
+  const adminNavItems: NavItem[] = isAdmin ? [
+    {
+      title: "Administracija",
+      href: "/admin",
+      icon: <Settings className="h-5 w-5" />
+    },
+    {
+      title: "PDF Predlošci",
+      href: "/admin/templates",
+      icon: <FileText className="h-5 w-5" />
+    }
+  ] : []
+  
+  // Combined navigation items
+  const allNavItems = [...navItems, ...adminNavItems]
+  
   return (
     <>
       {/* Side menu - shown on hover */}
@@ -77,7 +98,7 @@ export function MainNavigation() {
         <div className="px-4 py-6">
           <h2 className="text-xl font-bold mb-6 text-center">Magic Net</h2>
           <nav className="space-y-1">
-            {navItems.map((item) => {
+            {allNavItems.map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link
