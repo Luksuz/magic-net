@@ -16,6 +16,7 @@ interface NavItem {
 export function MainNavigation() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
+  const { isAdmin } = useAuth()
   
   useEffect(() => {
     // Create the hover trigger area
@@ -63,9 +64,6 @@ export function MainNavigation() {
       icon: <Mail className="h-5 w-5" />
     }
   ]
-  
-  // Get user to check if they're an admin
-  const { isAdmin } = useAuth()
   
   // Add admin links if user is admin
   const adminNavItems: NavItem[] = isAdmin ? [
