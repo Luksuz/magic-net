@@ -64,15 +64,15 @@ export default function EditContractPage() {
 
   // Fetch contract data on client side
   async function fetchData() {
-    if (authLoading) {
-      // Don't fetch data if auth is still loading
-      return
-    }
+    // if (authLoading) {
+    //   // Don't fetch data if auth is still loading
+    //   return
+    // }
     
-    if (dataFetched) {
-      // Don't fetch again if we've already fetched data
-      return
-    }
+    // if (dataFetched) {
+    //   // Don't fetch again if we've already fetched data
+    //   return
+    // }
     
     setLoading(true)
     try {

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { PackageIcon, Mail, Home, FileText, Settings } from "lucide-react"
+import { PackageIcon, Mail, Home, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/app/contexts/authContext"
@@ -69,13 +69,13 @@ export function MainNavigation() {
   
   // Add admin links if user is admin
   const adminNavItems: NavItem[] = isAdmin ? [
+    // {
+    //   title: "Administracija",
+    //   href: "/admin",
+    //   icon: <Settings className="h-5 w-5" />
+    // },
     {
-      title: "Administracija",
-      href: "/admin",
-      icon: <Settings className="h-5 w-5" />
-    },
-    {
-      title: "PDF Predlošci",
+      title: "Uredi PDF predložak",
       href: "/admin/templates",
       icon: <FileText className="h-5 w-5" />
     }
@@ -98,7 +98,7 @@ export function MainNavigation() {
         <div className="px-4 py-6">
           <h2 className="text-xl font-bold mb-6 text-center">Magic Net</h2>
           <nav className="space-y-1">
-            {allNavItems.map((item) => {
+            {navItems.map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link
@@ -119,6 +119,35 @@ export function MainNavigation() {
                 </Link>
               )
             })}
+            
+            {isAdmin && adminNavItems.length > 0 && (
+              <>
+                <hr className="my-4 border-t border-border/60" />
+                <h3 className="px-3 text-sm font-semibold text-muted-foreground mb-2">Admin</h3>
+                
+                {adminNavItems.map((item) => {
+                  const isActive = pathname === item.href
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center p-3 rounded-md text-sm font-medium transition-colors w-full",
+                        "hover:bg-accent hover:text-accent-foreground",
+                        isActive 
+                          ? "bg-accent text-accent-foreground" 
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      <span className={cn("mr-3", isActive ? "text-primary" : "text-muted-foreground")}>
+                        {item.icon}
+                      </span>
+                      {item.title}
+                    </Link>
+                  )
+                })}
+              </>
+            )}
           </nav>
         </div>
       </div>

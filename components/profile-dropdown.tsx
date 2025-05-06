@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { createClient } from "@/utils/supabase/client"
+import { supabase } from "@/utils/supabase/client"
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -18,7 +18,6 @@ import { Button } from "./ui/button"
 export function ProfileDropdown() {
   const [user, setUser] = useState<any>(null)
   const [isAdmin, setIsAdmin] = useState(false)
-  const supabase = createClient()
 
   useEffect(() => {
     const getUser = async () => {

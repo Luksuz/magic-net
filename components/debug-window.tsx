@@ -1,14 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { createClient } from "@/utils/supabase/client"
+import { supabase } from "@/utils/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Code } from "lucide-react"
 
 export function DebugWindow() {
   const [user, setUser] = useState<any>(null)
   const [isOpen, setIsOpen] = useState(false)
-  const supabase = createClient()
 
   useEffect(() => {
     const getUser = async () => {

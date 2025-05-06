@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { supabase } from "./supabase"
+import { supabase } from "@/utils/supabase/client"
 
 export async function createPackage(formData: FormData) {
   try {

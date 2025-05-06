@@ -17,11 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-import { ContractData } from '@/lib/supabase'
-import { UserInformation } from '@/components/user-information-form'
-import { TerminalEquipment } from '@/lib/pdf-generator'
 import { getEditableTemplate, saveEditableTemplate, getOriginalTemplate, resetToOriginalTemplate } from '@/lib/template-service'
-
 
 
 interface PdfTemplateEditorProps {
@@ -71,17 +67,40 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
       .editable-container:focus {
         box-shadow: 0 0 0 2px rgba(26, 60, 94, 0.2);
       }
-      /* Add other base editor styles */
+      /* Page break placeholder styling */
+      .page-break-placeholder {
+        display: block;
+        width: 100%;
+        height: 20px;
+        margin: 20px 0;
+        background-color: #f0f0f0;
+        border: 1px dashed #999;
+        text-align: center;
+        line-height: 20px;
+        color: #666;
+        position: relative;
+      }
+      .page-break-placeholder::before {
+        content: "Page Break";
+        font-size: 12px;
+        font-family: sans-serif;
+      }
     `
     
     // Create an async function inside useEffect to fetch the template
     const fetchTemplate = async () => {
       try {
+        console.log('Fetching template...')
         const templateData = await getEditableTemplate();
+        console.log('Template fetched:', templateData)
         // Set the template HTML
         if (templateData && templateData.html) {
-          setFullTemplate(templateData.html);
+          console.log("There is a template")
+          // Convert page-break to page-break-placeholder for editing
+          const templateForEditing = templateData.html.replace(/class="page-break"/g, 'class="page-break-placeholder"');
+          setFullTemplate(templateForEditing);
         } else {
+          console.log("No template found")
           // Fallback to empty template
           setFullTemplate('');
         }
@@ -108,8 +127,11 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
     try {
       setIsSaving(true);
       
+      // Convert page-break-placeholder to page-break before saving
+      let templateToSave = fullTemplate.replace(/class="page-break-placeholder"/g, 'class="page-break"');
+      
       // Save the template to the server
-      await saveEditableTemplate(fullTemplate);
+      await saveEditableTemplate(templateToSave);
       
       toast({
         title: 'Success',
@@ -216,7 +238,10 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
       
       // Get the original template to update the editor
       const originalTemplate = await getOriginalTemplate();
-      setFullTemplate(originalTemplate.html);
+      
+      // Convert page-break to page-break-placeholder for editing
+      const templateForEditing = originalTemplate.html.replace(/class="page-break"/g, 'class="page-break-placeholder"');
+      setFullTemplate(templateForEditing);
       
       toast({
         title: 'Success',
@@ -234,6 +259,40 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
       setShowResetConfirm(false);
     }
   };
+
+  const handleEditorKeyDown = (e: React.KeyboardEvent) => {
+    // Check for Ctrl+B for inserting page break
+    if (e.ctrlKey && e.key === 'b') {
+      e.preventDefault(); // Prevent the default bold formatting
+      insertPageBreak();
+    }
+  };
+
+  const insertPageBreak = () => {
+    if (!editorRef.current || editMode !== 'visual') return;
+
+    // Get current selection
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return;
+    
+    const range = selection.getRangeAt(0);
+    
+    // Create a page break element
+    const pageBreak = document.createElement('div');
+    pageBreak.className = 'page-break-placeholder';
+    
+    // Insert the page break at cursor position
+    range.insertNode(pageBreak);
+    
+    // Move cursor after the page break
+    range.setStartAfter(pageBreak);
+    range.setEndAfter(pageBreak);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    
+    // Update the template state
+    handleEditorChange();
+  }
 
   return (
     <Card className="w-full">
@@ -295,17 +354,29 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
             </div>
           </div>
         ) : (
-          <div className="border rounded-md bg-white mt-4 p-4">
-            <style dangerouslySetInnerHTML={{ __html: editorCss }} />
-            <div
-              ref={editorRef}
-              className="editable-container prose max-w-none"
-              contentEditable
-              onBlur={handleEditorChange}
-              dangerouslySetInnerHTML={{
-                __html: processTemplateForPreview(fullTemplate)
-              }}
-            />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-2 py-1 bg-muted/30 rounded border text-sm">
+              <div className="flex gap-3">
+                <span className="text-muted-foreground">Editor Shortcuts:</span>
+                <span><kbd className="px-1.5 py-0.5 text-xs border rounded bg-background">Ctrl+B</kbd> Insert Page Break</span>
+              </div>
+              <Button variant="ghost" size="sm" onClick={insertPageBreak} className="h-7">
+                Insert Page Break
+              </Button>
+            </div>
+            <div className="border rounded-md bg-white p-4">
+              <style dangerouslySetInnerHTML={{ __html: editorCss }} />
+              <div
+                ref={editorRef}
+                className="editable-container prose max-w-none"
+                contentEditable
+                onBlur={handleEditorChange}
+                onKeyDown={handleEditorKeyDown}
+                dangerouslySetInnerHTML={{
+                  __html: processTemplateForPreview(fullTemplate)
+                }}
+              />
+            </div>
           </div>
         )}
       </CardContent>

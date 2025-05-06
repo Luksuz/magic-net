@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/client'
+import { supabase } from '@/utils/supabase/client'
 import type { PdfTemplateContent, TerminalEquipment } from './pdf-generator'
 import type { ContractData } from './supabase'
 import type { UserInformation } from '@/components/user-information-form'
@@ -6,7 +6,6 @@ import { generatePDF } from './pdf-generator'
 
 
 export async function getOriginalTemplate(): Promise<PdfTemplateContent> {
-  const supabase = createClient()
   
   const { data, error } = await supabase
     .from('original_ugovorna_spranca_html')
@@ -23,7 +22,6 @@ export async function getOriginalTemplate(): Promise<PdfTemplateContent> {
 
 
 export async function saveOriginalTemplate(html: string): Promise<boolean> {
-  const supabase = createClient()
 
   // Then insert new template
   const { error } = await supabase
@@ -44,7 +42,6 @@ export async function saveOriginalTemplate(html: string): Promise<boolean> {
 
 
 export async function getEditableTemplate(): Promise<{ html: string }> {
-  const supabase = createClient()
 
   const { data, error } = await supabase
     .from('promjenjiva_ugovorna_spranca_html')
@@ -55,15 +52,12 @@ export async function getEditableTemplate(): Promise<{ html: string }> {
   if (error) {
     throw new Error('Failed to get templates')
   }
-  console.log(data)
-
   // Return the data or a default object with empty html if no data is found
   return data;
 }
 
 
 export async function saveEditableTemplate(html: string): Promise<boolean> {
-  const supabase = createClient()
 
   // Ensure the HTML is properly formatted with styles preserved
   let templateToSave = html;
