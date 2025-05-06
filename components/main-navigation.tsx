@@ -17,6 +17,7 @@ export function MainNavigation() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const { isAdmin } = useAuth()
+  console.log(isAdmin)
   
   useEffect(() => {
     // Create the hover trigger area

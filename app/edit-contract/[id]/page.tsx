@@ -107,10 +107,7 @@ export default function EditContractPage() {
 
   useEffect(() => {
     fetchData()
-  }, [contractId, profile, authLoading])
-
-  // Overall loading state combines auth loading and data loading
-  const isLoading = loading || authLoading || !dataFetched;
+  }, [])
 
   // Handle PDF generation request from table view
   const handlePdfFromTableView = (data: ContractData, equipmentData: TerminalEquipment[]) => {
@@ -136,13 +133,6 @@ export default function EditContractPage() {
     }
   }, [isGeneratingPdf, useTableView])
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto py-8 px-4 text-center">
-        <h1 className="text-3xl font-bold mb-4">Učitavanje...</h1>
-      </div>
-    )
-  }
 
   if (!contractData) {
     return (
