@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState, useEffect, useRef } from "react"
+import { Suspense, useState, useEffect, useRef, useCallback } from "react"
 import { getContractById } from "@/lib/supabase"
 import ContractForm from "@/components/contract-form"
 import ContractTableEditor from "@/components/contract-table-editor"
@@ -63,51 +63,75 @@ export default function EditContractPage() {
   const { profile, loading: authLoading } = useAuth()
 
   // Fetch contract data on client side
-  async function fetchData() {
-    // if (authLoading) {
-    //   // Don't fetch data if auth is still loading
-    //   return
-    // }
-    
-    // if (dataFetched) {
-    //   // Don't fetch again if we've already fetched data
-    //   return
-    // }
-    
-    setLoading(true)
+  const fetchData = useCallback(async () => {
+    if (!profile) {
+      // This check is a safeguard; the calling useEffect should ensure profile exists.
+      console.warn("fetchData called but profile is null, this should be guarded by useEffect.");
+      setContractData(null);
+      setLoading(false); // Page's own loading for contract
+      setDataFetched(true);
+      return;
+    }
+
+    setLoading(true); // For contract fetching
+    // setDataFetched(false); // Reset if you want to allow re-fetching based on more complex conditions
+
     try {
-      const data = await getContractById(Number(contractId))
+      const data = await getContractById(Number(contractId));
       if (!data) {
-        setDataFetched(true)
-        return
-      }
-      
-      if (!profile) {
-        setDataFetched(true)
-        return
+        setContractData(null);
+        return;
       }
       
       const currentDate = new Date();
       const year = currentDate.getFullYear();
       const month = String(currentDate.getMonth() + 1).padStart(2, '0');
       
+      // profile is guaranteed by useCallback dependency and useEffect guard
       if (profile.agreement_number) {
-        data.broj_ugovora = `UG-${year}-${month}-${profile.agreement_number}` // TODO: remove from db
+        data.broj_ugovora = `UG-${year}-${month}-${profile.agreement_number}`;
       }
       
-      setContractData(data)
-      setDataFetched(true)
+      setContractData(data);
     } catch (error) {
-      console.error("Greška pri dohvaćanju ugovora:", error)
-      setDataFetched(true)
+      console.error("Greška pri dohvaćanju ugovora:", error);
+      setContractData(null);
     } finally {
-      setLoading(false)
+      setLoading(false); // For contract fetching
+      setDataFetched(true); // Mark that an attempt to fetch has been made
     }
-  }
+  }, [contractId, profile]); // Key dependencies for fetchData
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    if (authLoading) {
+      // AuthContext is still loading user and profile.
+      // Optionally, set page loading: setLoading(true);
+      return;
+    }
+
+    // Auth is loaded. Now check if profile exists.
+    if (!profile) {
+      console.warn("EditContractPage: Auth loaded, but no profile. Cannot fetch contract.");
+      setContractData(null);
+      setLoading(false); // Page loading for contract data
+      setDataFetched(true); // Considered "attempted" or not possible
+      return;
+    }
+
+    // Auth is loaded, profile is available.
+    // Fetch data if contractId is present.
+    if (contractId) {
+      // dataFetched state can be used here if you want to prevent re-fetching
+      // for the same contractId and profile, but useEffect dependencies mostly handle this.
+      // Example: if (!dataFetched || previousContractId !== contractId) { fetchData(); }
+      fetchData();
+    } else {
+      // No contractId, so clear contract data and set loading states.
+      setContractData(null);
+      setLoading(false);
+      setDataFetched(true);
+    }
+  }, [authLoading, profile, contractId, fetchData]); // Dependencies for this effect
 
   // Handle PDF generation request from table view
   const handlePdfFromTableView = (data: ContractData, equipmentData: TerminalEquipment[]) => {

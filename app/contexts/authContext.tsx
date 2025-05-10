@@ -54,6 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Update local state with new profile data
       setProfile(prev => prev ? { ...prev, ...profileData } : null)
       setIsAdmin(Boolean(profileData.is_admin ?? isAdmin))
+      console.log('isAdmin set to:', Boolean(profileData.is_admin))
     } catch (error) {
       console.error('Error updating profile:', error)
       throw error
@@ -65,12 +66,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(currentUser)
     
     if (currentUser) {
+      console.log('Fetching profile for user:', currentUser.id)
       const profileData = await fetchProfile(currentUser.id)
+      console.log('Profile data:', profileData)
       setProfile(profileData)
       // Explicitly convert to boolean to avoid any truthy/falsy issues
       setIsAdmin(Boolean(profileData?.is_admin))
       console.log('isAdmin set to:', Boolean(profileData?.is_admin))
     } else {
+      console.log('No user found')
       setProfile(null)
       setIsAdmin(false)
     }
@@ -82,7 +86,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Initial auth check
     const initAuth = async () => {
       try {
+        console.log('Initializing auth')
         const { data: { user } } = await supabase.auth.getUser()
+        console.log('User:', user)
         await handleAuthChange(user)
       } catch (error) {
         console.error('Auth initialization error:', error)
@@ -113,7 +119,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 }
 
 export const useAuth = () => {
+  console.log('useAuth called')
   const context = useContext(AuthContext)
+  console.log('context:', context)
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider')
   }
