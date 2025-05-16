@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +28,10 @@ export default async function ProfilePage() {
     .select("*")
     .eq("user_id", user.id)
     .single();
+
+  if (!profile) {
+    return notFound();
+  }
 
   return (
     <div className="container mx-auto py-10">
