@@ -230,8 +230,9 @@ interface Props {
   params: { id: string };
 }
 
-export default function EditContractPage({ params }: Props) {
-  const contractId = Number(params.id);
+export default async function EditContractPage({ params }: Props) {
+  const { id } = await params;
+  const contractId = Number(id);
 
   return <EditContractLoader contractId={contractId} />;
 }
