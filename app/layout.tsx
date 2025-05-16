@@ -1,24 +1,30 @@
-import "@/app/globals.css"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import { ThemeProvider } from "@/components/theme-provider"
-import { Header } from "@/components/header"
-import { DebugWindow } from "@/components/debug-window"
-import { AuthProvider } from "./contexts/authContext"
-import { MainNavigation } from "@/components/main-navigation"
+import "@/app/globals.css";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Header } from "@/components/header";
+import { DebugWindow } from "@/components/debug-window";
+import { AuthProvider } from "./contexts/authContext";
+import { MainNavigation } from "@/components/main-navigation";
+import { createClient } from "@/utils/supabase/server";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Magic Net - Ugovori",
   description: "Aplikacija za kreiranje ugovora",
-}
+};
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await (await supabase).auth.getUser();
+
   return (
     <html lang="hr" suppressHydrationWarning>
       <head>
@@ -38,7 +44,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <Header />
-            <MainNavigation />
+            {user && <MainNavigation />}
             <main className="md:ml-0 transition-all duration-300">
               {children}
             </main>
@@ -47,5 +53,5 @@ export default function RootLayout({
         </AuthProvider>
       </body>
     </html>
-  )
+  );
 }

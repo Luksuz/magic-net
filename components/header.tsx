@@ -1,8 +1,6 @@
-"use client"
-
-import Link from "next/link"
-import { ModeToggle } from "./mode-toggle"
-import { ProfileDropdown } from "./profile-dropdown"
+import Link from "next/link";
+import { ModeToggle } from "./mode-toggle";
+import { ProfileDropdown } from "./profile-dropdown";
 
 export function Header() {
   return (
@@ -17,5 +15,5 @@ export function Header() {
         </div>
       </div>
     </header>
-  )
-} 
+  );
+}
