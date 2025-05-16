@@ -6,7 +6,7 @@ import { Header } from "@/components/header";
 import { DebugWindow } from "@/components/debug-window";
 import { AuthProvider } from "./contexts/authContext";
 import { MainNavigation } from "@/components/main-navigation";
-// import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/server";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,10 +20,10 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // const supabase = createClient();
-  // const {
-  //   data: { user },
-  // } = await (await supabase).auth.getUser();
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await (await supabase).auth.getUser();
 
   return (
     <html lang="hr" suppressHydrationWarning>
@@ -44,7 +44,7 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <Header />
-            <MainNavigation />
+            {user && <MainNavigation />}
             <main className="md:ml-0 transition-all duration-300">
               {children}
             </main>
