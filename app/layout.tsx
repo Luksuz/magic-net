@@ -5,8 +5,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Header } from "@/components/header";
 import { DebugWindow } from "@/components/debug-window";
 import { AuthProvider } from "./contexts/authContext";
-import { MainNavigation } from "@/components/main-navigation";
 import { createClient } from "@/utils/supabase/server";
+import MainNavigation from "@/components/navigation/MainNavigation";
 
 const inter = Inter({ subsets: ["latin"] });
 
