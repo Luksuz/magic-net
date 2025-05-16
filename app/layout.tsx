@@ -37,7 +37,7 @@ export default async function RootLayout({
         ></script>
       </head>
       <body className={`${inter.className} min-h-screen bg-background`}>
-        <AuthProvider>
+        <AuthProvider initialUser={user}>
           <ThemeProvider
             attribute="class"
             defaultTheme="light"

@@ -1,16 +1,7 @@
-import { notFound, redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { signOut } from "./actions";
-import { ProfileEditor } from "@/components/profile-editor";
+import { ProfileEditorClient } from "@/components/profile/ProfileEditorClient";
+import { ProfileCard } from "@/components/profile/ProfileCard";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -19,9 +10,7 @@ export default async function ProfilePage() {
     error,
   } = await supabase.auth.getUser();
 
-  if (error || !user) {
-    redirect("/login");
-  }
+  if (error || !user) redirect("/login");
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -29,47 +18,12 @@ export default async function ProfilePage() {
     .eq("user_id", user.id)
     .single();
 
-  if (!profile) {
-    return notFound();
-  }
+  if (!profile) return notFound();
 
   return (
-    <div className="container mx-auto py-10">
-      <ProfileEditor profile={profile} />
-
-      <Card className="max-w-md mx-auto">
-        <CardHeader>
-          <CardTitle>Korisnički profil</CardTitle>
-          <CardDescription>Vaši podaci</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Email</p>
-              <p>{user.email}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Korisnički ID
-              </p>
-              <p className="text-sm break-all">{user.id}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Potvrđen email
-              </p>
-              <p>{user.email_confirmed_at ? "Da" : "Ne"}</p>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter>
-          <form action={signOut}>
-            <Button variant="outline" className="w-full">
-              Odjava
-            </Button>
-          </form>
-        </CardFooter>
-      </Card>
+    <div className="container grid grid-cols-2 mx-auto py-5">
+      <ProfileEditorClient profile={profile} />
+      <ProfileCard user={user} />
     </div>
   );
 }

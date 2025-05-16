@@ -1,15 +1,20 @@
-import { notFound } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import PackageForm from "@/components/package-form"
-import { getContractById } from "@/lib/supabase"
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import PackageForm from "@/components/package-form";
+import { getContractById } from "@/lib/supabase";
 
-export default async function EditPackagePage({ params }: { params: { id: string } }) {
-  const packageId = Number.parseInt(params.id)
-  const packageData = await getContractById(packageId)
+export default async function EditPackagePage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const { id } = await params;
+  const packageId = Number.parseInt(id);
+  const packageData = await getContractById(packageId);
 
   if (!packageData) {
-    notFound()
+    notFound();
   }
 
   return (
@@ -25,5 +30,5 @@ export default async function EditPackagePage({ params }: { params: { id: string
         <PackageForm initialData={packageData} isEditing={true} />
       </div>
     </main>
-  )
+  );
 }
