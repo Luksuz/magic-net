@@ -5,4 +5,3 @@ export type ProfileData = {
     user_number: number | null
   }
 
-//

@@ -280,6 +280,15 @@ function formatHtml(html: string, data: ContractData, userInfo?: UserInformation
   if (!html) throw new Error("HTML is required")
   if (!data) throw new Error("Data is required")
 
+  // Add a style tag for hiding empty tables
+  if (!html.includes('.hidden-section')) {
+    html = html.replace('</head>', `<style>.hidden-section { display: none !important; }</style></head>`);
+    // If there's no head tag, add it to the beginning
+    if (!html.includes('</head>')) {
+      html = `<style>.hidden-section { display: none !important; }</style>` + html;
+    }
+  }
+
   // Helper function to format currency values
   const formatCurrency = (value: number | null | undefined): string => {
     if (value === null || value === undefined) return "0,00 EUR"
@@ -533,6 +542,49 @@ function formatHtml(html: string, data: ContractData, userInfo?: UserInformation
     safeReplace('PAYMENT_METHOD_FORMATTED',
       userInfo.paymentMethod ? paymentMethodMap[userInfo.paymentMethod] || userInfo.paymentMethod : '')
   }
+
+  // Now hide sections that are empty
+  
+  // Internet service table
+  const internetValues = [data.fiksni_paket, data.fiksna_brzina, data.fiksne_dodatne_usluge, data.fiksna_oprema];
+  hideIfEmpty('INTERNET_SERVICE_NAME', internetValues);
+  
+  // TV service table
+  const tvValues = [data.tv_paket, data.tv_dodatne_usluge, data.tv_oprema];
+  hideIfEmpty('TV_SERVICE_NAME', tvValues);
+  
+  // Phone service table
+  const phoneValues = [data.pretplatnicki_broj, data.tarifa, data.tel_dodatne_usluge, data.tel_oprema];
+  hideIfEmpty('PHONE_SERVICE_NAME', phoneValues);
+  
+  // Equipment section
+  const equipmentValues = [data.uredaj_proizvodac_model, data.uredaj_cijena, data.uredaj_popust, 
+                           data.uredaj_za_placanje, data.uredaj_otplata_na_rate ? "DA" : "", 
+                           data.uredaj_broj_obroka, data.uredaj_inicijalna_uplata, data.uredaj_mjesecna_rata];
+  hideDivIfEmpty('Podaci o kupljenim uređajima', equipmentValues);
+  
+  // Terminal equipment table
+  const terminalHasContent = terminalEquipment && terminalEquipment.length > 0 && 
+                           hasContent(terminalEquipment.flatMap(e => [e.name, e.quantity, e.price]));
+  if (!terminalHasContent) {
+    hideDivIfEmpty('Cijena opreme dane na korištenje', []);
+  }
+  
+  // Hide empty rows in pricing table
+  hideRowIfEmpty('FIKSNI_PAKET', [data.fiksni_paket, data.fiksna_brzina, 
+                                 (data as any).promo_price_fiksni, 
+                                 (data as any).contract_price_fiksni, 
+                                 (data as any).regular_price_fiksni]);
+  
+  hideRowIfEmpty('TV_PAKET', [data.tv_paket, data.tv_dodatne_usluge, 
+                             (data as any).promo_price_tv, 
+                             (data as any).contract_price_tv, 
+                             (data as any).regular_price_tv]);
+  
+  hideRowIfEmpty('TARIFA', [data.tarifa, data.pretplatnicki_broj, 
+                           (data as any).promo_price_phone, 
+                           (data as any).contract_price_phone, 
+                           (data as any).regular_price_phone]);
 
   return html
 }
