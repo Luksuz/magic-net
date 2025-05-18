@@ -34,6 +34,7 @@ export interface UserInformation {
   sellerCode: number
   sellerPlace: string
   sellerDate: string
+  changeOperator: boolean
 }
 
 const defaultUserInfo: UserInformation = {
@@ -59,6 +60,7 @@ const defaultUserInfo: UserInformation = {
   sellerCode: 0,
   sellerPlace: "Koprivnička 17C, 42230 Ludbreg",
   sellerDate: new Date().toISOString().split("T")[0],
+  changeOperator: false
 }
 
 interface UserInformationFormProps {
@@ -75,27 +77,34 @@ export default function UserInformationForm({
   subscriptionNumber,
 }: UserInformationFormProps) {
   const { profile } = useAuth()
-  if (!profile) {
-    return null
-  }
-  const [userInfo, setUserInfo] = useState<UserInformation>({
-    ...defaultUserInfo,
-    ...initialData,
-  })
+  const [userInfo, setUserInfo] = useState<UserInformation>(() => {
+    // Initialize with defaultUserInfo and initialData
+    // Then, if profile is available, merge sellerCode from it immediately.
+    // This avoids an extra effect/render just for sellerCode initialization.
+    const baseInfo = {
+      ...defaultUserInfo,
+      ...initialData,
+    };
+    if (profile && profile.user_number !== null) {
+      baseInfo.sellerCode = profile.user_number;
+    }
+    return baseInfo;
+  });
 
   useEffect(() => {
-    if (profile) {
-      // Only update if we have a profile and user_number exists
-      if (profile.user_number !== null) {
-        const updatedInfo = { 
-          ...userInfo, 
-          sellerCode: profile.user_number 
+    // This effect now only syncs sellerCode if profile changes *after* initial mount
+    // or if initialData didn't provide it and profile was initially null but became available.
+    if (profile && profile.user_number !== null && userInfo.sellerCode !== profile.user_number) {
+        // Only update if profile.user_number is different from current userInfo.sellerCode
+        // to avoid unnecessary updates if it was already set during useState initialization.
+        const updatedInfo = {
+          ...userInfo,
+          sellerCode: profile.user_number
         };
         setUserInfo(updatedInfo);
-        onChange(updatedInfo);
-      }
+        // onChange will be called by the next effect if updatedInfo is different
     }
-  }, [profile]);
+  }, [profile, userInfo.sellerCode]); // Added userInfo.sellerCode to dependencies
 
   const handleChange = (field: keyof UserInformation, value: any) => {
     const updatedInfo = { ...userInfo, [field]: value }
@@ -141,6 +150,9 @@ export default function UserInformationForm({
     onChange(userInfo)
   }, [onChange, userInfo])
 
+  if (!profile) {
+    return null
+  }
 
   return (
     <Card className="mb-6">
@@ -240,6 +252,19 @@ export default function UserInformationForm({
               onChange={(e) => handleChange("email", e.target.value)}
               placeholder="npr. pero.peric@gmail.com"
             />
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <div className="flex items-center space-x-2 pt-2">
+              <Checkbox
+                id="changeOperator"
+                checked={userInfo.changeOperator}
+                onCheckedChange={(checked) => handleChange("changeOperator", Boolean(checked))}
+              />
+              <Label htmlFor="changeOperator" className="font-normal">
+                Želim podnijeti zahtjev za promjenu operatera
+              </Label>
+            </div>
           </div>
         </div>
 

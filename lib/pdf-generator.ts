@@ -4,6 +4,7 @@ import type { ContractData } from "./supabase"
 import type { PdfStyleOptions } from "@/components/pdf-style-options"
 import type { UserInformation } from "@/components/user-information-form"
 import { getEditableTemplate } from "./template-service"
+import type { ProfileData } from "@/types/user"
 
 export type PdfTemplateContent = {
   id: number
@@ -60,6 +61,32 @@ function calculateFinalPrice(price: number | null | undefined, discountPercentag
   return price - discountAmount
 }
 
+// Helper function to convert image URL to Base64
+async function imageUrlToBase64(url: string): Promise<string> {
+  try {
+    const response = await fetch(url); // Default mode is 'cors'
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image ${url}: ${response.status} ${response.statusText}`);
+    }
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          resolve(reader.result as string);
+        } else {
+          reject(new Error("FileReader failed to read blob as Data URL."));
+        }
+      };
+      reader.onerror = (error) => reject(new Error(`FileReader error: ${error.target?.error?.message || 'Unknown FileReader error'}`));
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error(`Error in imageUrlToBase64 for ${url}:`, error);
+    throw error; // Re-throw to be caught by the caller
+  }
+}
+
 export async function generatePDF(
   data: ContractData,
   userInfo?: UserInformation,
@@ -104,18 +131,106 @@ export async function generatePDF(
       throw new Error('No template found');
     }
     
+
+    const response = await fetch('/promjena_operatera.html');
+    const promjenaOperateraHtmlContent = await response.text();
     // Process template variables with actual data
-    const processedHtml = formatHtml(templateData.html, data, userInfo, terminalEquipment);
+    const processedHtml = formatHtml(templateData.html, data, userInfo, terminalEquipment, promjenaOperateraHtmlContent);
     
+    // Start: Added logic to hide empty tables
+    const tempHtmlDiv = document.createElement('div');
+    tempHtmlDiv.innerHTML = processedHtml;
+    const allTables = tempHtmlDiv.querySelectorAll('table');
+
+    allTables.forEach(table => {
+      let tableHasMeaningfulData = false;
+      const rows = table.querySelectorAll('tr');
+
+      for (const row of Array.from(rows)) {
+        const cells = row.querySelectorAll('td');
+        // If a row has no <td> elements (e.g., it's purely <th> or empty), it doesn't have data cells.
+        if (cells.length === 0) {
+          continue;
+        }
+
+        let rowHasActualValue = false;
+        for (const cell of Array.from(cells)) {
+          const trimmedCellText = cell.textContent?.trim() || '';
+          
+          // Heuristic to identify common static label patterns.
+          // This includes text ending with a colon (e.g., "Name:", "Price (EUR):")
+          // or numbered items (e.g., "1.", "2.").
+          // The character set includes common European characters, symbols, and punctuation.
+          const isLikelyStaticLabel = /^[A-ZČĆŽŠĐa-zčćžšđ\s\d(),%/€.'"-À-ÖØ-öø-ÿ]+:$/.test(trimmedCellText) || /^\d+\.$/.test(trimmedCellText);
+          const isPlaceholderText = /^\\[[A-Z0-9_]+\\]$/.test(trimmedCellText); // Checks for unreplaced placeholders like [FOO_BAR]
+
+          if (trimmedCellText !== '' && !isLikelyStaticLabel && !isPlaceholderText) {
+            rowHasActualValue = true;
+            break; // Found a cell with meaningful data in this row
+          }
+        }
+
+        if (rowHasActualValue) {
+          tableHasMeaningfulData = true;
+          break; // Found a row with meaningful data in this table
+        }
+      }
+
+      if (!tableHasMeaningfulData) {
+        table.style.display = 'none'; // Hide the table if no meaningful data was found
+      }
+    });
+
+    const finalHtmlContent = tempHtmlDiv.innerHTML;
+    // End: Added logic to hide empty tables
+    
+    //save html to file
+    console.log("Original HTML content before logo embedding:", finalHtmlContent);
+
+    let htmlContentForPdf = finalHtmlContent;
+    const logoUrl = "https://qfpjbgjxkpwtsegtkaze.supabase.co/storage/v1/object/public/images//logo.png";
+
+    try {
+      console.log("Attempting to embed logo as Base64...");
+      const base64Logo = await imageUrlToBase64(logoUrl);
+      
+      const tempRenderDiv = document.createElement('div');
+      tempRenderDiv.innerHTML = htmlContentForPdf;
+      
+      const logoImgElement = tempRenderDiv.querySelector(`img[src="${logoUrl}"]`) as HTMLImageElement | null;
+      
+      if (logoImgElement) {
+        logoImgElement.src = base64Logo;
+        htmlContentForPdf = tempRenderDiv.innerHTML;
+        console.log("Logo successfully embedded as Base64.");
+      } else {
+        // Fallback selector in case the URL has slight variations (e.g. normalized slashes)
+        const genericLogoImgElement = tempRenderDiv.querySelector('img[src*="supabase.co/storage/v1/object/public/images"][src*="logo.png"]') as HTMLImageElement | null;
+        if (genericLogoImgElement && genericLogoImgElement.src.includes("logo.png")) {
+            console.warn(`Logo image tag not found with exact URL: ${logoUrl}. Found with generic selector: ${genericLogoImgElement.src}. Replacing this one.`);
+            genericLogoImgElement.src = base64Logo;
+            htmlContentForPdf = tempRenderDiv.innerHTML;
+            console.log("Logo (found generically) embedded as Base64.");
+        } else {
+            console.warn(`Logo image tag not found with URL: ${logoUrl}. PDF might not render the logo correctly. The original URL will be used.`);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch or convert logo to Base64. PDF will use the original URL:", error);
+      // htmlContentForPdf remains finalHtmlContent, html2pdf will attempt to fetch it using its own mechanisms.
+    }
+    
+    console.log("HTML content after attempting logo embedding (passed to html2pdf):", htmlContentForPdf);
+
     // Create a container for the PDF content
     container = document.createElement("div");
     
-    // Set the processed HTML to the container
-    container.innerHTML = processedHtml;
+    // Set the processed HTML (now with potentially hidden tables and embedded logo) to the container
+    container.innerHTML = htmlContentForPdf;
     
     // Temporarily append to document to render
     document.body.appendChild(container);
-
+    
     // Generate PDF
     const ownerPassword = process.env.NEXT_PUBLIC_PDF_OWNER_PASSWORD
     const pdfOptions = {
@@ -161,7 +276,7 @@ export async function generatePDF(
   }
 }
 
-function formatHtml(html: string, data: ContractData, userInfo?: UserInformation, terminalEquipment?: TerminalEquipment[]): string {
+function formatHtml(html: string, data: ContractData, userInfo?: UserInformation, terminalEquipment?: TerminalEquipment[], promjenaOperateraHtmlContent?: string): string {
   if (!html) throw new Error("HTML is required")
   if (!data) throw new Error("Data is required")
 
@@ -175,6 +290,16 @@ function formatHtml(html: string, data: ContractData, userInfo?: UserInformation
   const safeReplace = (placeholder: string, value: string | number | null | undefined) => {
     const stringValue = value !== null && value !== undefined ? String(value) : ""
     html = html.replace(new RegExp(`\\[${placeholder}\\]`, 'g'), stringValue)
+  }
+
+    // Conditionally include Zahtjev za promjenu operatera
+  if (userInfo && userInfo.changeOperator && promjenaOperateraHtmlContent) {
+    // Assuming promjenaOperateraHtmlContent is defined or fetched elsewhere and available here
+    
+    console.log(promjenaOperateraHtmlContent)
+    html = html.replace('<!-- ZAHTJEV_ZA_PROMJENU_OPERATERA -->', promjenaOperateraHtmlContent);
+  } else {
+    html = html.replace('<!-- ZAHTJEV_ZA_PROMJENU_OPERATERA -->', '');
   }
 
   // Agreement number
