@@ -127,7 +127,7 @@ export default function ContractForm({
       <Tabs defaultValue="basic" className="w-full" onValueChange={setActiveTab} value={activeTab}>
         <TabsList className="grid grid-cols-7 w-full">
           <TabsTrigger value="basic">Osnovne informacije</TabsTrigger>
-          <TabsTrigger value="internet">Internet</TabsTrigger>
+          <TabsTrigger value="internet">Usluga i Internet</TabsTrigger>
           <TabsTrigger value="tv">TV</TabsTrigger>
           <TabsTrigger value="telephone">Telefon</TabsTrigger>
           <TabsTrigger value="equipment">Oprema</TabsTrigger>

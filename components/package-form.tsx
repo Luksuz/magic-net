@@ -252,7 +252,7 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="grid grid-cols-6 w-full">
             <TabsTrigger value="basic">Osnovne informacije</TabsTrigger>
-            <TabsTrigger value="internet">Internet</TabsTrigger>
+            <TabsTrigger value="Usluga i Internet">Usluga i Internet</TabsTrigger>
             <TabsTrigger value="tv">TV</TabsTrigger>
             <TabsTrigger value="telephone">Telefon</TabsTrigger>
             <TabsTrigger value="terminal_equipment">Terminalna Oprema</TabsTrigger>

@@ -32,16 +32,6 @@ export default function NavigationDrawer({
     },
   ];
 
-  const adminItems = isAdmin
-    ? [
-        {
-          title: "Uredi PDF predložak",
-          href: "/admin/templates",
-          icon: <FileText className="h-5 w-5" />,
-        },
-      ]
-    : [];
-
   return (
     <div
       className={cn(
@@ -61,21 +51,6 @@ export default function NavigationDrawer({
             />
           ))}
         </nav>
-        {isAdmin && adminItems.length > 0 && (
-          <>
-            <hr className="my-4 border-t border-border/60" />
-            <h3 className="px-3 text-sm font-semibold text-muted-foreground mb-2">
-              Admin
-            </h3>
-            {adminItems.map((item) => (
-              <NavItem
-                key={item.href}
-                {...item}
-                isActive={pathname === item.href}
-              />
-            ))}
-          </>
-        )}
       </div>
     </div>
   );
