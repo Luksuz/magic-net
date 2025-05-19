@@ -1,11 +1,13 @@
-"use client"
+"use server";
+
 import type { ProfileData } from "@/types/user";
-import { supabase } from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/server";
 
 export const fetchProfileServer = async (
   userId: string
 ): Promise<ProfileData | null> => {
   try {
+    const supabase = await createClient();
     const { data, error } = await supabase
       .from("profiles")
       .select("is_admin, agreement_number, activation_fees, user_number")
