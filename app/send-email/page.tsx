@@ -24,17 +24,69 @@ export default function SendEmailPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    sendEmail(recipient, subject, message, attachments)
+    // Validate form fields
+    if (!recipient.trim()) {
+      toast({
+        title: "Greška",
+        description: "Molimo unesite email primatelja.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!subject.trim()) {
+      toast({
+        title: "Greška",
+        description: "Molimo unesite predmet poruke.",
+        variant: "destructive"
+      })
+      return
+    }
     
     setIsSending(true)
     
     try {
-      // Here you would implement your email sending logic with attachments
-      // For now, we'll just simulate a delay and log the attachments
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // Create FormData for file uploads
+      const formData = new FormData()
       
-      console.log("Would send email with attachments:", attachments)
+      // First convert files to Base64 strings
+      const filePromises = attachments.map(async (file) => {
+        return new Promise<{name: string, content: string}>((resolve) => {
+          const reader = new FileReader()
+          reader.onloadend = () => {
+            resolve({
+              name: file.name,
+              content: reader.result as string
+            })
+          }
+          reader.readAsDataURL(file)
+        })
+      })
       
+      // Wait for all files to be converted
+      const fileContents = await Promise.all(filePromises)
+      
+      const response = await fetch('/api/sendEmail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipient,
+          subject,
+          message,
+          attachments: fileContents.map(file => ({
+            name: file.name,
+            url: file.content, // Send Base64 string instead of URL
+          })),
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to send email')
+      }
+
       toast({
         title: "Uspjeh!",
         description: `Email je uspješno poslan${attachments.length ? ' s prilozima' : ''}.`,
@@ -46,9 +98,10 @@ export default function SendEmailPage() {
       setMessage("")
       setAttachments([])
     } catch (error) {
+      console.error('Error sending email:', error)
       toast({
         title: "Greška",
-        description: "Nije uspjelo slanje emaila. Molimo pokušajte ponovno.",
+        description: error instanceof Error ? error.message : "Nije uspjelo slanje emaila. Molimo pokušajte ponovno.",
         variant: "destructive"
       })
     } finally {
