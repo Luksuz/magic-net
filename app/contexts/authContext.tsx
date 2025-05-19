@@ -81,12 +81,22 @@ export const AuthProvider = ({
     const initAuth = async () => {
       console.log("[AuthProvider] initAuth started.");
       setLoading(true);
+      let sessionData = null;
+      let sessionError = null;
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log("[AuthProvider] initAuth: session from getSession():", session);
-        await handleAuthChange(session?.user || null);
+        console.log("[AuthProvider] initAuth: Attempting supabase.auth.getSession()...");
+        const { data, error } = await supabase.auth.getSession();
+        sessionData = data;
+        sessionError = error;
+        console.log("[AuthProvider] initAuth: supabase.auth.getSession() completed. Error:", sessionError, "Session:", sessionData);
+
+        if (sessionError) {
+          console.error("[AuthProvider] initAuth: Error from getSession():", sessionError);
+          // Potentially handle this error more gracefully, e.g., by not proceeding to handleAuthChange
+        }
+        await handleAuthChange(sessionData?.session?.user || null);
       } catch (error) {
-        console.error("[AuthProvider] initAuth: Error:", error);
+        console.error("[AuthProvider] initAuth: CAUGHT Error during getSession() or handleAuthChange call:", error);
         setUser(null);
         setProfile(null);
         setIsAdmin(false);
