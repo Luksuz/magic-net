@@ -31,41 +31,6 @@ export const AuthProvider = ({
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  useEffect(() => {
-    const fetchProfile = async (userId: string) => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
-
-      if (data) {
-        setIsAdmin(Boolean(data.is_admin));
-        setProfile(data);
-      }
-    };
-
-    if (initialUser) {
-      fetchProfile(initialUser.id).finally(() => setLoading(false));
-    } else {
-      setIsAdmin(false);
-      setLoading(false);
-    }
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user || null);
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [initialUser]);
-
   const updateProfile = async (profileData: Partial<ProfileData>) => {
     if (!user) return;
 
@@ -77,7 +42,6 @@ export const AuthProvider = ({
 
       if (error) throw error;
 
-      // Update local state with new profile data
       setProfile((prev) => (prev ? { ...prev, ...profileData } : null));
       setIsAdmin(Boolean(profileData.is_admin ?? isAdmin));
       console.log("isAdmin set to:", Boolean(profileData.is_admin));
@@ -93,13 +57,12 @@ export const AuthProvider = ({
     if (currentUser) {
       console.log("Fetching profile for user:", currentUser.id);
       const profileData = await fetchProfileServer(currentUser.id);
-      console.log("Profile data:", profileData);
+      console.log("Profile data from server action:", profileData);
       setProfile(profileData);
-      // Explicitly convert to boolean to avoid any truthy/falsy issues
       setIsAdmin(Boolean(profileData?.is_admin));
-      console.log("isAdmin set to:", Boolean(profileData?.is_admin));
+      console.log("isAdmin set to (in handleAuthChange):", Boolean(profileData?.is_admin));
     } else {
-      console.log("No user found");
+      console.log("No user found, clearing profile and admin status");
       setProfile(null);
       setIsAdmin(false);
     }
@@ -109,27 +72,28 @@ export const AuthProvider = ({
 
   useEffect(() => {
     const initAuth = async () => {
+      setLoading(true);
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         await handleAuthChange(session?.user || null);
       } catch (error) {
         console.error("Auth init error:", error);
+        setUser(null);
+        setProfile(null);
+        setIsAdmin(false);
         setLoading(false);
       }
     };
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      await handleAuthChange(session?.user || null);
-    });
-
     initAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        console.log("Auth state changed, event:", _event, "session:", session);
+        setLoading(true);
+        await handleAuthChange(session?.user || null);
+      }
+    );
 
     return () => {
       subscription.unsubscribe();
