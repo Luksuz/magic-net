@@ -32,7 +32,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Prijava</CardTitle>
-          <CardDescription>Prijavite se u Magic Net ili kreirajte novi račun</CardDescription>
+          <CardDescription>Prijavite se u Magic Net.</CardDescription>
         </CardHeader>
         
         <Suspense fallback={

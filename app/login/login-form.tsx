@@ -32,7 +32,7 @@ export function LoginForm({ login, signup }: LoginFormProps) {
     <form>
       <CardContent>
         {showMessage && (
-          <div className={`p-3 mb-4 rounded text-sm ${showMessage.includes('Check') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          <div className={`p-3 mb-4 rounded text-sm ${showMessage.includes('Check your email') || showMessage.includes('account created successfully') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
             {showMessage}
           </div>
         )}
@@ -49,7 +49,6 @@ export function LoginForm({ login, signup }: LoginFormProps) {
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row gap-2">
         <Button className="w-full" formAction={login}>Prijava</Button>
-        <Button className="w-full" variant="outline" formAction={signup}>Registracija</Button>
       </CardFooter>
     </form>
   )

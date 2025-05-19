@@ -3,8 +3,7 @@
 import { useAuth } from '../contexts/authContext'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { FileText, Settings } from 'lucide-react'
+import { FileText, UserPlus, Trash2Icon as DeleteUserIcon, Settings, PackagePlus, Edit3Icon } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function AdminDashboard() {
@@ -12,7 +11,7 @@ export default function AdminDashboard() {
   
   // Show loading state
   if (loading) {
-    return <div className="container mx-auto py-10">Učitavanje...</div>
+    return <div className="container mx-auto py-10 text-center">Učitavanje administratorske ploče...</div>
   }
   
   // Redirect if not admin
@@ -21,31 +20,128 @@ export default function AdminDashboard() {
   }
   
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-10 space-y-8">
       <h1 className="text-3xl font-bold mb-6">Administratorska ploča</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Link href="/admin/templates">
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <FileText className="mr-2 h-5 w-5" />
-                PDF Predlošci
-              </CardTitle>
-              <CardDescription>
-                Uredi predloške za PDF dokumente
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Prilagodite izgled i sadržaj PDF ugovora koji se generiraju za korisnike.
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-        
-        {/* Add more admin links here */}
-      </div>
+      <section>
+        <h2 className="text-2xl font-semibold mb-4">Upravljanje Korisnicima</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Link href="/admin/create-user" legacyBehavior passHref>
+            <a className="block h-full">
+              <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <UserPlus className="mr-2 h-5 w-5 text-primary" />
+                    Kreiraj Novog Korisnika
+                  </CardTitle>
+                  <CardDescription>
+                    Dodajte novog korisnika u sustav.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <p className="text-sm text-muted-foreground">
+                    Omogućuje administratorima kreiranje korisničkih računa.
+                  </p>
+                </CardContent>
+              </Card>
+            </a>
+          </Link>
+
+          <Link href="/admin/delete-user" legacyBehavior passHref>
+            <a className="block h-full">
+              <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <DeleteUserIcon className="mr-2 h-5 w-5 text-destructive" />
+                    Obriši Korisnika
+                  </CardTitle>
+                  <CardDescription>
+                    Pregledajte i odaberite korisnika za brisanje.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <p className="text-sm text-muted-foreground">
+                    Vodi na stranicu za odabir i potvrdu brisanja korisnika.
+                  </p>
+                </CardContent>
+              </Card>
+            </a>
+          </Link>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-semibold mb-4">Upravljanje Paketima Usluga</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Link href="/admin/add-package" legacyBehavior passHref>
+            <a className="block h-full">
+              <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <PackagePlus className="mr-2 h-5 w-5 text-primary" />
+                    Dodaj Novi Paket
+                  </CardTitle>
+                  <CardDescription>
+                    Kreirajte novi paket usluga.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <p className="text-sm text-muted-foreground">
+                    Definirajte detalje i cijene novih paketa dostupnih korisnicima.
+                  </p>
+                </CardContent>
+              </Card>
+            </a>
+          </Link>
+
+          <Link href="/admin/edit-package" legacyBehavior passHref>
+            <a className="block h-full">
+              <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Edit3Icon className="mr-2 h-5 w-5 text-primary" />
+                    Uredi Postojeći Paket
+                  </CardTitle>
+                  <CardDescription>
+                    Izmijenite detalje postojećih paketa.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <p className="text-sm text-muted-foreground">
+                    Pregledajte listu paketa i odaberite paket za uređivanje.
+                  </p>
+                </CardContent>
+              </Card>
+            </a>
+          </Link>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-semibold mb-4">Ostale Postavke</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Link href="/admin/templates" legacyBehavior passHref>
+            <a className="block h-full">
+              <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <FileText className="mr-2 h-5 w-5 text-primary" />
+                    PDF Predlošci
+                  </CardTitle>
+                  <CardDescription>
+                    Uredi predloške za PDF ugovore.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <p className="text-sm text-muted-foreground">
+                    Prilagodite izgled PDF ugovora.
+                  </p>
+                </CardContent>
+              </Card>
+            </a>
+          </Link>
+        </div>
+      </section>
     </div>
   )
 } 

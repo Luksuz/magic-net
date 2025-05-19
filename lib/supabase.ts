@@ -38,6 +38,7 @@ export type ContractData = {
   cijena_aktivacije_naknada: number | null
   cijena_aktivacije_popust: number | null
   cijena_aktivacije_ukupno: number | null
+  terminalna_oprema: Record<string, number> | null
   created_at: string | null
 }
 

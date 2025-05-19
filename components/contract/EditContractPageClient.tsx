@@ -11,6 +11,11 @@ import type { ContractData } from "@/lib/supabase";
 import type { TerminalEquipment } from "@/lib/pdf-generator";
 import type { UserInformation } from "@/components/user-information-form";
 
+// Helper to generate a somewhat unique ID
+const generatePseudoUniqueId = (prefix: string = 'eq') => {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+};
+
 interface Props {
   contract: ContractData;
   profile: { agreement_number: number };
@@ -43,6 +48,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
     sellerCode: 0,
     sellerPlace: "",
     sellerDate: new Date().toISOString().split("T")[0],
+    changeOperator: false,
   });
 
   const [terminalEquipment, setTerminalEquipment] = useState<
@@ -61,11 +67,33 @@ export default function EditContractPageClient({ contract, profile }: Props) {
   ]);
 
   const formDataRef = useRef<ContractData | null>(null);
-  const formTerminalEquipmentRef =
-    useRef<TerminalEquipment[]>(terminalEquipment);
+  const formTerminalEquipmentRef = useRef<TerminalEquipment[]>(terminalEquipment);
 
   useEffect(() => {
-    setContractData(contract);
+    if (contract) {
+      setContractData(contract);
+      if (contract.terminalna_oprema && typeof contract.terminalna_oprema === 'object') {
+        const newTerminalEquipmentList = Object.entries(contract.terminalna_oprema).map(
+          ([name, price]) => ({
+            id: Number(generatePseudoUniqueId().split('-')[1]), 
+            name,
+            quantity: "", 
+            price: typeof price === 'number' ? String(price.toFixed(2)).replace('.', ',') : "0,00",
+          })
+        );
+        setTerminalEquipment(newTerminalEquipmentList);
+        formTerminalEquipmentRef.current = newTerminalEquipmentList;
+      } else {
+        const emptyList: TerminalEquipment[] = [];
+        setTerminalEquipment(emptyList);
+        formTerminalEquipmentRef.current = emptyList;
+      }
+    } else {
+      setContractData(null);
+      const emptyList: TerminalEquipment[] = [];
+      setTerminalEquipment(emptyList);
+      formTerminalEquipmentRef.current = emptyList;
+    }
   }, [contract]);
 
   useEffect(() => {
@@ -91,9 +119,26 @@ export default function EditContractPageClient({ contract, profile }: Props) {
     setUserInfo(data);
   };
 
-  const handleTerminalEquipmentChange = (data: TerminalEquipment[]) => {
-    setTerminalEquipment(data);
-    formTerminalEquipmentRef.current = data;
+  const handleTerminalEquipmentChange = (updatedEquipment: TerminalEquipment[]) => {
+    setTerminalEquipment(updatedEquipment);
+    formTerminalEquipmentRef.current = updatedEquipment;
+
+    // Also update contractData.terminalna_oprema
+    const newTerminalOpremaRecord: Record<string, number> = {};
+    updatedEquipment.forEach(item => {
+      if (item.name.trim() !== "") {
+        const priceNumber = parseFloat(String(item.price).replace(',', '.'));
+        newTerminalOpremaRecord[item.name.trim()] = isNaN(priceNumber) ? 0 : priceNumber;
+      }
+    });
+
+    setContractData(prevContractData => 
+      prevContractData ? 
+      { 
+        ...prevContractData, 
+        terminalna_oprema: newTerminalOpremaRecord 
+      } : null
+    );
   };
 
   if (!contractData) {

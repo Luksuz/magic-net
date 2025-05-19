@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PencilIcon, PlusIcon, FileTextIcon } from "lucide-react"
+import { PencilIcon, PlusIcon, FileTextIcon, TrashIcon } from "lucide-react"
 import { SearchBar } from "@/components/search-bar"
+import { deletePackageAction } from "@/lib/actions"
+import { useAuth } from "@/app/contexts/authContext"
 
 type Package = {
   id: number
@@ -18,8 +20,11 @@ type Package = {
 
 export default function PackageSelector({ packages }: { packages: Package[] }) {
   const router = useRouter()
+  const { isAdmin } = useAuth()
   const [selectedPackage, setSelectedPackage] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [deletingPackageId, setDeletingPackageId] = useState<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSelectPackage = (id: number) => {
     setSelectedPackage(id)
@@ -34,6 +39,35 @@ export default function PackageSelector({ packages }: { packages: Package[] }) {
   const handleSearchChange = (value: string) => {
     setSearchQuery(value)
   }
+
+  const handleDeletePackage = async (packageId: number) => {
+    if (!isAdmin) return;
+    if (deletingPackageId === packageId) return;
+
+    const confirmed = window.confirm("Jeste li sigurni da želite obrisati ovaj paket? Ova akcija se ne može poništiti.");
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingPackageId(packageId);
+    setError(null);
+
+    try {
+      const result = await deletePackageAction(packageId);
+      if (result.success) {
+        router.refresh();
+        window.alert("Paket uspješno obrisan.");
+      } else {
+        console.error("Failed to delete package:", result.error);
+        setError(result.error || "Došlo je do pogreške prilikom brisanja paketa.");
+      }
+    } catch (err: any) {
+      console.error("Client-side error deleting package:", err);
+      setError(err.message || "Došlo je do neočekivane pogreške na klijentu.");
+    } finally {
+      setDeletingPackageId(null);
+    }
+  };
   
   // Check if a text contains a keyword, considering diacritics
   const containsKeyword = (text: string, keyword: string): boolean => {
@@ -106,6 +140,11 @@ export default function PackageSelector({ packages }: { packages: Package[] }) {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="bg-destructive/10 border border-destructive text-destructive p-3 rounded-md">
+          <p><b>Greška:</b> {error}</p>
+        </div>
+      )}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
         <h2 className="text-2xl font-semibold">Odaberi Internet Paket</h2>
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
@@ -115,12 +154,14 @@ export default function PackageSelector({ packages }: { packages: Package[] }) {
             placeholder="Pretraži pakete..."
             className="sm:w-64"
           />
-          <Link href="/add-package" className="w-full sm:w-auto">
-            <Button className="w-full sm:w-auto">
-              <PlusIcon className="mr-2 h-4 w-4" />
-              Dodaj Novi Paket
-            </Button>
-          </Link>
+          {isAdmin && (
+            <Link href="/add-package" className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto">
+                <PlusIcon className="mr-2 h-4 w-4" />
+                Dodaj Novi Paket
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -140,27 +181,47 @@ export default function PackageSelector({ packages }: { packages: Package[] }) {
               <tr
                 key={pkg.id}
                 className={`border-t hover:bg-muted/50 cursor-pointer ${selectedPackage === pkg.id ? "bg-primary/10" : ""}`}
-                onClick={() => handleSelectPackage(pkg.id)}
               >
-                <td className="p-3">
+                <td className="p-3" onClick={() => handleSelectPackage(pkg.id)}>
                   <div className="font-medium">{pkg.usluga || "Neimenovani Paket"}</div>
                   <div className="text-xs text-muted-foreground">ID: {pkg.id}</div>
                 </td>
-                <td className="p-3">{pkg.fiksni_paket || "-"}</td>
-                <td className="p-3">{pkg.tv_paket || "-"}</td>
-                <td className="p-3">{pkg.tarifa || "-"}</td>
+                <td className="p-3" onClick={() => handleSelectPackage(pkg.id)}>{pkg.fiksni_paket || "-"}</td>
+                <td className="p-3" onClick={() => handleSelectPackage(pkg.id)}>{pkg.tv_paket || "-"}</td>
+                <td className="p-3" onClick={() => handleSelectPackage(pkg.id)}>{pkg.tarifa || "-"}</td>
                 <td className="p-3 text-right">
-                  <div className="flex justify-end gap-2">
-                    <Link href={`/edit-package/${pkg.id}`}>
-                      <Button variant="ghost" size="sm">
-                        <PencilIcon className="h-4 w-4" />
-                        <span className="sr-only">Uredi</span>
-                      </Button>
-                    </Link>
-                    <Link href={`/edit-contract/${pkg.id}`}>
-                      <Button variant="ghost" size="sm">
+                  <div className="flex justify-end gap-1 items-center">
+                    {isAdmin && (
+                      <>
+                        <Link href={`/edit-package/${pkg.id}`} legacyBehavior={false}>
+                          <Button variant="ghost" size="sm" title="Uredi Paket">
+                            <PencilIcon className="h-4 w-4" />
+                            <span className="sr-only">Uredi Paket</span>
+                          </Button>
+                        </Link>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          title="Obriši Paket"
+                          onClick={(e) => { 
+                            e.stopPropagation();
+                            handleDeletePackage(pkg.id); 
+                          }}
+                          disabled={deletingPackageId === pkg.id}
+                        >
+                          {deletingPackageId === pkg.id ? (
+                            <span className="text-xs">Brisanje...</span>
+                          ) : (
+                            <TrashIcon className="h-4 w-4 text-destructive" />
+                          )}
+                          <span className="sr-only">Obriši Paket</span>
+                        </Button>
+                      </>
+                    )}
+                    <Link href={`/edit-contract/${pkg.id}`} legacyBehavior={false}>
+                      <Button variant="ghost" size="sm" title="Kreiraj Ugovor">
                         <FileTextIcon className="h-4 w-4" />
-                        <span className="sr-only">Ugovor</span>
+                        <span className="sr-only">Kreiraj Ugovor</span>
                       </Button>
                     </Link>
                   </div>
@@ -181,15 +242,20 @@ export default function PackageSelector({ packages }: { packages: Package[] }) {
       </div>
 
       {filteredPackages.length === 0 && !searchQuery.trim() && (
-        <div className="text-center p-8 border rounded-lg bg-muted/20">
-          <p className="text-muted-foreground mb-4">Nije pronađen nijedan paket. Kreirajte svoj prvi paket za početak.</p>
-          <Link href="/add-package">
-            <Button>
-              <PlusIcon className="mr-2 h-4 w-4" />
-              Dodaj Novi Paket
-            </Button>
-          </Link>
-        </div>
+         <div className="text-center p-8 border rounded-lg bg-muted/20">
+           <p className="text-muted-foreground mb-4">
+             Nije pronađen nijedan paket.
+             {isAdmin && " Kreirajte svoj prvi paket za početak."}
+           </p>
+           {isAdmin && (
+             <Link href="/add-package">
+               <Button>
+                 <PlusIcon className="mr-2 h-4 w-4" />
+                 Dodaj Novi Paket
+               </Button>
+             </Link>
+           )}
+         </div>
       )}
     </div>
   )

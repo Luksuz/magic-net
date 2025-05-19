@@ -55,6 +55,7 @@ export default function ContractForm({
     sellerCode: 0,
     sellerPlace: "",
     sellerDate: new Date().toISOString().split("T")[0],
+    changeOperator: false,
   })
   const [terminalEquipment, setTerminalEquipment] = useState<TerminalEquipment[]>(terminalEquipmentInitial || [
     { id: 1, name: "WiFi router", quantity: "", price: "190,00" },
@@ -357,7 +358,6 @@ export default function ContractForm({
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-gray-100">
-                      <th className="border border-gray-300 px-4 py-2 text-center">Redni broj</th>
                       <th className="border border-gray-300 px-4 py-2 text-left">Naziv Terminalne opreme</th>
                       <th className="border border-gray-300 px-4 py-2 text-center">Količina</th>
                       <th className="border border-gray-300 px-4 py-2 text-right">Jedinična cijena po komadu Terminalne opreme</th>
@@ -366,7 +366,6 @@ export default function ContractForm({
                   <tbody>
                     {terminalEquipment.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
-                        <td className="border border-gray-300 px-4 py-2 text-center">{item.id}.</td>
                         <td className="border border-gray-300 px-4 py-2">{item.name}</td>
                         <td className="border border-gray-300 px-4 py-2 text-center">
                           <Input
@@ -382,11 +381,7 @@ export default function ContractForm({
                     ))}
                   </tbody>
                 </table>
-                <p className="text-sm mt-4 italic">
-                  Napomena: ako bilo kada odlučite isključiti uslugu, dužni ste nam vratiti Terminalnu opremu koju smo Vam dali na korištenje. 
-                  Krajnji rok za povrat Terminalne opreme je 15 dana od dana zaprimanja računa na kojem će Vam biti naplaćena naknada za istu, 
-                  a koji ćemo stornirati u slučaju povrata Terminalne opreme.
-                </p>
+               
               </div>
             </CardContent>
           </Card>
