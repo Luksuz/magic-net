@@ -1,5 +1,4 @@
-"use server";
-
+"use client"
 import type { ProfileData } from "@/types/user";
 import { supabase } from "@/utils/supabase/client";
 
