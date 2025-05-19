@@ -4,7 +4,8 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
 import type { ProfileData } from "@/types/user";
-import { set } from "date-fns";
+import { fetchProfileServer } from "@/lib/userActions";
+
 
 type AuthContextType = {
   user: User | null;
@@ -65,25 +66,6 @@ export const AuthProvider = ({
     return () => subscription.unsubscribe();
   }, [initialUser]);
 
-  // Simplified fetch profile function
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("is_admin, agreement_number, activation_fees, user_number")
-        .eq("user_id", userId)
-        .single();
-
-      if (error) throw error;
-
-      console.log("Profile data:", data);
-      return data as ProfileData;
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      return null;
-    }
-  };
-
   const updateProfile = async (profileData: Partial<ProfileData>) => {
     if (!user) return;
 
@@ -105,13 +87,12 @@ export const AuthProvider = ({
     }
   };
 
-  // Simplified auth initialization
   const handleAuthChange = async (currentUser: User | null) => {
     setUser(currentUser);
 
     if (currentUser) {
       console.log("Fetching profile for user:", currentUser.id);
-      const profileData = await fetchProfile(currentUser.id);
+      const profileData = await fetchProfileServer(currentUser.id);
       console.log("Profile data:", profileData);
       setProfile(profileData);
       // Explicitly convert to boolean to avoid any truthy/falsy issues
