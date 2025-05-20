@@ -81,31 +81,44 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
         position: relative;
       }
       .page-break-placeholder::before {
-        content: "Page Break";
+        content: "Prijelom stranice";
         font-size: 12px;
         font-family: sans-serif;
+      }
+      /* Placeholder styling */
+      .template-placeholder {
+        display: inline-block;
+        background-color: #FFFF9E;
+        padding: 0 4px;
+        margin: 0 1px;
+        border-radius: 3px;
+        font-weight: bold;
+        user-select: all;
+        cursor: default;
+        border: 1px dashed #e6ca00;
+        color: #5c5c00;
       }
     `
     
     // Create an async function inside useEffect to fetch the template
     const fetchTemplate = async () => {
       try {
-        console.log('Fetching template...')
+        console.log('Dohvaćanje predloška...')
         const templateData = await getEditableTemplate();
-        console.log('Template fetched:', templateData)
+        console.log('Predložak dohvaćen:', templateData)
         // Set the template HTML
         if (templateData && templateData.html) {
-          console.log("There is a template")
+          console.log("Predložak je pronađen")
           // Convert page-break to page-break-placeholder for editing
           const templateForEditing = templateData.html.replace(/class="page-break"/g, 'class="page-break-placeholder"');
           setFullTemplate(templateForEditing);
         } else {
-          console.log("No template found")
+          console.log("Predložak nije pronađen")
           // Fallback to empty template
           setFullTemplate('');
         }
       } catch (error) {
-        console.error('Failed to fetch template:', error);
+        console.error('Greška pri dohvaćanju predloška:', error);
         // Fallback to empty template
         setFullTemplate('');
       }
@@ -134,13 +147,13 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
       await saveEditableTemplate(templateToSave);
       
       toast({
-        title: 'Success',
-        description: 'Template saved successfully',
+        title: 'Uspjeh',
+        description: 'Predložak je spremljen',
       });
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to save template',
+        title: 'Greška',
+        description: 'Nije moguće spremiti predložak',
         variant: 'destructive',
       });
       console.error('Failed to save template:', error);
@@ -175,8 +188,8 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
 
     let processed = template
     
-    // In preview mode, we just keep the placeholders as they are
-    // We don't have mock data to replace them with
+    // Replace placeholders with styled spans that are uneditable
+    processed = processed.replace(/\[([A-Z0-9_]+)\]/g, '<span class="template-placeholder" contenteditable="false">[$1]</span>');
     
     // Reapply the style tag if it was present
     if (styleTag) {
@@ -201,11 +214,10 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
     // Create a template with proper structure
     let template = html
     
-    template = styleTag + template
+    // Convert the styled placeholders back to simple text placeholders
+    template = template.replace(/<span class="template-placeholder"[^>]*>\[([A-Z0-9_]+)\]<\/span>/g, '[$1]');
     
-    // Preserve any existing handlebars syntax and placeholders
-    // We're not trying to convert content to template variables anymore
-    // as we don't have mock data to compare against
+    template = styleTag + template
     
     return template
   }
@@ -244,13 +256,13 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
       setFullTemplate(templateForEditing);
       
       toast({
-        title: 'Success',
-        description: 'Template reset to original version',
+        title: 'Uspjeh',
+        description: 'Predložak je vraćen na izvornu verziju',
       });
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to reset to original template',
+        title: 'Greška',
+        description: 'Nije moguće vratiti izvorni predložak',
         variant: 'destructive',
       });
       console.error('Failed to reset to original template:', error);
@@ -265,6 +277,95 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
     if (e.ctrlKey && e.key === 'b') {
       e.preventDefault(); // Prevent the default bold formatting
       insertPageBreak();
+    }
+    
+    // Prevent deletion of placeholders
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      const selection = window.getSelection();
+      if (!selection?.rangeCount) return;
+      
+      const range = selection.getRangeAt(0);
+      
+      // Check if selection includes any placeholders
+      let containsPlaceholder = false;
+      
+      // Check if range contains or starts/ends within a placeholder
+      const checkNodeForPlaceholder = (node: Node): boolean => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          if ((node as Element).classList?.contains('template-placeholder')) {
+            return true;
+          }
+          
+          // Check children
+          const children = (node as Element).querySelectorAll('.template-placeholder');
+          return children.length > 0;
+        }
+        return false;
+      };
+      
+      // Check start container
+      if (checkNodeForPlaceholder(range.startContainer) || 
+          (range.startContainer.parentElement && checkNodeForPlaceholder(range.startContainer.parentElement))) {
+        containsPlaceholder = true;
+      }
+      
+      // Check end container
+      if (!containsPlaceholder && (
+          checkNodeForPlaceholder(range.endContainer) || 
+          (range.endContainer.parentElement && checkNodeForPlaceholder(range.endContainer.parentElement)))) {
+        containsPlaceholder = true;
+      }
+      
+      // Check if any parent element contains placeholders within the range
+      if (!containsPlaceholder && range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE) {
+        const elementsInRange = Array.from((range.commonAncestorContainer as Element).querySelectorAll('*'));
+        for (const element of elementsInRange) {
+          if (checkNodeForPlaceholder(element)) {
+            containsPlaceholder = true;
+            break;
+          }
+        }
+      }
+      
+      if (containsPlaceholder) {
+        e.preventDefault(); // Prevent deletion
+        toast({
+          title: "Zaštićeni sadržaj",
+          description: "Oznake [PLACEHOLDER] nije moguće izbrisati.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  // Handle paste events to preserve placeholders
+  const handleEditorPaste = (e: React.ClipboardEvent) => {
+    if (editMode !== 'visual') return;
+    
+    // Only process if we're pasting into the editor
+    if (e.target !== editorRef.current && !editorRef.current?.contains(e.target as Node)) return;
+    
+    // Get the current selection
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return;
+    
+    const range = selection.getRangeAt(0);
+    
+    // Check if we're pasting over a placeholder
+    let containsPlaceholder = false;
+    if (!range.collapsed) {
+      // If there's a selection, check if it contains any placeholders
+      const fragment = range.cloneContents();
+      containsPlaceholder = !!fragment.querySelector('.template-placeholder');
+    }
+    
+    if (containsPlaceholder) {
+      e.preventDefault();
+      toast({
+        title: "Zaštićeni sadržaj",
+        description: "Nije moguće lijepiti preko oznaka [PLACEHOLDER].",
+        variant: "destructive"
+      });
     }
   };
 
@@ -297,10 +398,10 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
   return (
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Edit PDF Template</CardTitle>
+        <CardTitle>Uredi PDF predložak</CardTitle>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={toggleEditMode}>
-            {editMode === 'html' ? 'Visual Editor' : 'HTML Editor'}
+            {editMode === 'html' ? 'Vizualni editor' : 'HTML editor'}
           </Button>
           
           <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
@@ -308,23 +409,23 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
               <Button 
                 variant="secondary" 
                 disabled={isSaving || isResetting}
-                title="Reset to the original template"
+                title="Vrati na izvorni predložak"
                 className="ml-auto"
               >
-                {isResetting ? 'Resetting...' : 'Reset'}
+                {isResetting ? 'Vraćanje...' : 'Vrati izvorno'}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Reset Template</AlertDialogTitle>
+                <AlertDialogTitle>Vraćanje predloška</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will reset the template to the original version. Any unsaved changes will be lost. 
-                  Are you sure you want to continue?
+                  Ovo će vratiti predložak na izvornu verziju. Sve nesačuvane promjene bit će izgubljene. 
+                  Jeste li sigurni da želite nastaviti?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleReset}>Reset</AlertDialogAction>
+                <AlertDialogCancel>Odustani</AlertDialogCancel>
+                <AlertDialogAction onClick={handleReset}>Vrati</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -334,7 +435,7 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
             disabled={isSaving || isResetting}
             className="ml-2"
           >
-            {isSaving ? 'Saving...' : 'Save Template'}
+            {isSaving ? 'Spremanje...' : 'Spremi predložak'}
           </Button>
         </div>
       </CardHeader>
@@ -343,7 +444,7 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
           <div className="space-y-4">
             <div>
               <p className="mb-2 text-sm text-slate-500">
-                {`Edit the full HTML template. Use placeholder variables within square brackets like [USER_NAME], [FIKSNI_PAKET], etc.`}
+                {`Uredi cijeli HTML predložak. Koristi varijable unutar uglatih zagrada poput [USER_NAME], [FIKSNI_PAKET], itd.`}
               </p>
               <Textarea
                 rows={25}
@@ -355,14 +456,20 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between px-2 py-1 bg-muted/30 rounded border text-sm">
-              <div className="flex gap-3">
-                <span className="text-muted-foreground">Editor Shortcuts:</span>
-                <span><kbd className="px-1.5 py-0.5 text-xs border rounded bg-background">Ctrl+B</kbd> Insert Page Break</span>
+            <div className="flex flex-col gap-2 px-2 py-1 bg-muted/30 rounded border text-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex gap-3">
+                  <span className="text-muted-foreground">Prečaci u uređivaču:</span>
+                  <span><kbd className="px-1.5 py-0.5 text-xs border rounded bg-background">Ctrl+B</kbd> Umetni prijelom stranice</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={insertPageBreak} className="h-7">
+                  Umetni prijelom stranice
+                </Button>
               </div>
-              <Button variant="ghost" size="sm" onClick={insertPageBreak} className="h-7">
-                Insert Page Break
-              </Button>
+              <div className="text-amber-600 flex items-center">
+                <span className="bg-yellow-100 px-1 py-0.5 rounded text-xs font-bold mr-2 border border-yellow-300">[PLACEHOLDER]</span>
+                <span>Oznake su zaštićene i ne mogu se izbrisati. Tekst možete dodati oko njih.</span>
+              </div>
             </div>
             <div className="border rounded-md bg-white p-4">
               <style dangerouslySetInnerHTML={{ __html: editorCss }} />
@@ -372,6 +479,7 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
                 contentEditable
                 onBlur={handleEditorChange}
                 onKeyDown={handleEditorKeyDown}
+                onPaste={handleEditorPaste}
                 dangerouslySetInnerHTML={{
                   __html: processTemplateForPreview(fullTemplate)
                 }}
