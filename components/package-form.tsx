@@ -252,7 +252,7 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="grid grid-cols-6 w-full">
             <TabsTrigger value="basic">Osnovne informacije</TabsTrigger>
-            <TabsTrigger value="Usluga i Internet">Usluga i Internet</TabsTrigger>
+            <TabsTrigger value="internet">Usluga i Internet</TabsTrigger>
             <TabsTrigger value="tv">TV</TabsTrigger>
             <TabsTrigger value="telephone">Telefon</TabsTrigger>
             <TabsTrigger value="terminal_equipment">Terminalna Oprema</TabsTrigger>
@@ -285,7 +285,7 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="fiksni_paket">Fiksni paket</Label>
-                    <Input id="fiksni_paket" name="fiksni_paket" value={formState.fiksni_paket || ""} onChange={handleInputChange} />
+                    <Input id="usluga" name="fiksni_paket" value={formState.usluga || ""} onChange={handleInputChange} />
                   </div>
 
                   <div className="space-y-2">

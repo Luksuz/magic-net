@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { ContractData } from "@/lib/supabase"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -31,6 +31,15 @@ export default function ContractTableEditor({
   const [formData, setFormData] = useState<ContractData>(initialData)
   const [terminalEquipment, setTerminalEquipment] = useState<TerminalEquipment[]>(initialTerminalEquipment)
   
+  // Calculate monthly payment when component mounts or relevant values change
+  useEffect(() => {
+    if (formData.uredaj_otplata_na_rate) {
+      const updatedData = { ...formData };
+      calculateMonthlyPayment(updatedData);
+      setFormData(updatedData);
+    }
+  }, [formData.uredaj_otplata_na_rate, formData.uredaj_za_placanje, formData.uredaj_inicijalna_uplata, formData.uredaj_broj_obroka]);
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -38,13 +47,96 @@ export default function ContractTableEditor({
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value === "" ? null : Number.parseFloat(value) }))
+    const parsedValue = value === "" ? null : Number.parseFloat(value)
+    
+    setFormData((prev) => {
+      const updatedData = { ...prev, [name]: parsedValue }
+      
+      // Auto-calculate total connection fee
+      if (name === "cijena_prikljucenja_naknada" || name === "cijena_prikljucenja_popust") {
+        const naknada = name === "cijena_prikljucenja_naknada" 
+          ? (parsedValue ?? 0) 
+          : (updatedData.cijena_prikljucenja_naknada ?? 0)
+        
+        const popustPercentage = name === "cijena_prikljucenja_popust" 
+          ? (parsedValue ?? 0) 
+          : (updatedData.cijena_prikljucenja_popust ?? 0)
+        
+        // Calculate discount as percentage of the fee
+        const popustAmount = (naknada * popustPercentage) / 100
+        updatedData.cijena_prikljucenja_ukupno = naknada - popustAmount
+      }
+      
+      // Auto-calculate total activation fee
+      if (name === "cijena_aktivacije_naknada" || name === "cijena_aktivacije_popust") {
+        const naknada = name === "cijena_aktivacije_naknada" 
+          ? (parsedValue ?? 0) 
+          : (updatedData.cijena_aktivacije_naknada ?? 0)
+        
+        const popustPercentage = name === "cijena_aktivacije_popust" 
+          ? (parsedValue ?? 0) 
+          : (updatedData.cijena_aktivacije_popust ?? 0)
+        
+        // Calculate discount as percentage of the fee
+        const popustAmount = (naknada * popustPercentage) / 100
+        updatedData.cijena_aktivacije_ukupno = naknada - popustAmount
+      }
+      
+      // Auto-calculate device payment amount
+      if (name === "uredaj_cijena" || name === "uredaj_popust") {
+        const cijena = name === "uredaj_cijena"
+          ? (parsedValue ?? 0)
+          : (updatedData.uredaj_cijena ?? 0)
+          
+        const popustPercentage = name === "uredaj_popust"
+          ? (parsedValue ?? 0)
+          : (updatedData.uredaj_popust ?? 0)
+          
+        // Calculate discount as percentage of the price
+        const popustAmount = (cijena * popustPercentage) / 100
+        updatedData.uredaj_za_placanje = cijena - popustAmount
+        
+        // If payment in installments is enabled, also update the monthly payment amount
+        if (updatedData.uredaj_otplata_na_rate) {
+          calculateMonthlyPayment(updatedData);
+        }
+      }
+      
+      // Calculate monthly payment when number of installments or initial payment changes
+      if ((name === "uredaj_broj_obroka" || name === "uredaj_inicijalna_uplata") && updatedData.uredaj_otplata_na_rate) {
+        calculateMonthlyPayment(updatedData);
+      }
+      
+      return updatedData
+    })
   }
 
   const handleCheckboxChange = (name: string, checked: boolean) => {
-    setFormData((prev) => ({ ...prev, [name]: checked }))
+    setFormData((prev) => {
+      const updatedData = { ...prev, [name]: checked };
+      
+      // When installment payment is toggled, update the monthly payment calculation
+      if (name === "uredaj_otplata_na_rate" && checked) {
+        calculateMonthlyPayment(updatedData);
+      }
+      
+      return updatedData;
+    });
   }
   
+  // Helper function to calculate the monthly payment amount
+  const calculateMonthlyPayment = (data: ContractData) => {
+    const totalPrice = data.uredaj_za_placanje ?? 0;
+    const initialPayment = data.uredaj_inicijalna_uplata ?? 0;
+    const installments = data.uredaj_broj_obroka ?? 1;
+    
+    if (installments > 0) {
+      data.uredaj_mjesecna_rata = (totalPrice - initialPayment) / installments;
+    } else {
+      data.uredaj_mjesecna_rata = 0;
+    }
+  }
+
   const handleEquipmentChange = (id: number, field: string, value: string) => {
     const updatedEquipment = terminalEquipment.map(item => 
       item.id === id ? { ...item, [field]: value } : item
@@ -103,12 +195,12 @@ export default function ContractTableEditor({
       fields: [
         { key: "uredaj_proizvodac_model", label: "Proizvođač i model uređaja", type: "text" },
         { key: "uredaj_cijena", label: "Cijena uređaja", type: "number" },
-        { key: "uredaj_popust", label: "Popust na uređaj", type: "number" },
+        { key: "uredaj_popust", label: "Popust na uređaj (%)", type: "number" },
         { key: "uredaj_za_placanje", label: "Iznos za plaćanje", type: "number" },
         { key: "uredaj_otplata_na_rate", label: "Plaćanje na rate", type: "checkbox" },
         { key: "uredaj_broj_obroka", label: "Broj rata", type: "number" },
         { key: "uredaj_inicijalna_uplata", label: "Inicijalna uplata", type: "number" },
-        { key: "uredaj_mjesecna_rata", label: "Mjesečna rata", type: "number" }
+        { key: "uredaj_mjesecna_rata", label: "Mjesečna rata", type: "number", readOnly: true }
       ]
     },
     {
@@ -116,11 +208,11 @@ export default function ContractTableEditor({
       fields: [
         { key: "cijena_prikljucenja_opis", label: "Opis naknade za priključenje", type: "text" },
         { key: "cijena_prikljucenja_naknada", label: "Naknada za priključenje", type: "number" },
-        { key: "cijena_prikljucenja_popust", label: "Popust na priključenje", type: "number" },
+        { key: "cijena_prikljucenja_popust", label: "Popust na priključenje (%)", type: "number" },
         { key: "cijena_prikljucenja_ukupno", label: "Ukupno za priključenje", type: "number" },
         { key: "cijena_aktivacije_opis", label: "Opis naknade za aktivaciju", type: "text" },
         { key: "cijena_aktivacije_naknada", label: "Naknada za aktivaciju", type: "number" },
-        { key: "cijena_aktivacije_popust", label: "Popust na aktivaciju", type: "number" },
+        { key: "cijena_aktivacije_popust", label: "Popust na aktivaciju (%)", type: "number" },
         { key: "cijena_aktivacije_ukupno", label: "Ukupno za aktivaciju", type: "number" }
       ]
     }
@@ -208,7 +300,8 @@ export default function ContractTableEditor({
                             type="number"
                             value={(formData as any)[field.key] || ""}
                             onChange={handleNumberChange}
-                            className="w-full"
+                            className={`w-full ${field.readOnly ? "bg-gray-50" : ""}`}
+                            readOnly={field.readOnly}
                           />
                         ) : field.type === "checkbox" ? (
                           <div className="flex items-center">

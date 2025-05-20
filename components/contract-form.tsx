@@ -75,11 +75,94 @@ export default function ContractForm({
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value === "" ? null : Number.parseFloat(value) }))
+    const parsedValue = value === "" ? null : Number.parseFloat(value)
+    
+    setFormData((prev) => {
+      const updatedData = { ...prev, [name]: parsedValue }
+      
+      // Auto-calculate total connection fee
+      if (name === "cijena_prikljucenja_naknada" || name === "cijena_prikljucenja_popust") {
+        const naknada = name === "cijena_prikljucenja_naknada" 
+          ? (parsedValue ?? 0) 
+          : (updatedData.cijena_prikljucenja_naknada ?? 0)
+        
+        const popustPercentage = name === "cijena_prikljucenja_popust" 
+          ? (parsedValue ?? 0) 
+          : (updatedData.cijena_prikljucenja_popust ?? 0)
+        
+        // Calculate discount as percentage of the fee
+        const popustAmount = (naknada * popustPercentage) / 100
+        updatedData.cijena_prikljucenja_ukupno = naknada - popustAmount
+      }
+      
+      // Auto-calculate total activation fee
+      if (name === "cijena_aktivacije_naknada" || name === "cijena_aktivacije_popust") {
+        const naknada = name === "cijena_aktivacije_naknada" 
+          ? (parsedValue ?? 0) 
+          : (updatedData.cijena_aktivacije_naknada ?? 0)
+        
+        const popustPercentage = name === "cijena_aktivacije_popust" 
+          ? (parsedValue ?? 0) 
+          : (updatedData.cijena_aktivacije_popust ?? 0)
+        
+        // Calculate discount as percentage of the fee
+        const popustAmount = (naknada * popustPercentage) / 100
+        updatedData.cijena_aktivacije_ukupno = naknada - popustAmount
+      }
+      
+      // Auto-calculate device payment amount
+      if (name === "uredaj_cijena" || name === "uredaj_popust") {
+        const cijena = name === "uredaj_cijena"
+          ? (parsedValue ?? 0)
+          : (updatedData.uredaj_cijena ?? 0)
+          
+        const popustPercentage = name === "uredaj_popust"
+          ? (parsedValue ?? 0)
+          : (updatedData.uredaj_popust ?? 0)
+          
+        // Calculate discount as percentage of the price
+        const popustAmount = (cijena * popustPercentage) / 100
+        updatedData.uredaj_za_placanje = cijena - popustAmount
+        
+        // If payment in installments is enabled, also update the monthly payment amount
+        if (updatedData.uredaj_otplata_na_rate) {
+          calculateMonthlyPayment(updatedData);
+        }
+      }
+      
+      // Calculate monthly payment when number of installments or initial payment changes
+      if ((name === "uredaj_broj_obroka" || name === "uredaj_inicijalna_uplata") && updatedData.uredaj_otplata_na_rate) {
+        calculateMonthlyPayment(updatedData);
+      }
+      
+      return updatedData
+    })
   }
 
   const handleCheckboxChange = (name: string, checked: boolean) => {
-    setFormData((prev) => ({ ...prev, [name]: checked }))
+    setFormData((prev) => {
+      const updatedData = { ...prev, [name]: checked };
+      
+      // When installment payment is toggled, update the monthly payment calculation
+      if (name === "uredaj_otplata_na_rate" && checked) {
+        calculateMonthlyPayment(updatedData);
+      }
+      
+      return updatedData;
+    });
+  }
+  
+  // Helper function to calculate the monthly payment amount
+  const calculateMonthlyPayment = (data: ContractData) => {
+    const totalPrice = data.uredaj_za_placanje ?? 0;
+    const initialPayment = data.uredaj_inicijalna_uplata ?? 0;
+    const installments = data.uredaj_broj_obroka ?? 1;
+    
+    if (installments > 0) {
+      data.uredaj_mjesecna_rata = (totalPrice - initialPayment) / installments;
+    } else {
+      data.uredaj_mjesecna_rata = 0;
+    }
   }
 
   const handleUserInfoChange = (data: UserInformation) => {
@@ -116,6 +199,15 @@ export default function ContractForm({
       return () => clearTimeout(timer)
     }
   }, [shouldGeneratePdf])
+
+  // Calculate monthly payment when component mounts or relevant values change
+  useEffect(() => {
+    if (formData.uredaj_otplata_na_rate) {
+      const updatedData = { ...formData };
+      calculateMonthlyPayment(updatedData);
+      setFormData(updatedData);
+    }
+  }, [formData.uredaj_otplata_na_rate, formData.uredaj_za_placanje, formData.uredaj_inicijalna_uplata, formData.uredaj_broj_obroka]);
 
   // Function to handle PDF button ref
   const setPdfRef = (el: HTMLButtonElement | null) => {
@@ -165,9 +257,9 @@ export default function ContractForm({
                 <div className="space-y-2">
                   <Label htmlFor="fiksni_paket">Fiksni paket</Label>
                   <Input
-                    id="fiksni_paket"
+                    id="usluga"
                     name="fiksni_paket"
-                    value={formData.fiksni_paket || ""}
+                    value={formData.usluga || ""}
                     onChange={handleChange}
                   />
                 </div>
@@ -415,7 +507,7 @@ export default function ContractForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="uredaj_popust">Popust na uređaj</Label>
+                  <Label htmlFor="uredaj_popust">Popust na uređaj (%)</Label>
                   <Input
                     id="uredaj_popust"
                     name="uredaj_popust"
@@ -479,6 +571,8 @@ export default function ContractForm({
                     step="0.01"
                     value={formData.uredaj_mjesecna_rata || ""}
                     onChange={handleNumberChange}
+                    readOnly
+                    className="w-full bg-gray-50"
                   />
                 </div>
               </div>
@@ -509,7 +603,7 @@ export default function ContractForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="cijena_prikljucenja_popust">Popust na priključenje</Label>
+                  <Label htmlFor="cijena_prikljucenja_popust">Popust na priključenje (%)</Label>
                   <Input
                     id="cijena_prikljucenja_popust"
                     name="cijena_prikljucenja_popust"
@@ -559,7 +653,7 @@ export default function ContractForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="cijena_aktivacije_popust">Popust na aktivaciju</Label>
+                  <Label htmlFor="cijena_aktivacije_popust">Popust na aktivaciju (%)</Label>
                   <Input
                     id="cijena_aktivacije_popust"
                     name="cijena_aktivacije_popust"

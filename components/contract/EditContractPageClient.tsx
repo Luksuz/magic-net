@@ -12,8 +12,13 @@ import type { TerminalEquipment } from "@/lib/pdf-generator";
 import type { UserInformation } from "@/components/user-information-form";
 
 // Helper to generate a somewhat unique ID
+// Use a counter to ensure uniqueness even with simultaneous calls
+let idCounter = 0;
 const generatePseudoUniqueId = (prefix: string = 'eq') => {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 9);
+  idCounter += 1;
+  return `${prefix}-${timestamp}-${idCounter}-${random}`;
 };
 
 interface Props {
@@ -74,8 +79,8 @@ export default function EditContractPageClient({ contract, profile }: Props) {
       setContractData(contract);
       if (contract.terminalna_oprema && typeof contract.terminalna_oprema === 'object') {
         const newTerminalEquipmentList = Object.entries(contract.terminalna_oprema).map(
-          ([name, price]) => ({
-            id: Number(generatePseudoUniqueId().split('-')[1]), 
+          ([name, price], index) => ({
+            id: index + 1,
             name,
             quantity: "", 
             price: typeof price === 'number' ? String(price.toFixed(2)).replace('.', ',') : "0,00",
