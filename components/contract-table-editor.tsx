@@ -19,7 +19,9 @@ export default function ContractTableEditor({
   onUserInfoChange,
   terminalEquipment: initialTerminalEquipment,
   onTerminalEquipmentChange,
-  onGeneratePdf
+  onGeneratePdf,
+  contractConcludedOnPremises,
+  onContractConcludedOnPremisesChange
 }: { 
   initialData: ContractData
   userInfo: UserInformation
@@ -27,6 +29,8 @@ export default function ContractTableEditor({
   terminalEquipment: TerminalEquipment[]
   onTerminalEquipmentChange: (data: TerminalEquipment[]) => void
   onGeneratePdf: (data: ContractData, equipmentData: TerminalEquipment[]) => void
+  contractConcludedOnPremises?: boolean
+  onContractConcludedOnPremisesChange?: (value: boolean) => void
 }) {
   const [formData, setFormData] = useState<ContractData>(initialData)
   const [terminalEquipment, setTerminalEquipment] = useState<TerminalEquipment[]>(initialTerminalEquipment)
@@ -136,7 +140,7 @@ export default function ContractTableEditor({
       data.uredaj_mjesecna_rata = 0;
     }
   }
-
+  
   const handleEquipmentChange = (id: number, field: string, value: string) => {
     const updatedEquipment = terminalEquipment.map(item => 
       item.id === id ? { ...item, [field]: value } : item
@@ -165,6 +169,9 @@ export default function ContractTableEditor({
         { key: "fiksna_brzina", label: "Fiksna brzina", type: "text" },
         { key: "fiksne_dodatne_usluge", label: "Dodatne fiksne usluge", type: "textarea" },
         { key: "fiksna_oprema", label: "Fiksna oprema", type: "textarea" },
+        { key: "promo_price_fiksni", label: "Promotivna mj. naknada (Internet)", type: "number" },
+        { key: "contract_price_fiksni", label: "Ugovorena mj. naknada (Internet)", type: "number" },
+        { key: "regular_price_fiksni", label: "Redovna mj. naknada (Internet)", type: "number" },
         { key: "brzina_min_download", label: "Min. brzina downloada", type: "text" },
         { key: "brzina_min_upload", label: "Min. brzina uploada", type: "text" },
         { key: "brzina_obicna_download", label: "Uobičajena brzina downloada", type: "text" },
@@ -178,7 +185,10 @@ export default function ContractTableEditor({
       fields: [
         { key: "tv_paket", label: "TV paket", type: "text" },
         { key: "tv_dodatne_usluge", label: "Dodatne TV usluge", type: "textarea" },
-        { key: "tv_oprema", label: "TV oprema", type: "textarea" }
+        { key: "tv_oprema", label: "TV oprema", type: "textarea" },
+        { key: "promo_price_tv", label: "Promotivna mj. naknada (TV)", type: "number" },
+        { key: "contract_price_tv", label: "Ugovorena mj. naknada (TV)", type: "number" },
+        { key: "regular_price_tv", label: "Redovna mj. naknada (TV)", type: "number" }
       ]
     },
     {
@@ -187,7 +197,10 @@ export default function ContractTableEditor({
         { key: "pretplatnicki_broj", label: "Pretplatnički broj", type: "text" },
         { key: "tarifa", label: "Tarifa", type: "text" },
         { key: "tel_dodatne_usluge", label: "Dodatne telefonske usluge", type: "textarea" },
-        { key: "tel_oprema", label: "Telefonska oprema", type: "textarea" }
+        { key: "tel_oprema", label: "Telefonska oprema", type: "textarea" },
+        { key: "promo_price_phone", label: "Promotivna mj. naknada (Telefon)", type: "number" },
+        { key: "contract_price_phone", label: "Ugovorena mj. naknada (Telefon)", type: "number" },
+        { key: "regular_price_phone", label: "Redovna mj. naknada (Telefon)", type: "number" }
       ]
     },
     {
@@ -264,6 +277,12 @@ export default function ContractTableEditor({
     const { name, value } = e.target
     onUserInfoChange({ ...userInfo, [name]: value })
   }
+
+  const handleCheckboxToggle = () => {
+    if (onContractConcludedOnPremisesChange) {
+      onContractConcludedOnPremisesChange(!contractConcludedOnPremises);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -414,7 +433,17 @@ export default function ContractTableEditor({
         </CardContent>
       </Card>
 
-      <div className="flex justify-end mt-6">
+      <div className="flex justify-between mt-6 items-center">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="contract-on-premises-table"
+            checked={contractConcludedOnPremises}
+            onCheckedChange={handleCheckboxToggle}
+          />
+          <Label htmlFor="contract-on-premises-table" className="text-sm font-medium">
+            Ugovor sklopljen u poslovnom prostoru
+          </Label>
+        </div>
         <Button 
           onClick={handleGeneratePdf} 
           size="lg" 

@@ -458,7 +458,7 @@ export function PdfTemplateEditor() { // ({ initialFullTemplate, onSave }: PdfTe
           <div className="space-y-4">
             <div className="flex flex-col gap-2 px-2 py-1 bg-muted/30 rounded border text-sm">
               <div className="flex items-center justify-between">
-                <div className="flex gap-3">
+              <div className="flex gap-3">
                   <span className="text-muted-foreground">Prečaci u uređivaču:</span>
                   <span><kbd className="px-1.5 py-0.5 text-xs border rounded bg-background">Ctrl+B</kbd> Umetni prijelom stranice</span>
                 </div>

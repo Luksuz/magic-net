@@ -7,22 +7,20 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import ContractForm from "@/components/contract-form";
 import ContractTableEditor from "@/components/contract-table-editor";
+import SendEmailPage from "@/components/email-component";
 import type { ContractData } from "@/lib/supabase";
 import type { TerminalEquipment } from "@/lib/pdf-generator";
 import type { UserInformation } from "@/components/user-information-form";
 
-// Helper to generate a somewhat unique ID
-// Use a counter to ensure uniqueness even with simultaneous calls
+// Helper to generate a somewhat unique ID (if needed for new items not from DB)
 let idCounter = 0;
-const generatePseudoUniqueId = (prefix: string = 'eq') => {
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 9);
+const generateId = () => {
   idCounter += 1;
-  return `${prefix}-${timestamp}-${idCounter}-${random}`;
+  return Date.now() + idCounter; // Simple unique ID for client-side rendering
 };
 
 interface Props {
-  contract: ContractData;
+  contract: ContractData; // contract.terminalna_oprema will be the new array structure or old object
   profile: { agreement_number: number };
 }
 
@@ -30,6 +28,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
   const [contractData, setContractData] = useState<ContractData | null>(null);
   const [useTableView, setUseTableView] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [contractConcludedOnPremises, setContractConcludedOnPremises] = useState(false);
   const [userInfo, setUserInfo] = useState<UserInformation>({
     userId: "",
     userName: "",
@@ -56,43 +55,42 @@ export default function EditContractPageClient({ contract, profile }: Props) {
     changeOperator: false,
   });
 
-  const [terminalEquipment, setTerminalEquipment] = useState<
-    TerminalEquipment[]
-  >([
-    { id: 1, name: "WiFi router", quantity: "", price: "190,00" },
-    {
-      id: 2,
-      name: "Svjetlovodno čvorište - FTTH",
-      quantity: "",
-      price: "25,00",
-    },
-    { id: 3, name: "Smart Card za prijemnike", quantity: "", price: "0,00" },
-    { id: 4, name: "CAM modul za DVB/T2", quantity: "", price: "45,00" },
-    { id: 5, name: "MESH", quantity: "", price: "65,00" },
-  ]);
+  // Default terminal equipment if none is loaded from contract (e.g., new contract from basic template)
+  // This will be overridden by useEffect if contract.terminalna_oprema exists.
+  const [terminalEquipment, setTerminalEquipment] = useState<TerminalEquipment[]>([]);
 
   const formDataRef = useRef<ContractData | null>(null);
-  const formTerminalEquipmentRef = useRef<TerminalEquipment[]>(terminalEquipment);
+  const formTerminalEquipmentRef = useRef<TerminalEquipment[]>([]); // Initialize with empty array
 
   useEffect(() => {
     if (contract) {
       setContractData(contract);
-      if (contract.terminalna_oprema && typeof contract.terminalna_oprema === 'object') {
-        const newTerminalEquipmentList = Object.entries(contract.terminalna_oprema).map(
-          ([name, price], index) => ({
-            id: index + 1,
-            name,
-            quantity: "", 
-            price: typeof price === 'number' ? String(price.toFixed(2)).replace('.', ',') : "0,00",
-          })
-        );
-        setTerminalEquipment(newTerminalEquipmentList);
-        formTerminalEquipmentRef.current = newTerminalEquipmentList;
+      let initialEquipment: TerminalEquipment[] = [];
+
+      if (Array.isArray(contract.terminalna_oprema)) {
+        // New structure: contract.terminalna_oprema is Array<{ name: string, quantity: number, price: number }>
+        initialEquipment = contract.terminalna_oprema.map((item, index) => ({
+          id: item.id || generateId(), // Use existing id or generate new one
+          name: item.name || "",
+          quantity: String(item.quantity || "1"), // Default to 1 if quantity is missing or 0
+          price: typeof item.price === 'number' ? String(item.price.toFixed(2)).replace('.', ',') : "0,00",
+        }));
+      } else if (contract.terminalna_oprema && typeof contract.terminalna_oprema === 'object') {
+        // Old structure: contract.terminalna_oprema is Record<string, price_number>
+        // For backward compatibility or if data hasn't been migrated yet.
+        initialEquipment = Object.entries(contract.terminalna_oprema).map(([name, price], index) => ({
+          id: generateId(), // Old structure items won't have an ID
+          name: name,
+          quantity: "1", // Default quantity to 1 for old structure, as per user request
+          price: typeof price === 'number' ? String(price.toFixed(2)).replace('.', ',') : "0,00",
+        }));
       } else {
-        const emptyList: TerminalEquipment[] = [];
-        setTerminalEquipment(emptyList);
-        formTerminalEquipmentRef.current = emptyList;
+        // No terminal equipment defined in the contract, use a default empty list or pre-defined defaults if any.
+        // For now, it defaults to what terminalEquipment was initialized with (empty array).
+        // If you had default items for *all* new contracts, you could set them here.
       }
+      setTerminalEquipment(initialEquipment);
+      formTerminalEquipmentRef.current = initialEquipment;
     } else {
       setContractData(null);
       const emptyList: TerminalEquipment[] = [];
@@ -125,23 +123,33 @@ export default function EditContractPageClient({ contract, profile }: Props) {
   };
 
   const handleTerminalEquipmentChange = (updatedEquipment: TerminalEquipment[]) => {
-    setTerminalEquipment(updatedEquipment);
-    formTerminalEquipmentRef.current = updatedEquipment;
+    setTerminalEquipment(updatedEquipment); // Update local state for rendering
+    formTerminalEquipmentRef.current = updatedEquipment; // Update ref for view switching
 
-    // Also update contractData.terminalna_oprema
-    const newTerminalOpremaRecord: Record<string, number> = {};
-    updatedEquipment.forEach(item => {
-      if (item.name.trim() !== "") {
-        const priceNumber = parseFloat(String(item.price).replace(',', '.'));
-        newTerminalOpremaRecord[item.name.trim()] = isNaN(priceNumber) ? 0 : priceNumber;
-      }
-    });
+    // Convert to the new DB structure: Array<{ name: string; quantity: number; price: number; }>
+    const newTerminalOpremaForDb = updatedEquipment
+      .map(item => {
+        const name = item.name.trim();
+        const quantityStr = String(item.quantity || "").trim();
+        const quantity = parseInt(quantityStr, 10);
+        const price = parseFloat(String(item.price || "0").replace(',', '.'));
+
+        return {
+          name: name,
+          // Ensure quantity is at least 1 if name is present, otherwise 0 (or skip item)
+          quantity: name && (isNaN(quantity) || quantity <= 0) ? 1 : (isNaN(quantity) ? 0 : quantity),
+          price: isNaN(price) ? 0 : price,
+          // Include id if your DB schema for the array elements includes it, otherwise omit
+          // id: item.id 
+        };
+      })
+      .filter(item => item.name !== ""); // Filter out items with no name
 
     setContractData(prevContractData => 
       prevContractData ? 
       { 
         ...prevContractData, 
-        terminalna_oprema: newTerminalOpremaRecord 
+        terminalna_oprema: newTerminalOpremaForDb // Save in the new array format
       } : null
     );
   };
@@ -182,23 +190,37 @@ export default function EditContractPageClient({ contract, profile }: Props) {
       <div className="w-full">
         {useTableView ? (
           <ContractTableEditor
-            initialData={contractData}
+            initialData={contractData} // This initialData.terminalna_oprema will be the new array from DB (or converted old)
             userInfo={userInfo}
             onUserInfoChange={handleUserInfoChange}
-            terminalEquipment={terminalEquipment}
+            terminalEquipment={terminalEquipment} // This is already TerminalEquipment[]
             onTerminalEquipmentChange={handleTerminalEquipmentChange}
             onGeneratePdf={handlePdfFromTableView}
+            contractConcludedOnPremises={contractConcludedOnPremises}
+            onContractConcludedOnPremisesChange={setContractConcludedOnPremises}
           />
         ) : (
           <ContractForm
-            initialData={formDataRef.current || contractData}
+            initialData={formDataRef.current || contractData} // This initialData.terminalna_oprema will be new array
             userInfoInitial={userInfo}
             onUserInfoChange={handleUserInfoChange}
-            terminalEquipmentInitial={formTerminalEquipmentRef.current}
+            terminalEquipmentInitial={formTerminalEquipmentRef.current} // This is already TerminalEquipment[]
             onTerminalEquipmentChange={handleTerminalEquipmentChange}
             shouldGeneratePdf={isGeneratingPdf}
+            contractConcludedOnPremises={contractConcludedOnPremises}
+            onContractConcludedOnPremisesChange={setContractConcludedOnPremises}
           />
         )}
+      </div>
+
+      {/* Email Component Section */}
+      <div className="mt-12 pt-8 border-t">
+        <SendEmailPage 
+          contractNumber={contractData?.broj_ugovora}
+          serviceName={contractData?.usluga}
+          recipientEmail={userInfo?.email}
+          recipientName={userInfo?.userName}
+        />
       </div>
     </main>
   );

@@ -9,13 +9,22 @@ export type ContractData = {
   fiksna_brzina: string | null
   fiksne_dodatne_usluge: string | null
   fiksna_oprema: string | null
+  promo_price_fiksni?: number | null
+  contract_price_fiksni?: number | null
+  regular_price_fiksni?: number | null
   tv_paket: string | null
   tv_dodatne_usluge: string | null
   tv_oprema: string | null
+  promo_price_tv?: number | null
+  contract_price_tv?: number | null
+  regular_price_tv?: number | null
   pretplatnicki_broj: string | null
   tarifa: string | null
   tel_dodatne_usluge: string | null
   tel_oprema: string | null
+  promo_price_phone?: number | null
+  contract_price_phone?: number | null
+  regular_price_phone?: number | null
   uredaj_proizvodac_model: string | null
   uredaj_cijena: number | null
   uredaj_popust: number | null
@@ -38,7 +47,7 @@ export type ContractData = {
   cijena_aktivacije_naknada: number | null
   cijena_aktivacije_popust: number | null
   cijena_aktivacije_ukupno: number | null
-  terminalna_oprema: Record<string, number> | null
+  terminalna_oprema: Array<{ id?: number; name: string; quantity: number; price: number; }> | Record<string, number> | null;
   created_at: string | null
 }
 

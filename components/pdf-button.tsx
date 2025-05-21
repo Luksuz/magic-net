@@ -19,9 +19,10 @@ interface PdfButtonProps {
   setActiveTab: (tab: string) => void
   terminalEquipment?: TerminalEquipment[]
   buttonRef?: (button: HTMLButtonElement | null) => void
+  contractConcludedOnPremises?: boolean
 }
 
-export default function PdfButton({ formData, userInfo, setActiveTab, terminalEquipment, buttonRef }: PdfButtonProps) {
+export default function PdfButton({ formData, userInfo, setActiveTab, terminalEquipment, buttonRef, contractConcludedOnPremises }: PdfButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isLibraryLoaded, setIsLibraryLoaded] = useState(false)
   const [showStyleOptions, setShowStyleOptions] = useState(false)
@@ -124,7 +125,14 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
       
       const editableTemplate = await getEditableTemplate();
       
-      const success = await generatePDF(safeFormData, safeUserInfo, styleOptions || undefined, safeTerminalEquipment, editableTemplate.html)
+      const success = await generatePDF(
+        safeFormData, 
+        safeUserInfo, 
+        styleOptions || undefined, 
+        safeTerminalEquipment, 
+        editableTemplate.html,
+        contractConcludedOnPremises
+      )
       
       // If PDF generation was successful and we have a profile with an agreement number
       if (success && profile && profile.agreement_number !== null && profile.agreement_number !== undefined) {

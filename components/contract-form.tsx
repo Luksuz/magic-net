@@ -21,6 +21,8 @@ interface ContractFormProps {
   terminalEquipmentInitial?: TerminalEquipment[]
   onTerminalEquipmentChange?: (data: TerminalEquipment[]) => void
   shouldGeneratePdf?: boolean
+  contractConcludedOnPremises?: boolean
+  onContractConcludedOnPremisesChange?: (value: boolean) => void
 }
 
 export default function ContractForm({ 
@@ -29,7 +31,9 @@ export default function ContractForm({
   onUserInfoChange,
   terminalEquipmentInitial,
   onTerminalEquipmentChange,
-  shouldGeneratePdf = false
+  shouldGeneratePdf = false,
+  contractConcludedOnPremises,
+  onContractConcludedOnPremisesChange
 }: ContractFormProps) {
   const [formData, setFormData] = useState<ContractData>(initialData)
   const [userInfo, setUserInfo] = useState<UserInformation>(userInfoInitial || {
@@ -214,6 +218,12 @@ export default function ContractForm({
     pdfButtonRef.current = el
   }
 
+  const handleCheckboxToggle = () => {
+    if (onContractConcludedOnPremisesChange) {
+      onContractConcludedOnPremisesChange(!contractConcludedOnPremises);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="basic" className="w-full" onValueChange={setActiveTab} value={activeTab}>
@@ -256,25 +266,13 @@ export default function ContractForm({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="fiksni_paket">Fiksni paket</Label>
-                  <Input
-                    id="usluga"
-                    name="fiksni_paket"
-                    value={formData.usluga || ""}
-                    onChange={handleChange}
-                  />
+                  <Input id="fiksni_paket" name="fiksni_paket" value={formData.fiksni_paket || ""} onChange={handleChange} />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="fiksna_brzina">Fiksna brzina</Label>
-                  <Input
-                    id="fiksna_brzina"
-                    name="fiksna_brzina"
-                    value={formData.fiksna_brzina || ""}
-                    onChange={handleChange}
-                  />
+                  <Input id="fiksna_brzina" name="fiksna_brzina" value={formData.fiksna_brzina || ""} onChange={handleChange} />
                 </div>
-
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="fiksne_dodatne_usluge">Dodatne fiksne usluge</Label>
                   <Textarea
                     id="fiksne_dodatne_usluge"
@@ -284,8 +282,7 @@ export default function ContractForm({
                     rows={3}
                   />
                 </div>
-
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="fiksna_oprema">Fiksna oprema</Label>
                   <Textarea
                     id="fiksna_oprema"
@@ -295,6 +292,21 @@ export default function ContractForm({
                     rows={3}
                   />
                 </div>
+
+                {/* Added Price Fields for Internet */}
+                <div className="space-y-2">
+                  <Label htmlFor="promo_price_fiksni">Promotivna mjesečna naknada (Internet)</Label>
+                  <Input id="promo_price_fiksni" name="promo_price_fiksni" type="number" step="0.01" value={formData.promo_price_fiksni ?? ""} onChange={handleNumberChange} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contract_price_fiksni">Ugovorena mjesečna naknada (Internet)</Label>
+                  <Input id="contract_price_fiksni" name="contract_price_fiksni" type="number" step="0.01" value={formData.contract_price_fiksni ?? ""} onChange={handleNumberChange} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="regular_price_fiksni">Redovna mjesečna naknada (Internet)</Label>
+                  <Input id="regular_price_fiksni" name="regular_price_fiksni" type="number" step="0.01" value={formData.regular_price_fiksni ?? ""} onChange={handleNumberChange} />
+                </div>
+
               </div>
 
               <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -370,8 +382,7 @@ export default function ContractForm({
                   <Label htmlFor="tv_paket">TV paket</Label>
                   <Input id="tv_paket" name="tv_paket" value={formData.tv_paket || ""} onChange={handleChange} />
                 </div>
-
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="tv_dodatne_usluge">Dodatne TV usluge</Label>
                   <Textarea
                     id="tv_dodatne_usluge"
@@ -381,8 +392,7 @@ export default function ContractForm({
                     rows={3}
                   />
                 </div>
-
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="tv_oprema">TV oprema</Label>
                   <Textarea
                     id="tv_oprema"
@@ -391,6 +401,19 @@ export default function ContractForm({
                     onChange={handleChange}
                     rows={3}
                   />
+                </div>
+                {/* Added Price Fields for TV */}
+                <div className="space-y-2">
+                  <Label htmlFor="promo_price_tv">Promotivna mjesečna naknada (TV)</Label>
+                  <Input id="promo_price_tv" name="promo_price_tv" type="number" step="0.01" value={formData.promo_price_tv ?? ""} onChange={handleNumberChange} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contract_price_tv">Ugovorena mjesečna naknada (TV)</Label>
+                  <Input id="contract_price_tv" name="contract_price_tv" type="number" step="0.01" value={formData.contract_price_tv ?? ""} onChange={handleNumberChange} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="regular_price_tv">Redovna mjesečna naknada (TV)</Label>
+                  <Input id="regular_price_tv" name="regular_price_tv" type="number" step="0.01" value={formData.regular_price_tv ?? ""} onChange={handleNumberChange} />
                 </div>
               </div>
             </CardContent>
@@ -410,13 +433,11 @@ export default function ContractForm({
                     onChange={handleChange}
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="tarifa">Tarifa</Label>
                   <Input id="tarifa" name="tarifa" value={formData.tarifa || ""} onChange={handleChange} />
                 </div>
-
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="tel_dodatne_usluge">Dodatne telefonske usluge</Label>
                   <Textarea
                     id="tel_dodatne_usluge"
@@ -426,8 +447,7 @@ export default function ContractForm({
                     rows={3}
                   />
                 </div>
-
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="tel_oprema">Telefonska oprema</Label>
                   <Textarea
                     id="tel_oprema"
@@ -436,6 +456,19 @@ export default function ContractForm({
                     onChange={handleChange}
                     rows={3}
                   />
+                </div>
+                {/* Added Price Fields for Telephone */}
+                <div className="space-y-2">
+                  <Label htmlFor="promo_price_phone">Promotivna mjesečna naknada (Telefon)</Label>
+                  <Input id="promo_price_phone" name="promo_price_phone" type="number" step="0.01" value={formData.promo_price_phone ?? ""} onChange={handleNumberChange} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contract_price_phone">Ugovorena mjesečna naknada (Telefon)</Label>
+                  <Input id="contract_price_phone" name="contract_price_phone" type="number" step="0.01" value={formData.contract_price_phone ?? ""} onChange={handleNumberChange} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="regular_price_phone">Redovna mjesečna naknada (Telefon)</Label>
+                  <Input id="regular_price_phone" name="regular_price_phone" type="number" step="0.01" value={formData.regular_price_phone ?? ""} onChange={handleNumberChange} />
                 </div>
               </div>
             </CardContent>
@@ -690,7 +723,17 @@ export default function ContractForm({
         </TabsContent>
       </Tabs>
 
-      <div className="flex justify-between mt-8">
+      <div className="flex justify-between mt-8 items-center">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="contract-on-premises-form"
+            checked={contractConcludedOnPremises}
+            onCheckedChange={handleCheckboxToggle}
+          />
+          <Label htmlFor="contract-on-premises-form" className="text-sm font-medium">
+            Ugovor sklopljen u poslovnom prostoru
+          </Label>
+        </div>
         <div className="pdf-button-container">
           <PdfButton 
             formData={formData} 
@@ -698,6 +741,7 @@ export default function ContractForm({
             setActiveTab={setActiveTab}
             terminalEquipment={terminalEquipment.filter(item => item.quantity && item.quantity !== "")}
             buttonRef={setPdfRef}
+            contractConcludedOnPremises={contractConcludedOnPremises}
           />
         </div>
       </div>

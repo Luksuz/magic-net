@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -11,7 +11,19 @@ import { FileText, X, Paperclip, Upload } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { sendEmail } from "@/lib/sendEmail"
 
-export default function SendEmailPage() {
+interface SendEmailPageProps {
+  contractNumber?: string | null;
+  serviceName?: string | null;
+  recipientEmail?: string | null;
+  recipientName?: string | null;
+}
+
+export default function SendEmailPage({ 
+  contractNumber,
+  serviceName,
+  recipientEmail,
+  recipientName 
+}: SendEmailPageProps) {
   const [subject, setSubject] = useState("")
   const [recipient, setRecipient] = useState("")
   const [message, setMessage] = useState("")
@@ -20,6 +32,17 @@ export default function SendEmailPage() {
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dropZoneRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (recipientEmail) {
+      setRecipient(recipientEmail);
+    }
+    if (contractNumber && serviceName) {
+      setSubject(`Ugovor: ${contractNumber} - ${serviceName}`);
+    } else if (contractNumber) {
+      setSubject(`Ugovor: ${contractNumber}`);
+    }
+  }, [contractNumber, serviceName, recipientEmail]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -93,6 +93,7 @@ export async function generatePDF(
   styleOptions?: Partial<PdfStyleOptions>,
   terminalEquipment?: TerminalEquipment[],
   customHtml?: string,
+  contractConcludedOnPremises?: boolean
 ) {
   // Make sure html2pdf is available
   if (typeof window === "undefined" || !window.html2pdf) {
@@ -120,6 +121,38 @@ export async function generatePDF(
     }
   }
 
+  // Prepare the terminal equipment list for formatHtml
+  let finalTerminalEquipmentList: TerminalEquipment[];
+
+  if (terminalEquipment !== undefined) {
+    // If terminalEquipment is explicitly passed, use it
+    finalTerminalEquipmentList = terminalEquipment;
+  } else if (data.terminalna_oprema) {
+    if (Array.isArray(data.terminalna_oprema)) {
+      // New format: Array of objects { name: string; quantity: number; price: number; id?: number }
+      finalTerminalEquipmentList = data.terminalna_oprema.map((item, index) => ({
+        id: item.id ?? index, // Use DB id if available, else index. id in TerminalEquipment is number.
+        name: item.name || "", // Ensure name is string, default to empty if somehow null/undefined
+        quantity: String(item.quantity ?? 1), // Convert number to string, default quantity 1
+        price: String(item.price ?? 0),    // Convert number to string, default price 0
+      }));
+    } else if (typeof data.terminalna_oprema === 'object' && data.terminalna_oprema !== null) {
+      // Old format: Record<string, number> (name: price)
+      finalTerminalEquipmentList = Object.entries(data.terminalna_oprema).map(([name, priceValue], index) => ({
+        id: index, // Use array index as id
+        name: name,
+        quantity: "1", // Default quantity for old format
+        price: String(priceValue ?? 0), // Convert price (which is number) to string
+      }));
+    } else {
+      // data.terminalna_oprema is of an unexpected type (should be array, object, or null)
+      finalTerminalEquipmentList = [];
+    }
+  } else {
+    // data.terminalna_oprema is null or undefined, and terminalEquipment param was not provided
+    finalTerminalEquipmentList = [];
+  }
+
   // Create a container reference that will be accessible in finally block
   let container: HTMLDivElement | null = null;
 
@@ -134,8 +167,15 @@ export async function generatePDF(
 
     const response = await fetch('/promjena_operatera.html');
     const promjenaOperateraHtmlContent = await response.text();
-    // Process template variables with actual data
-    const processedHtml = formatHtml(templateData.html, data, userInfo, terminalEquipment, promjenaOperateraHtmlContent);
+    // Process template variables with actual data, using the prepared finalTerminalEquipmentList
+    const processedHtml = formatHtml(
+      templateData.html, 
+      data, 
+      userInfo, 
+      finalTerminalEquipmentList, 
+      promjenaOperateraHtmlContent,
+      contractConcludedOnPremises
+    );
     
     // Start: Added logic to hide empty tables
     const tempHtmlDiv = document.createElement('div');
@@ -276,9 +316,27 @@ export async function generatePDF(
   }
 }
 
-function formatHtml(html: string, data: ContractData, userInfo?: UserInformation, terminalEquipment?: TerminalEquipment[], promjenaOperateraHtmlContent?: string): string {
+function formatHtml(
+  html: string, 
+  data: ContractData, 
+  userInfo?: UserInformation, 
+  terminalEquipment?: TerminalEquipment[], 
+  promjenaOperateraHtmlContent?: string,
+  contractConcludedOnPremises?: boolean
+): string {
   if (!html) throw new Error("HTML is required")
   if (!data) throw new Error("Data is required")
+
+  // Define the note texts with new styling
+  const onPremisesNote1 = `<p style="margin-bottom: 6px; color: red;">1.<br />U slučaju sklapanja ugovora u našim poslovnim prostorima, imate pravo na jednostrani raskid ugovora u roku od 3 dana od dana sklapanja ugovora.</p>`;
+  const onPremisesNote2 = `<p style="margin-bottom: 6px; color: red;">2.<br />U slučaju da ste ugovorili i kupnju uređaja te preuzeli uređaj, a u roku od 3 dana od dana sklapanja ugovora zatražite raskid ugovora, možete vratiti preuzeti uređaj neoštećen i kompletan u originalnom pakiranju sa svom pripadajućom dokumentacijom. U protivnom Vam imamo pravo naplatiti maloprodajnu cijenu uređaja, umanjenu za inicijalno uplaćeni iznos.</p>`;
+
+  const offPremisesNote1 = `<p style="margin-bottom: 6px; color: red;">U slučaju sklapanja ugovora putem sredstava daljinske komunikacije ili izvan naših poslovnih prostora, prema odredbama Zakona o zaštiti potrošača imate pravo na jednostrani raskid ugovora u roku od 14 dana od dana sklapanja ugovora. Ugovor sklopljen na daljinu smatra se sklopljenim kada nam nakon primitka dokumentacije o sklapanju dostavite potvrdu svoje suglasnosti o sklapanju ugovora, na jedan od sljedećih načina:<br /><br />
+- potpisom ove obavijesti koju trebate uručiti našem dostavljaču/predstavniku MAGIC NET – d.o.o.,<br />
+- potpisom ove obavijesti i slanjem poštom na adresu: MAGIC NET- d.o.o., Kratka 2, 42000 Varaždin, Hrvatska,<br />
+- odgovorom kako dajete suglasnost na sklapanje ugovora na ovu adresu elektroničke pošte, ili<br />
+- plaćanjem prvog mjesečnog računa.</p>`;
+  const offPremisesNote2 = `<p style="margin-bottom: 6px; color: red;">U slučaju da ste ugovorili i kupnju uređaja te preuzeli uređaj, a u roku od 14 dana od dana sklapanja ugovora zatražite raskid ugovora, u skladu s odredbama Zakona o zaštiti potrošača, možete vratiti preuzeti uređaj neoštećen i kompletan u originalnom pakiranju sa svom pripadajućom dokumentacijom. U protivnom Vam imamo pravo naplatiti maloprodajnu cijenu uređaja, umanjenu za inicijalno uplaćeni iznos.</p>`;
 
   // Add a style tag for hiding empty tables
   if (!html.includes('.hidden-section')) {
@@ -541,6 +599,15 @@ function formatHtml(html: string, data: ContractData, userInfo?: UserInformation
     }
     safeReplace('PAYMENT_METHOD_FORMATTED',
       userInfo.paymentMethod ? paymentMethodMap[userInfo.paymentMethod] || userInfo.paymentMethod : '')
+  }
+
+  // Replace POSLOVNI_PROSTOR_NAPOMENA placeholders
+  if (contractConcludedOnPremises) {
+    html = html.replace('<!--POSLOVNI_PROSTOR_NAPOMENA_1-->', onPremisesNote1);
+    html = html.replace('<!--POSLOVNI_PROSTOR_NAPOMENA_2-->', onPremisesNote2);
+  } else {
+    html = html.replace('<!--POSLOVNI_PROSTOR_NAPOMENA_1-->', offPremisesNote1);
+    html = html.replace('<!--POSLOVNI_PROSTOR_NAPOMENA_2-->', offPremisesNote2);
   }
 
   return html

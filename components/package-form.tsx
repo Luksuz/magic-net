@@ -35,13 +35,22 @@ const emptyPackage: Partial<ContractData> = {
   fiksna_brzina: "",
   fiksne_dodatne_usluge: "",
   fiksna_oprema: "",
+  promo_price_fiksni: null,
+  contract_price_fiksni: null,
+  regular_price_fiksni: null,
   tv_paket: "",
   tv_dodatne_usluge: "",
   tv_oprema: "",
+  promo_price_tv: null,
+  contract_price_tv: null,
+  regular_price_tv: null,
   pretplatnicki_broj: "",
   tarifa: "",
   tel_dodatne_usluge: "",
   tel_oprema: "",
+  promo_price_phone: null,
+  contract_price_phone: null,
+  regular_price_phone: null,
   uredaj_proizvodac_model: "",
   uredaj_cijena: null,
   uredaj_popust: null,
@@ -64,7 +73,7 @@ const emptyPackage: Partial<ContractData> = {
   cijena_aktivacije_naknada: null,
   cijena_aktivacije_popust: null,
   cijena_aktivacije_ukupno: null,
-  terminalna_oprema: {},
+  terminalna_oprema: [], // Initialize as empty array for the new structure
 }
 
 export default function PackageForm({ initialData, isEditing = false }: PackageFormProps) {
@@ -74,7 +83,7 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
   const [success, setSuccess] = useState<string | null>(null)
 
   const [formState, setFormState] = useState<Partial<ContractData>>(initialData || emptyPackage)
-  const [terminalEquipmentList, setTerminalEquipmentList] = useState<{ id: string; name: string; price: string | number }[]>([]);
+  const [terminalEquipmentList, setTerminalEquipmentList] = useState<{ id: string; name: string; quantity: string | number; price: string | number }[]>([]);
 
   /*
   useEffect(() => {
@@ -91,19 +100,29 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
   // Effect to initialize terminalEquipmentList from initialData.terminalna_oprema
   useEffect(() => {
     const initialTE = initialData?.terminalna_oprema;
-    if (initialTE && typeof initialTE === 'object') {
+    if (Array.isArray(initialTE)) {
+      // New structure: Array of objects with name, quantity, price
+      setTerminalEquipmentList(
+        initialTE.map(item => ({
+          id: item.id?.toString() || generatePseudoUniqueId('initial-te'), // Use existing id or generate new
+          name: item.name || "",
+          quantity: item.quantity === null || item.quantity === undefined ? "1" : Number(item.quantity),
+          price: item.price === null || item.price === undefined ? "" : Number(item.price),
+        }))
+      );
+    } else if (initialTE && typeof initialTE === 'object' && !Array.isArray(initialTE)) {
+      // Old structure: Record<string, number> (name: price)
       setTerminalEquipmentList(
         Object.entries(initialTE).map(([name, price]) => ({
-          id: generatePseudoUniqueId('initial-te'),
+          id: generatePseudoUniqueId('initial-te-old'),
           name,
+          quantity: "1", // Default quantity to 1 for old structure
           price: price === null || price === undefined ? "" : Number(price),
         }))
       );
-    } else if (!initialData) { // If there's no initialData (e.g. create form), ensure list is empty
+    } else if (!initialData) {
       setTerminalEquipmentList([]);
     }
-    // Only run when initialData itself changes, not on every formState.terminalna_oprema change.
-    // User modifications to terminalEquipmentList will be handled directly by its state setters.
   }, [initialData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -122,11 +141,11 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
   };
 
   // Handler for changes in terminal equipment item inputs
-  const handleTerminalEquipmentChange = (id: string, field: 'name' | 'price', value: string) => {
+  const handleTerminalEquipmentChange = (id: string, field: 'name' | 'quantity' | 'price', value: string) => {
     setTerminalEquipmentList(currentList =>
       currentList.map(item =>
         item.id === id
-          ? { ...item, [field]: field === 'price' ? (value === '' ? '' : parseFloat(value) || '') : value }
+          ? { ...item, [field]: (field === 'price' || field === 'quantity') ? (value === '' ? '' : parseFloat(value) || '') : value }
           : item
       )
     );
@@ -136,7 +155,7 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
   const addTerminalEquipmentItem = () => {
     setTerminalEquipmentList(currentList => [
       ...currentList,
-      { id: generatePseudoUniqueId('new-te'), name: "", price: "" },
+      { id: generatePseudoUniqueId('new-te'), name: "", quantity: "1", price: "" }, // Default quantity to 1 for new items
     ]);
   };
 
@@ -150,32 +169,38 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
     setError(null)
     setSuccess(null)
 
-    // Convert terminalEquipmentList back to object for formState
-    const reconciledTerminalOprema: Record<string, number> = {};
-    terminalEquipmentList.forEach(item => {
-      if (item.name.trim() !== "") { // Only include items with a name
-        const price = parseFloat(String(item.price)); // item.price could be string "" or number
-        reconciledTerminalOprema[item.name.trim()] = isNaN(price) ? 0 : price; // Default to 0 if price is not valid
-      }
-    });
+    // Convert terminalEquipmentList to the new structure for formState
+    const newTerminalOpremaForDb = terminalEquipmentList
+      .map(item => {
+        const name = item.name.trim();
+        const quantityStr = String(item.quantity || "").trim();
+        const quantity = parseInt(quantityStr, 10);
+        const price = parseFloat(String(item.price || "0"));
 
-    // CRITICAL FIX: Update the actual component formState before preparing FormData
+        return {
+          name: name,
+          quantity: name && (isNaN(quantity) || quantity <= 0) ? 1 : (isNaN(quantity) ? 0 : quantity),
+          price: isNaN(price) ? 0 : price,
+        };
+      })
+      .filter(item => item.name !== ""); // Filter out items with no name
+
     const stateWithLatestTerminalOprema = {
       ...formState,
-      terminalna_oprema: reconciledTerminalOprema,
+      terminalna_oprema: newTerminalOpremaForDb, // Save in the new array format
     };
-    setFormState(stateWithLatestTerminalOprema);
+    // No need to call setFormState here if it's only for submission
 
-    // Now build FormData using the updated state
     const formDataToSubmit = new FormData();
     for (const key in stateWithLatestTerminalOprema) {
       if (key === 'terminalna_oprema') {
         const teValue = stateWithLatestTerminalOprema[key as keyof ContractData];
-        if (teValue && typeof teValue === 'object') {
+        // Ensure teValue is treated as the array of objects we just constructed
+        if (Array.isArray(teValue)) {
             formDataToSubmit.append(key, JSON.stringify(teValue));
-        } else if (teValue === null || teValue === undefined) {
-            // Send null as JSON if terminalna_oprema is empty/null after reconciliation
-            formDataToSubmit.append(key, JSON.stringify(null)); 
+        } else {
+            // Handle case where it might be null or an old Record<string, number> if logic above changes
+            formDataToSubmit.append(key, JSON.stringify(teValue === undefined ? null : teValue)); 
         }
       } else {
         const value = stateWithLatestTerminalOprema[key as keyof ContractData];
@@ -209,6 +234,7 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
           })
           if (!isEditing) {
              setFormState(emptyPackage);
+             setTerminalEquipmentList([]); // Clear the list for new package form
           }
         } else {
           setError(result.error || "Došlo je do pogreške")
@@ -316,6 +342,22 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
                   </div>
                 </div>
 
+                <h4 className="text-md font-medium mt-6 mb-3">Detalji ugovora za Internet</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="promo_price_fiksni">Promotivna mjesečna naknada (Internet)</Label>
+                    <Input id="promo_price_fiksni" name="promo_price_fiksni" type="number" step="0.01" value={formState.promo_price_fiksni === null ? "" : formState.promo_price_fiksni} onChange={handleInputChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contract_price_fiksni">Ugovorena mjesečna naknada (Internet)</Label>
+                    <Input id="contract_price_fiksni" name="contract_price_fiksni" type="number" step="0.01" value={formState.contract_price_fiksni === null ? "" : formState.contract_price_fiksni} onChange={handleInputChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="regular_price_fiksni">Redovna mjesečna naknada (Internet)</Label>
+                    <Input id="regular_price_fiksni" name="regular_price_fiksni" type="number" step="0.01" value={formState.regular_price_fiksni === null ? "" : formState.regular_price_fiksni} onChange={handleInputChange} />
+                  </div>
+                </div>
+
                 <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="brzina_min_download">Min brzina preuzimanja</Label>
@@ -412,6 +454,22 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
                     />
                   </div>
                 </div>
+
+                <h4 className="text-md font-medium mt-6 mb-3">Detalji ugovora za TV</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="promo_price_tv">Promotivna mjesečna naknada (TV)</Label>
+                    <Input id="promo_price_tv" name="promo_price_tv" type="number" step="0.01" value={formState.promo_price_tv === null ? "" : formState.promo_price_tv} onChange={handleInputChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contract_price_tv">Ugovorena mjesečna naknada (TV)</Label>
+                    <Input id="contract_price_tv" name="contract_price_tv" type="number" step="0.01" value={formState.contract_price_tv === null ? "" : formState.contract_price_tv} onChange={handleInputChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="regular_price_tv">Redovna mjesečna naknada (TV)</Label>
+                    <Input id="regular_price_tv" name="regular_price_tv" type="number" step="0.01" value={formState.regular_price_tv === null ? "" : formState.regular_price_tv} onChange={handleInputChange} />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -455,6 +513,22 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
                       onChange={handleInputChange}
                       rows={3}
                     />
+                  </div>
+                </div>
+
+                <h4 className="text-md font-medium mt-6 mb-3">Detalji ugovora za Telefon</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="promo_price_phone">Promotivna mjesečna naknada (Telefon)</Label>
+                    <Input id="promo_price_phone" name="promo_price_phone" type="number" step="0.01" value={formState.promo_price_phone === null ? "" : formState.promo_price_phone} onChange={handleInputChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contract_price_phone">Ugovorena mjesečna naknada (Telefon)</Label>
+                    <Input id="contract_price_phone" name="contract_price_phone" type="number" step="0.01" value={formState.contract_price_phone === null ? "" : formState.contract_price_phone} onChange={handleInputChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="regular_price_phone">Redovna mjesečna naknada (Telefon)</Label>
+                    <Input id="regular_price_phone" name="regular_price_phone" type="number" step="0.01" value={formState.regular_price_phone === null ? "" : formState.regular_price_phone} onChange={handleInputChange} />
                   </div>
                 </div>
               </CardContent>
@@ -666,8 +740,8 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
               <CardContent className="pt-6">
                 <h3 className="text-lg font-medium mb-4">Terminalna Oprema</h3>
                 {terminalEquipmentList.map((item, index) => (
-                  <div key={item.id} className="flex items-center space-x-2 mb-4 p-3 border rounded-md">
-                    <div className="flex-grow grid grid-cols-2 gap-x-4">
+                  <div key={item.id} className="flex items-end space-x-2 mb-4 p-3 border rounded-md">
+                    <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-x-4">
                       <div className="space-y-1">
                         <Label htmlFor={`te_name_${item.id}`}>Naziv opreme</Label>
                         <Input
@@ -676,6 +750,18 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
                           value={item.name}
                           onChange={(e) => handleTerminalEquipmentChange(item.id, 'name', e.target.value)}
                           placeholder="Npr. Modem X, Router Y"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor={`te_quantity_${item.id}`}>Količina</Label>
+                        <Input
+                          id={`te_quantity_${item.id}`}
+                          name={`te_quantity_${item.id}`}
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => handleTerminalEquipmentChange(item.id, 'quantity', e.target.value)}
+                          placeholder="1"
                         />
                       </div>
                       <div className="space-y-1">
@@ -696,7 +782,7 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
                       variant="ghost"
                       size="sm"
                       onClick={() => removeTerminalEquipmentItem(item.id)}
-                      className="text-red-500 hover:text-red-700"
+                      className="text-red-500 hover:text-red-700 self-center mb-1"
                     >
                       Ukloni
                     </Button>
