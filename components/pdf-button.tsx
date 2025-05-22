@@ -6,8 +6,6 @@ import { Settings2 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import type { ContractData } from "@/lib/supabase"
 import { generatePDF, type TerminalEquipment } from "@/lib/pdf-generator"
-import PdfStyleOptionsComponent from "@/components/pdf-style-options"
-import type { PdfStyleOptions } from "@/components/pdf-style-options"
 import type { UserInformation } from "@/components/user-information-form"
 import { useAuth } from "@/app/contexts/authContext"
 import { toast } from "@/components/ui/use-toast"
@@ -26,7 +24,6 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
   const [isGenerating, setIsGenerating] = useState(false)
   const [isLibraryLoaded, setIsLibraryLoaded] = useState(false)
   const [showStyleOptions, setShowStyleOptions] = useState(false)
-  const [styleOptions, setStyleOptions] = useState<PdfStyleOptions | null>(null)
   const { profile, updateProfile } = useAuth()
 
   useEffect(() => {
@@ -64,24 +61,6 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
     }
   }, [profile])
 
-  // Load saved style options from localStorage
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedOptions = localStorage.getItem("pdfStyleOptions")
-      if (savedOptions) {
-        try {
-          setStyleOptions(JSON.parse(savedOptions))
-        } catch (e) {
-          console.error("Greška pri parsiranju spremljenih PDF opcija stila:", e)
-        }
-      }
-    }
-  }, [])
-
-  const handleStyleOptionsChange = (options: PdfStyleOptions) => {
-    setStyleOptions(options)
-    localStorage.setItem("pdfStyleOptions", JSON.stringify(options))
-  }
 
   // Deep clone function to avoid reference issues
   const deepClone = <T,>(obj: T): T => {
@@ -128,7 +107,6 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
       const success = await generatePDF(
         safeFormData, 
         safeUserInfo, 
-        styleOptions || undefined, 
         safeTerminalEquipment, 
         editableTemplate.html,
         contractConcludedOnPremises
@@ -160,25 +138,6 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
 
   return (
     <div className="flex gap-2">
-      <Dialog open={showStyleOptions} onOpenChange={setShowStyleOptions}>
-        <DialogTrigger asChild>
-          <Button variant="outline" size="icon" className="h-10 w-10">
-            <Settings2 className="h-4 w-4" />
-            <span className="sr-only">Opcije stila PDF-a</span>
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Opcije stila PDF-a</DialogTitle>
-          </DialogHeader>
-          <PdfStyleOptionsComponent
-            initialOptions={styleOptions || undefined}
-            onChange={handleStyleOptionsChange}
-            contractData={formData}
-          />
-        </DialogContent>
-      </Dialog>
-
       <Button 
         onClick={handleExport} 
         size="lg" 

@@ -13,6 +13,20 @@ import { FileText } from "lucide-react"
 import type { UserInformation } from "@/components/user-information-form"
 import type { TerminalEquipment } from "@/lib/pdf-generator"
 
+// Define types for field configuration
+type FieldItem = {
+  key: string;
+  label: string;
+  type: string;
+  readOnly?: boolean;
+};
+
+type SubheadingItem = {
+  subheading: string;
+};
+
+type FormField = FieldItem | SubheadingItem;
+
 export default function ContractTableEditor({ 
   initialData, 
   userInfo, 
@@ -154,7 +168,7 @@ export default function ContractTableEditor({
   }
 
   // Group fields by category for better organization
-  const fieldGroups = [
+  const fieldGroups: Array<{ name: string; fields: FormField[] }> = [
     {
       name: "Osnovne informacije",
       fields: [
@@ -169,8 +183,8 @@ export default function ContractTableEditor({
         { key: "fiksna_brzina", label: "Fiksna brzina", type: "text" },
         { key: "fiksne_dodatne_usluge", label: "Dodatne fiksne usluge", type: "textarea" },
         { key: "fiksna_oprema", label: "Fiksna oprema", type: "textarea" },
+        { subheading: "Periodična cijena" },
         { key: "promo_price_fiksni", label: "Promotivna mj. naknada (Internet)", type: "number" },
-        { key: "contract_price_fiksni", label: "Ugovorena mj. naknada (Internet)", type: "number" },
         { key: "regular_price_fiksni", label: "Redovna mj. naknada (Internet)", type: "number" },
         { key: "brzina_min_download", label: "Min. brzina downloada", type: "text" },
         { key: "brzina_min_upload", label: "Min. brzina uploada", type: "text" },
@@ -186,8 +200,8 @@ export default function ContractTableEditor({
         { key: "tv_paket", label: "TV paket", type: "text" },
         { key: "tv_dodatne_usluge", label: "Dodatne TV usluge", type: "textarea" },
         { key: "tv_oprema", label: "TV oprema", type: "textarea" },
+        { subheading: "Periodična cijena" },
         { key: "promo_price_tv", label: "Promotivna mj. naknada (TV)", type: "number" },
-        { key: "contract_price_tv", label: "Ugovorena mj. naknada (TV)", type: "number" },
         { key: "regular_price_tv", label: "Redovna mj. naknada (TV)", type: "number" }
       ]
     },
@@ -198,8 +212,8 @@ export default function ContractTableEditor({
         { key: "tarifa", label: "Tarifa", type: "text" },
         { key: "tel_dodatne_usluge", label: "Dodatne telefonske usluge", type: "textarea" },
         { key: "tel_oprema", label: "Telefonska oprema", type: "textarea" },
+        { subheading: "Periodična cijena" },
         { key: "promo_price_phone", label: "Promotivna mj. naknada (Telefon)", type: "number" },
-        { key: "contract_price_phone", label: "Ugovorena mj. naknada (Telefon)", type: "number" },
         { key: "regular_price_phone", label: "Redovna mj. naknada (Telefon)", type: "number" }
       ]
     },
@@ -299,54 +313,66 @@ export default function ContractTableEditor({
                   </tr>
                 </thead>
                 <tbody>
-                  {group.fields.map((field) => (
-                    <tr key={field.key} className="border-b hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2 font-medium">{field.label}</td>
-                      <td className="border border-gray-300 px-4 py-2">
-                        {field.type === "textarea" ? (
-                          <Textarea 
-                            id={field.key}
-                            name={field.key}
-                            value={(formData as any)[field.key] || ""}
-                            onChange={handleChange}
-                            rows={2}
-                            className="w-full"
-                          />
-                        ) : field.type === "number" ? (
-                          <Input
-                            id={field.key}
-                            name={field.key}
-                            type="number"
-                            value={(formData as any)[field.key] || ""}
-                            onChange={handleNumberChange}
-                            className={`w-full ${field.readOnly ? "bg-gray-50" : ""}`}
-                            readOnly={field.readOnly}
-                          />
-                        ) : field.type === "checkbox" ? (
-                          <div className="flex items-center">
-                            <Checkbox 
+                  {group.fields.map((field, index) => {
+                    if ('subheading' in field) {
+                      return (
+                        <tr key={`subheading-${index}`} className="bg-gray-50">
+                          <td colSpan={2} className="border border-gray-300 px-4 py-2 font-medium text-md">
+                            {field.subheading}
+                          </td>
+                        </tr>
+                      );
+                    }
+                    
+                    return (
+                      <tr key={field.key} className="border-b hover:bg-gray-50">
+                        <td className="border border-gray-300 px-4 py-2 font-medium">{field.label}</td>
+                        <td className="border border-gray-300 px-4 py-2">
+                          {field.type === "textarea" ? (
+                            <Textarea 
                               id={field.key}
-                              checked={!!(formData as any)[field.key]}
-                              onCheckedChange={(checked) => 
-                                handleCheckboxChange(field.key, checked === true)
-                              }
+                              name={field.key}
+                              value={(formData as any)[field.key] || ""}
+                              onChange={handleChange}
+                              rows={2}
+                              className="w-full"
                             />
-                            <Label htmlFor={field.key} className="ml-2">
-                              {(formData as any)[field.key] ? "Da" : "Ne"}
-                            </Label>
-                          </div>
-                        ) : (
-                          <Input
-                            id={field.key}
-                            name={field.key}
-                            value={(formData as any)[field.key] || ""}
-                            onChange={handleChange}
-                            className="w-full"
-                          />
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                          ) : field.type === "number" ? (
+                            <Input
+                              id={field.key}
+                              name={field.key}
+                              type="number"
+                              value={(formData as any)[field.key] || ""}
+                              onChange={handleNumberChange}
+                              className={`w-full ${field.readOnly ? "bg-gray-50" : ""}`}
+                              readOnly={field.readOnly}
+                            />
+                          ) : field.type === "checkbox" ? (
+                            <div className="flex items-center">
+                              <Checkbox 
+                                id={field.key}
+                                checked={!!(formData as any)[field.key]}
+                                onCheckedChange={(checked) => 
+                                  handleCheckboxChange(field.key, checked === true)
+                                }
+                              />
+                              <Label htmlFor={field.key} className="ml-2">
+                                {(formData as any)[field.key] ? "Da" : "Ne"}
+                              </Label>
+                            </div>
+                          ) : (
+                            <Input
+                              id={field.key}
+                              name={field.key}
+                              value={(formData as any)[field.key] || ""}
+                              onChange={handleChange}
+                              className="w-full"
+                            />
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

@@ -170,6 +170,13 @@
                <td style="text-align: center;">[EQUIPMENT_QUANTITY_3]</td>
                <td style="text-align: right;">[EQUIPMENT_PRICE_3]</td>
            </tr>
+           <tr>
+               <td style="text-align: center;">4.</td>
+               <td>[EQUIPMENT_NAME_4]</td>
+               <td style="text-align: center;">[EQUIPMENT_QUANTITY_4]</td>
+               <td style="text-align: right;">[EQUIPMENT_PRICE_4]</td>
+           </tr>
+           
            </table>
            <p style="margin-top: 10px; margin-bottom: 6px; font-size: 10px;"><strong>Napomena: ako bilo kada odlučite isključiti uslugu, dužni ste nam vratiti Terminalnu opremu koju smo Vam dali na korištenje. Krajnji rok za povrat Terminalne opreme je 15 dana od dana zaprimanja računa na kojem će Vam biti naplaćena naknada za istu, a koji ćemo stornirati u slučaju povrata Terminalne opreme.</strong></p>
        </div>
@@ -220,32 +227,29 @@
            <p style="font-weight: bold; margin: 10px 0 3px 0;">Periodična cijena</p>
            <table>
            <tr style="background-color: #f2f2f2;">
-               <th style="width: 5%;">R.br.</th><th style="width: 40%;">Ugovorene usluge</th><th style="width: 18%;">Promotivna mjesečna naknada*</th><th style="width: 18%;">Mjesečna naknada za vrijeme obveznog trajanja ugovora</th><th style="width: 19%;">Mjesečna naknada nakon isteka / bez obveznog trajanja ugovora</th>
+               <th style="width: 4%;">R.br.</th><th style="width: 40%;">Ugovorene usluge</th><th style="width: 26%;">Promotivna mjesečna naknada*</th><th style="width: 26%;">Redovna mjesečna naknada</th>
            </tr>
            <tr>
                <td style="text-align: center;">1.</td>
                <td>[INTERNET_SERVICE_NAME]</td>
                <td style="text-align: right;">[PROMO_PRICE_FIKSNI]</td>
-               <td style="text-align: right;">[CONTRACT_PRICE_FIKSNI]</td>
                <td style="text-align: right;">[REGULAR_PRICE_FIKSNI]</td>
            </tr>
            <tr>
                <td style="text-align: center;">2.</td>
-               <td>[TV_PAKET] ([TV_DODATNE_USLUGE])</td>
+               <td>[TV_PAKET]</td>
                <td style="text-align: right;">[PROMO_PRICE_TV]</td>
-               <td style="text-align: right;">[CONTRACT_PRICE_TV]</td>
                <td style="text-align: right;">[REGULAR_PRICE_TV]</td>
            </tr>
            <tr>
                <td style="text-align: center;">3.</td>
-               <td>[TARIFA] ([PRETPLATNICKI_BROJ])</td>
+               <td>[TARIFA]</td>
                <td style="text-align: right;">[PROMO_PRICE_PHONE]</td>
-               <td style="text-align: right;">[CONTRACT_PRICE_PHONE]</td>
                <td style="text-align: right;">[REGULAR_PRICE_PHONE]</td>
            </tr>
            <!-- Add more rows for additional services/equipment if needed -->
            <tr>
-               <td style="text-align: center;"></td><td><strong>Ukupan iznos mjesečne naknade:</strong></td><td style="text-align: right; font-weight: bold;">[TOTAL_PROMO_PRICE] EUR</td><td style="text-align: right; font-weight: bold;">[TOTAL_CONTRACT_PRICE] EUR</td><td style="text-align: right; font-weight: bold;">[TOTAL_REGULAR_PRICE] EUR</td>
+               <td style="text-align: center;"></td><td><strong>Ukupan iznos mjesečne naknade:</strong></td><td style="text-align: right; font-weight: bold;">[TOTAL_PROMO_PRICE]</td><td style="text-align: right; font-weight: bold;">[TOTAL_REGULAR_PRICE] EUR</td>
            </tr>
        </table>
        <p style="font-size: 10px; font-style: italic; margin-bottom: 6px;">*Napomena: promotivna mjesečna naknada vrijedi za cijelo vrijeme do raskida ugovora ili ugovaranja novog paketa.</p>
@@ -431,12 +435,4 @@
       <div class="page-break"></div>
   
       <!-- ZAHTJEV_ZA_PROMJENU_OPERATERA -->
-  
-      
-  
-   <!-- Footer -->
-   <div style="margin-top: 40px; border-top: 1px solid #ddd; padding-top: 20px;">
-       <p style="text-align: center; font-size: 10px; color: #666;">Generirano na [CURRENT_DATE]</p>
-   </div>
-  
    </div><!-- End pdf-content -->

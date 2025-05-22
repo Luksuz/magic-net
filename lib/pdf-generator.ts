@@ -1,10 +1,8 @@
 "use client"
 
 import type { ContractData } from "./supabase"
-import type { PdfStyleOptions } from "@/components/pdf-style-options"
 import type { UserInformation } from "@/components/user-information-form"
 import { getEditableTemplate } from "./template-service"
-import type { ProfileData } from "@/types/user"
 
 export type PdfTemplateContent = {
   id: number
@@ -19,6 +17,22 @@ export type TerminalEquipment = {
   name: string
   quantity: string
   price: string
+}
+
+interface PdfStyleOptions {
+  theme: string
+  primaryColor: string
+  secondaryColor: string
+  fontFamily: string
+  fontSize: number
+  showLogo: boolean
+  logoPosition: string
+  showPageNumbers: boolean
+  showHeaderOnAllPages: boolean
+  tableStyle: string
+  pageSize: string,
+  orientation: string,
+  margins: number,
 }
 
 const defaultStyleOptions: PdfStyleOptions = {
@@ -90,7 +104,6 @@ async function imageUrlToBase64(url: string): Promise<string> {
 export async function generatePDF(
   data: ContractData,
   userInfo?: UserInformation,
-  styleOptions?: Partial<PdfStyleOptions>,
   terminalEquipment?: TerminalEquipment[],
   customHtml?: string,
   contractConcludedOnPremises?: boolean
@@ -100,8 +113,45 @@ export async function generatePDF(
     throw new Error("html2pdf is not available")
   }
 
+  // Hide UI elements temporarily (navigation bars, buttons, etc.)
+  const hideUIForPdfGeneration = () => {
+    // Store original styles to restore later
+    const elementsToHide = [
+      document.querySelector('nav'),
+      document.querySelector('header'),
+      ...Array.from(document.querySelectorAll('button:not(.pdf-content button)')),
+      ...Array.from(document.querySelectorAll('.pdf-button-container')),
+      document.querySelector('footer'),
+      ...Array.from(document.querySelectorAll('.ui-element')), // Add class to any custom UI elements
+      ...Array.from(document.querySelectorAll('[role="tablist"]')),
+      ...Array.from(document.querySelectorAll('.tabs-container')),
+      document.querySelector('.mt-12.pt-8.border-t') // Email section
+    ];
+
+    // Store original display values to restore later
+    const originalStyles: Map<HTMLElement, string> = new Map();
+    
+    elementsToHide.forEach(el => {
+      if (el && el instanceof HTMLElement) {
+        originalStyles.set(el, el.style.display);
+        el.style.display = 'none';
+      }
+    });
+
+    return originalStyles;
+  };
+
+  // Restore UI elements after PDF generation
+  const restoreUI = (originalStyles: Map<HTMLElement, string>) => {
+    originalStyles.forEach((originalDisplay, element) => {
+      if (element) {
+        element.style.display = originalDisplay;
+      }
+    });
+  };
+
   // Merge default options with provided options
-  const options = { ...defaultStyleOptions, ...styleOptions }
+  const options = { ...defaultStyleOptions }
 
   // Generate agreement number with user's agreement_number if available
   let agreementNumber = data.broj_ugovora || `${data.id}`
@@ -155,8 +205,12 @@ export async function generatePDF(
 
   // Create a container reference that will be accessible in finally block
   let container: HTMLDivElement | null = null;
+  let originalStyles: Map<HTMLElement, string> | null = null;
 
   try {
+    // Hide UI elements before generating PDF
+    originalStyles = hideUIForPdfGeneration();
+
     // Get template HTML or use custom HTML if provided
     const templateData = customHtml ? { html: customHtml } : await getEditableTemplate();
     
@@ -264,6 +318,7 @@ export async function generatePDF(
 
     // Create a container for the PDF content
     container = document.createElement("div");
+    container.className = "pdf-content";
     
     // Set the processed HTML (now with potentially hidden tables and embedded logo) to the container
     container.innerHTML = htmlContentForPdf;
@@ -312,6 +367,11 @@ export async function generatePDF(
     // Clean up the container that was added to the body
     if (container && document.body.contains(container)) {
       document.body.removeChild(container);
+    }
+    
+    // Restore UI elements
+    if (originalStyles) {
+      restoreUI(originalStyles);
     }
   }
 }

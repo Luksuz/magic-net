@@ -342,15 +342,11 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
                   </div>
                 </div>
 
-                <h4 className="text-md font-medium mt-6 mb-3">Detalji ugovora za Internet</h4>
+                <h4 className="text-md font-medium mt-6 mb-3">Periodična cijena</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="promo_price_fiksni">Promotivna mjesečna naknada (Internet)</Label>
                     <Input id="promo_price_fiksni" name="promo_price_fiksni" type="number" step="0.01" value={formState.promo_price_fiksni === null ? "" : formState.promo_price_fiksni} onChange={handleInputChange} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contract_price_fiksni">Ugovorena mjesečna naknada (Internet)</Label>
-                    <Input id="contract_price_fiksni" name="contract_price_fiksni" type="number" step="0.01" value={formState.contract_price_fiksni === null ? "" : formState.contract_price_fiksni} onChange={handleInputChange} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="regular_price_fiksni">Redovna mjesečna naknada (Internet)</Label>
@@ -455,15 +451,11 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
                   </div>
                 </div>
 
-                <h4 className="text-md font-medium mt-6 mb-3">Detalji ugovora za TV</h4>
+                <h4 className="text-md font-medium mt-6 mb-3">Periodična cijena</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="promo_price_tv">Promotivna mjesečna naknada (TV)</Label>
                     <Input id="promo_price_tv" name="promo_price_tv" type="number" step="0.01" value={formState.promo_price_tv === null ? "" : formState.promo_price_tv} onChange={handleInputChange} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contract_price_tv">Ugovorena mjesečna naknada (TV)</Label>
-                    <Input id="contract_price_tv" name="contract_price_tv" type="number" step="0.01" value={formState.contract_price_tv === null ? "" : formState.contract_price_tv} onChange={handleInputChange} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="regular_price_tv">Redovna mjesečna naknada (TV)</Label>
@@ -516,15 +508,11 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
                   </div>
                 </div>
 
-                <h4 className="text-md font-medium mt-6 mb-3">Detalji ugovora za Telefon</h4>
+                <h4 className="text-md font-medium mt-6 mb-3">Periodična cijena</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="promo_price_phone">Promotivna mjesečna naknada (Telefon)</Label>
                     <Input id="promo_price_phone" name="promo_price_phone" type="number" step="0.01" value={formState.promo_price_phone === null ? "" : formState.promo_price_phone} onChange={handleInputChange} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contract_price_phone">Ugovorena mjesečna naknada (Telefon)</Label>
-                    <Input id="contract_price_phone" name="contract_price_phone" type="number" step="0.01" value={formState.contract_price_phone === null ? "" : formState.contract_price_phone} onChange={handleInputChange} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="regular_price_phone">Redovna mjesečna naknada (Telefon)</Label>

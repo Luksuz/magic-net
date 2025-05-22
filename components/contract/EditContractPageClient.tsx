@@ -11,6 +11,8 @@ import SendEmailPage from "@/components/email-component";
 import type { ContractData } from "@/lib/supabase";
 import type { TerminalEquipment } from "@/lib/pdf-generator";
 import type { UserInformation } from "@/components/user-information-form";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { FileText } from "lucide-react";
 
 // Helper to generate a somewhat unique ID (if needed for new items not from DB)
 let idCounter = 0;
@@ -28,6 +30,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
   const [contractData, setContractData] = useState<ContractData | null>(null);
   const [useTableView, setUseTableView] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [pdfGenerationMessage, setPdfGenerationMessage] = useState(false);
   const [contractConcludedOnPremises, setContractConcludedOnPremises] = useState(false);
   const [userInfo, setUserInfo] = useState<UserInformation>({
     userId: "",
@@ -82,7 +85,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
           id: generateId(), // Old structure items won't have an ID
           name: name,
           quantity: "1", // Default quantity to 1 for old structure, as per user request
-          price: typeof price === 'number' ? String(price.toFixed(2)).replace('.', ',') : "0,00",
+            price: typeof price === 'number' ? String(price.toFixed(2)).replace('.', ',') : "0,00",
         }));
       } else {
         // No terminal equipment defined in the contract, use a default empty list or pre-defined defaults if any.
@@ -101,9 +104,16 @@ export default function EditContractPageClient({ contract, profile }: Props) {
 
   useEffect(() => {
     if (isGeneratingPdf && !useTableView) {
+      // Show PDF generation message
+      setPdfGenerationMessage(true);
+      
       const timer = setTimeout(() => {
         setIsGeneratingPdf(false);
-      }, 500);
+        // Hide the message after a short delay
+        setTimeout(() => {
+          setPdfGenerationMessage(false);
+        }, 500);
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, [isGeneratingPdf, useTableView]);
@@ -114,8 +124,15 @@ export default function EditContractPageClient({ contract, profile }: Props) {
   ) => {
     formDataRef.current = data;
     formTerminalEquipmentRef.current = equipmentData;
-    setIsGeneratingPdf(true);
-    setUseTableView(false);
+    
+    // Show PDF generation message
+    setPdfGenerationMessage(true);
+    
+    // Set small delay before switching views to ensure message is visible
+    setTimeout(() => {
+      setIsGeneratingPdf(true);
+      setUseTableView(false);
+    }, 100);
   };
 
   const handleUserInfoChange = (data: UserInformation) => {
@@ -186,6 +203,16 @@ export default function EditContractPageClient({ contract, profile }: Props) {
           />
         </div>
       </div>
+
+      {/* PDF Generation Message */}
+      {pdfGenerationMessage && (
+        <Alert className="my-4 bg-blue-50 border-blue-200 text-blue-800">
+          <FileText className="h-4 w-4 mr-2" />
+          <AlertDescription>
+            Priprema PDF dokumenta u tijeku...
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="w-full">
         {useTableView ? (
