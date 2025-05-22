@@ -24,7 +24,7 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
   const [isGenerating, setIsGenerating] = useState(false)
   const [isLibraryLoaded, setIsLibraryLoaded] = useState(false)
   const [showStyleOptions, setShowStyleOptions] = useState(false)
-  const { profile, updateProfile } = useAuth()
+  const { user, profile, updateProfile } = useAuth()
 
   useEffect(() => {
     // Check if html2pdf is loaded
@@ -51,15 +51,21 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
   // Store profile data on window for PDF generation access
   useEffect(() => {
     if (typeof window !== "undefined" && profile) {
-      (window as any).profileData = profile
+      // Make sure profile has user_id for tracking
+      const profileWithId = { ...profile };
+      if (!profileWithId.user_id && user && user.id) {
+        profileWithId.user_id = user.id;
+      }
+      (window as any).profileData = profileWithId;
+      console.log("Updated profileData on window:", (window as any).profileData);
     }
     
     return () => {
       if (typeof window !== "undefined") {
-        delete (window as any).profileData
+        delete (window as any).profileData;
       }
     }
-  }, [profile])
+  }, [profile, user]);
 
 
   // Deep clone function to avoid reference issues
@@ -104,13 +110,18 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
       
       const editableTemplate = await getEditableTemplate();
       
-      const success = await generatePDF(
-        safeFormData, 
-        safeUserInfo, 
-        safeTerminalEquipment, 
-        editableTemplate.html,
-        contractConcludedOnPremises
-      )
+      let success = false;
+      if (profile && profile.user_id) {
+        success = await generatePDF(
+          safeFormData, 
+          safeUserInfo, 
+          safeTerminalEquipment, 
+          editableTemplate.html,
+          contractConcludedOnPremises
+        )
+      } else {
+        console.error("Korisnički ID nije dostupan.")
+      }
       
       // If PDF generation was successful and we have a profile with an agreement number
       if (success && profile && profile.agreement_number !== null && profile.agreement_number !== undefined) {

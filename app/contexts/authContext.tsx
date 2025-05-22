@@ -63,6 +63,12 @@ export const AuthProvider = ({
       console.log("[AuthProvider] handleAuthChange: Fetching profile for user:", currentUser.id);
       const profileData = await fetchProfileServer(currentUser.id);
       console.log("[AuthProvider] handleAuthChange: Profile data from server action:", profileData);
+      
+      // Ensure user_id is set in profile data for PDF generation
+      if (profileData && !profileData.user_id) {
+        profileData.user_id = currentUser.id;
+      }
+      
       setProfile(profileData);
       setIsAdmin(Boolean(profileData?.is_admin));
       console.log("[AuthProvider] handleAuthChange: isAdmin set to:", Boolean(profileData?.is_admin));

@@ -231,19 +231,19 @@
            </tr>
            <tr>
                <td style="text-align: center;">1.</td>
-               <td>[INTERNET_SERVICE_NAME]</td>
+               <td>[FIKSNI_NAZIV_USLUGE]</td>
                <td style="text-align: right;">[PROMO_PRICE_FIKSNI]</td>
                <td style="text-align: right;">[REGULAR_PRICE_FIKSNI]</td>
            </tr>
            <tr>
                <td style="text-align: center;">2.</td>
-               <td>[TV_PAKET]</td>
+               <td>[TV_NAZIV_USLUGE]</td>
                <td style="text-align: right;">[PROMO_PRICE_TV]</td>
                <td style="text-align: right;">[REGULAR_PRICE_TV]</td>
            </tr>
            <tr>
                <td style="text-align: center;">3.</td>
-               <td>[TARIFA]</td>
+               <td>[TEL_NAZIV_USLUGE]</td>
                <td style="text-align: right;">[PROMO_PRICE_PHONE]</td>
                <td style="text-align: right;">[REGULAR_PRICE_PHONE]</td>
            </tr>
@@ -357,19 +357,6 @@
        <p style="margin-bottom: 3px;">☐Potvrđujem da ću Opće uvjete poslovanja MAGIC NET – d.o.o., posebne uvjete pružanja usluga i Cjenik istihpreuzeti na https://mtnet.hr/opci-dokumeti/ odnosno na drugi odgovarajući način.</p>
    </div>
   
-  
-   <div style="margin-bottom: 15px;">
-       <h2 style="font-size: 14px; font-weight: bold; margin-bottom: 6px;">PODACI O PRODAJNOM MJESTU I PRODAVATELJU</h2>
-           <table>
-           <tr>
-               <td style="width: 30%;">Kod prodavatelja:</td><td>[SELLER_CODE]</td>
-               <td style="width: 30%;">Potpis prodavatelja:</td><td></td>
-           </tr>
-           <tr><td>Mjesto:</td><td>[SELLER_PLACE]</td><td colspan="2"></td></tr>
-           <tr><td>Datum:</td><td>[SELLER_DATE_FORMATTED]</td><td>M.P.</td><td></td></tr>
-       </table>
-   </div>
-  
    <!-- PAGE BREAK PLACEHOLDER -->
    <div class="page-break"></div>
   
@@ -409,20 +396,36 @@
           <tr><td>Način otplate:</td><td>[PAYMENT_METHOD_FORMATTED]</td></tr>
       </table>
   
-      <h3 style="font-size: 13px; font-weight: bold; margin-top: 15px;">PODACI O PRODAJNOM MJESTU I PRODAVATELJU</h3>
+      <h2 style="font-size: 14px; font-weight: bold; border-bottom: 1px solid #1a3c5e; padding-bottom: 5px; margin-top: 20px;">PODACI O PRODAJNOM MJESTU I PRODAVATELJU</h2>
       <table>
           <tr>
-          <td style="width: 30%;">Kod prodavatelja:</td><td>[SELLER_CODE]</td>
-          <td style="width: 30%;">Potpis prodavatelja:</td><td></td>
+            <td style="width: 30%;">Kod prodavatelja:</td>
+            <td style="width: 20%;">[SELLER_CODE]</td>
+            <td style="width: 50%;">Potpis prodavatelja:</td>
           </tr>
-          <tr><td>Mjesto:</td><td>[SELLER_PLACE]</td><td colspan="2"></td></tr>
-          <tr><td>Datum:</td><td>[SELLER_DATE_FORMATTED]</td><td>M.P.</td><td></td></tr>
+          <tr>
+            <td>Mjesto:</td>
+            <td colspan="3">[SELLER_PLACE]</td>
+          </tr>
+          <tr>
+            <td>Datum:</td>
+            <td>[SELLER_DATE_FORMATTED]</td>
+            <td>M.P.</td>
+          </tr>
       </table>
   
-      <h3 style="font-size: 13px; font-weight: bold; margin-top: 25px;">POTPIS KORISNIKA</h3>
+      <h2 style="font-size: 14px; font-weight: bold; border-bottom: 1px solid #1a3c5e; padding-bottom: 5px; margin-top: 20px;">POTPIS KORISNIKA</h2>
       <table>
-          <tr><td style="width: 40%;">Ime i prezime (ovlaštena osoba):</td><td>[USER_NAME]</td></tr>
-          <tr><td>Potpis Korisnika:</td><td></td></tr>
+          <tr>
+            <td style="width: 40%;">Ime i prezime (ovlaštena osoba):</td>
+            <td style="width: 30%;">[USER_NAME]</td>
+            <td style="width: 30%;">Potpis Korisnika:</td>
+          </tr>
+          <tr>
+            <td>OIB (ovlaštena osoba):</td>
+            <td>[OIB]</td>
+            <td>M.P.</td>
+          </tr>
       </table>
       </div>
   

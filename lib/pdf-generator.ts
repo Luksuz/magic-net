@@ -1,8 +1,9 @@
 "use client"
 
-import type { ContractData } from "./supabase"
+import type { ContractData } from "@/lib/supabase"
 import type { UserInformation } from "@/components/user-information-form"
-import { getEditableTemplate } from "./template-service"
+import { getEditableTemplate } from "@/lib/template-service"
+import { trackContractCreation, getUserCode } from "@/lib/supabase"
 
 export type PdfTemplateContent = {
   id: number
@@ -218,17 +219,71 @@ export async function generatePDF(
       throw new Error('No template found');
     }
     
+    // First, track contract creation to get a proper contract number
+    // This needs to happen BEFORE processing the HTML
+    let contractNumber = '';
+    
+    try {
+      // Get user_id directly from auth context
+      let userId = null;
+      let userCode = null;
+      
+      // Get profile data if available
+      if (window.hasOwnProperty('profileData')) {
+        const profileData = (window as any).profileData;
+        console.log("Profile data:", profileData);
+        
+        // Always use the user_id from profileData which comes from auth context
+        if (profileData && profileData.user_id) {
+          userId = profileData.user_id;
+          
+          // Get user code for contract numbering - always use user_number
+          if (profileData.user_number) {
+            userCode = String(profileData.user_number).padStart(2, '0');
+          } else {
+            userCode = getUserCode(profileData);
+          }
+        }
+      }
+
+      console.log("User ID from auth context:", userId, "User Code:", userCode);
+      
+      // Track contract creation and get the generated contract number
+      if (userId) {
+        const result = await trackContractCreation(
+          userId || undefined,
+          userCode || undefined
+        );
+        console.log("Contract creation tracked in database:", result);
+        
+        // If successful, store the generated contract number
+        if (result && result.success && result.contract_number) {
+          contractNumber = result.contract_number;
+          console.log("Using contract number:", contractNumber);
+          
+          // Store for future reference
+          if (typeof window !== "undefined") {
+            (window as any).lastContractNumber = contractNumber;
+          }
+        }
+      }
+    } catch (trackingError) {
+      console.error("Error tracking contract creation:", trackingError);
+      // Don't fail the entire operation if tracking fails
+    }
 
     const response = await fetch('/promjena_operatera.html');
     const promjenaOperateraHtmlContent = await response.text();
-    // Process template variables with actual data, using the prepared finalTerminalEquipmentList
+    
+    // Process template variables with actual data, passing the contractNumber to formatHtml
     const processedHtml = formatHtml(
       templateData.html, 
       data, 
       userInfo, 
       finalTerminalEquipmentList, 
       promjenaOperateraHtmlContent,
-      contractConcludedOnPremises
+      contractConcludedOnPremises,
+      contractNumber // Pass the contract number to formatHtml
     );
     
     // Start: Added logic to hide empty tables
@@ -323,13 +378,17 @@ export async function generatePDF(
     // Set the processed HTML (now with potentially hidden tables and embedded logo) to the container
     container.innerHTML = htmlContentForPdf;
     
+         // Contract creation is now handled earlier in the process
+    
     // Temporarily append to document to render
     document.body.appendChild(container);
     
-    // Generate PDF
+    // Generate PDF with proper contract numbering
     const ownerPassword = process.env.NEXT_PUBLIC_PDF_OWNER_PASSWORD
+    
+    // Use the contract number if available
     const pdfOptions = {
-      filename: `contract-${agreementNumber}.pdf`,
+      filename: `contract-${contractNumber || agreementNumber}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: {
         scale: 2,
@@ -359,6 +418,9 @@ export async function generatePDF(
 
     // Use window.html2pdf instead of importing the library
     await window.html2pdf().from(container).set(pdfOptions).save()
+    
+        // Contract creation is already tracked before PDF generation
+    
     return true
   } catch (error) {
     console.error("Error generating PDF:", error)
@@ -382,7 +444,8 @@ function formatHtml(
   userInfo?: UserInformation, 
   terminalEquipment?: TerminalEquipment[], 
   promjenaOperateraHtmlContent?: string,
-  contractConcludedOnPremises?: boolean
+  contractConcludedOnPremises?: boolean,
+  contractNumber?: string
 ): string {
   if (!html) throw new Error("HTML is required")
   if (!data) throw new Error("Data is required")
@@ -429,11 +492,8 @@ function formatHtml(
     html = html.replace('<!-- ZAHTJEV_ZA_PROMJENU_OPERATERA -->', '');
   }
 
-  // Agreement number
-  let agreementNumber = data.broj_ugovora || `${data.id}`
-  if (userInfo?.userId) {
-    agreementNumber = userInfo.userId
-  }
+  // If we have a contractNumber from tracking, use it; otherwise use fallback
+  const agreementNumber = contractNumber || data.broj_ugovora || `${data.id}`;
   safeReplace('AGREEMENT_NUMBER', agreementNumber)
 
   // Internet service details
@@ -442,12 +502,14 @@ function formatHtml(
   safeReplace('INTERNET_SPEED', data.fiksna_brzina)
   safeReplace('INTERNET_ADDITIONAL_SERVICES', data.fiksne_dodatne_usluge)
   safeReplace('INTERNET_EQUIPMENT', data.fiksna_oprema)
+  safeReplace('FIKSNI_NAZIV_USLUGE', data.fiksni_naziv_ugovorene_usluge)
 
   // TV service details
   safeReplace('TV_SERVICE_NAME', 'Usluga Televizije')
   safeReplace('TV_PACKAGE_NAME', data.tv_paket)
   safeReplace('TV_ADDITIONAL_SERVICES', data.tv_dodatne_usluge)
   safeReplace('TV_EQUIPMENT', data.tv_oprema)
+  safeReplace('TV_NAZIV_USLUGE', data.tv_naziv_ugovorene_usluge)
 
   // Phone service details
   safeReplace('PHONE_SERVICE_NAME', 'Usluga Telefona')
@@ -455,6 +517,7 @@ function formatHtml(
   safeReplace('PHONE_TARIFF', data.tarifa)
   safeReplace('PHONE_ADDITIONAL_SERVICES', data.tel_dodatne_usluge)
   safeReplace('PHONE_EQUIPMENT', data.tel_oprema)
+  safeReplace('TEL_NAZIV_USLUGE', data.tel_naziv_ugovorene_usluge)
 
   // Equipment details
   safeReplace('EQUIPMENT__MODEL', data.uredaj_proizvodac_model)
@@ -517,6 +580,9 @@ function formatHtml(
     safeReplace('EQUIPMENT_NAME_3', "")
     safeReplace('EQUIPMENT_QUANTITY_3', "")
     safeReplace('EQUIPMENT_PRICE_3', "")
+    safeReplace('EQUIPMENT_NAME_4', "")
+    safeReplace('EQUIPMENT_QUANTITY_4', "")
+    safeReplace('EQUIPMENT_PRICE_4', "")
   }
 
   // Internet speeds
