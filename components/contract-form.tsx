@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import PdfButton from "@/components/pdf-button"
 import UserInformationForm, { type UserInformation } from "@/components/user-information-form"
 import type { TerminalEquipment } from "@/lib/pdf-generator"
+import { Button } from "@/components/ui/button"
 
 interface ContractFormProps {
   initialData: ContractData
@@ -217,12 +218,6 @@ export default function ContractForm({
   const setPdfRef = (el: HTMLButtonElement | null) => {
     pdfButtonRef.current = el
   }
-
-  const handleCheckboxToggle = () => {
-    if (onContractConcludedOnPremisesChange) {
-      onContractConcludedOnPremisesChange(!contractConcludedOnPremises);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -724,14 +719,24 @@ export default function ContractForm({
 
       <div className="flex justify-between mt-8 items-center">
         <div className="flex items-center space-x-2">
-          <Checkbox
-            id="contract-on-premises-form"
-            checked={contractConcludedOnPremises}
-            onCheckedChange={handleCheckboxToggle}
-          />
-          <Label htmlFor="contract-on-premises-form" className="text-sm font-medium">
-            Ugovor sklopljen u poslovnom prostoru
-          </Label>
+          <div className="border rounded-md overflow-hidden flex">
+            <Button
+              type="button"
+              variant={contractConcludedOnPremises ? "default" : "outline"}
+              className={`px-4 py-2 rounded-none ${contractConcludedOnPremises ? "bg-blue-600 text-white" : ""}`}
+              onClick={() => onContractConcludedOnPremisesChange?.(true)}
+            >
+              U poslovnom prostoru
+            </Button>
+            <Button
+              type="button"
+              variant={!contractConcludedOnPremises ? "default" : "outline"}
+              className={`px-4 py-2 rounded-none ${!contractConcludedOnPremises ? "bg-blue-600 text-white" : ""}`}
+              onClick={() => onContractConcludedOnPremisesChange?.(false)}
+            >
+              Izvan poslovnog prostora
+            </Button>
+          </div>
         </div>
         <div className="pdf-button-container">
           <PdfButton 

@@ -461,14 +461,24 @@ export default function ContractTableEditor({
 
       <div className="flex justify-between mt-6 items-center">
         <div className="flex items-center space-x-2">
-          <Checkbox
-            id="contract-on-premises-table"
-            checked={contractConcludedOnPremises}
-            onCheckedChange={handleCheckboxToggle}
-          />
-          <Label htmlFor="contract-on-premises-table" className="text-sm font-medium">
-            Ugovor sklopljen u poslovnom prostoru
-          </Label>
+          <div className="border rounded-md overflow-hidden flex">
+            <Button
+              type="button"
+              variant={contractConcludedOnPremises ? "default" : "outline"}
+              className={`px-4 py-2 rounded-none ${contractConcludedOnPremises ? "bg-blue-600 text-white" : ""}`}
+              onClick={() => onContractConcludedOnPremisesChange?.(true)}
+            >
+              U poslovnom prostoru
+            </Button>
+            <Button
+              type="button"
+              variant={!contractConcludedOnPremises ? "default" : "outline"}
+              className={`px-4 py-2 rounded-none ${!contractConcludedOnPremises ? "bg-blue-600 text-white" : ""}`}
+              onClick={() => onContractConcludedOnPremisesChange?.(false)}
+            >
+              Izvan poslovnog prostora
+            </Button>
+          </div>
         </div>
         <Button 
           onClick={handleGeneratePdf} 

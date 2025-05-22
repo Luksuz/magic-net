@@ -16,20 +16,13 @@ export default function NavigationDrawer({
   onClose,
 }: NavigationDrawerProps) {
   const pathname = usePathname();
-  const { isAdmin } = useAuth();
 
   const baseItems = [
-    { title: "Početna", href: "/", icon: <Home className="h-5 w-5" /> },
     {
       title: "Izbor paketa",
       href: "/packages",
       icon: <PackageIcon className="h-5 w-5" />,
-    },
-    {
-      title: "Pošalji email",
-      href: "/send-email",
-      icon: <Mail className="h-5 w-5" />,
-    },
+    }
   ];
 
   return (
