@@ -222,14 +222,14 @@ export default function ContractForm({
   return (
     <div className="space-y-6">
       <Tabs defaultValue="basic" className="w-full tabs-container" onValueChange={setActiveTab} value={activeTab}>
-        <TabsList className="grid grid-cols-7 w-full">
-          <TabsTrigger value="basic">Osnovne informacije</TabsTrigger>
-          <TabsTrigger value="internet">Usluga i Internet</TabsTrigger>
-          <TabsTrigger value="tv">TV</TabsTrigger>
-          <TabsTrigger value="telephone">Telefon</TabsTrigger>
-          <TabsTrigger value="equipment">Oprema</TabsTrigger>
-          <TabsTrigger value="pricing">Cijene</TabsTrigger>
-          <TabsTrigger value="user">Podaci korisnika</TabsTrigger>
+        <TabsList className="flex w-full">
+          <TabsTrigger className="flex-1" value="basic">Osnovne informacije</TabsTrigger>
+          <TabsTrigger className="flex-1" value="internet">Usluga i Internet</TabsTrigger>
+          <TabsTrigger className="flex-1" value="tv">TV</TabsTrigger>
+          <TabsTrigger className="flex-1" value="telephone">Telefon</TabsTrigger>
+          <TabsTrigger className="flex-1" value="equipment">Oprema</TabsTrigger>
+          <TabsTrigger className="flex-1" value="pricing">Cijene</TabsTrigger>
+          <TabsTrigger className="flex-1" value="user">Podaci korisnika</TabsTrigger>
         </TabsList>
 
         <div className="pdf-content">
@@ -259,6 +259,7 @@ export default function ContractForm({
           <TabsContent value="internet" className="space-y-4 mt-4">
             <Card>
               <CardContent className="pt-6">
+                <h3 className="text-xl font-semibold mb-4">Osnovni podaci</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="fiksni_paket">Fiksni paket</Label>
@@ -288,85 +289,90 @@ export default function ContractForm({
                       rows={3}
                     />
                   </div>
+                </div>
 
-                  {/* Added Price Fields for Internet */}
-                  <h4 className="text-md font-medium mt-6 mb-3">Periodična cijena</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="mt-8 border-t pt-6">
+                  <h3 className="text-xl font-semibold mb-4">Periodična cijena</h3>
+                  <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="promo_price_fiksni">Promotivna mjesečna naknada (Internet)</Label>
-                      <Input id="promo_price_fiksni" name="promo_price_fiksni" type="number" step="0.01" value={formData.promo_price_fiksni ?? ""} onChange={handleNumberChange} />
+                      <Label htmlFor="fiksni_naziv_ugovorene_usluge">Naziv ugovorene usluge</Label>
+                      <Input id="fiksni_naziv_ugovorene_usluge" name="fiksni_naziv_ugovorene_usluge" value={formData.fiksni_naziv_ugovorene_usluge || ""} onChange={handleChange} />
                     </div>
-                    <div className="space-y-2 w-full">
-                      <Label htmlFor="regular_price_fiksni">Redovna mjesečna naknada (Internet)</Label>
-                      <Input id="regular_price_fiksni" name="regular_price_fiksni" type="number" step="0.01" value={formData.regular_price_fiksni ?? ""} onChange={handleNumberChange} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="promo_price_fiksni">Promotivna mjesečna naknada (Internet)</Label>
+                        <Input id="promo_price_fiksni" name="promo_price_fiksni" type="number" step="0.01" value={formData.promo_price_fiksni ?? ""} onChange={handleNumberChange} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="regular_price_fiksni">Redovna mjesečna naknada (Internet)</Label>
+                        <Input id="regular_price_fiksni" name="regular_price_fiksni" type="number" step="0.01" value={formData.regular_price_fiksni ?? ""} onChange={handleNumberChange} />
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-2 mt-4">
-                    <Label htmlFor="fiksni_naziv_ugovorene_usluge">Naziv ugovorene usluge</Label>
-                    <Input id="fiksni_naziv_ugovorene_usluge" name="fiksni_naziv_ugovorene_usluge" value={formData.fiksni_naziv_ugovorene_usluge || ""} onChange={handleChange} />
                   </div>
                 </div>
 
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="brzina_min_download">Min. brzina preuzimanja</Label>
-                    <Input
-                      id="brzina_min_download"
-                      name="brzina_min_download"
-                      value={formData.brzina_min_download || ""}
-                      onChange={handleChange}
-                    />
-                  </div>
+                <div className="mt-8 border-t pt-6">
+                  <h3 className="text-xl font-semibold mb-4">Brzine preuzimanja</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="brzina_min_download">Min. brzina preuzimanja</Label>
+                      <Input
+                        id="brzina_min_download"
+                        name="brzina_min_download"
+                        value={formData.brzina_min_download || ""}
+                        onChange={handleChange}
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="brzina_min_upload">Min. brzina slanja</Label>
-                    <Input
-                      id="brzina_min_upload"
-                      name="brzina_min_upload"
-                      value={formData.brzina_min_upload || ""}
-                      onChange={handleChange}
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="brzina_min_upload">Min. brzina slanja</Label>
+                      <Input
+                        id="brzina_min_upload"
+                        name="brzina_min_upload"
+                        value={formData.brzina_min_upload || ""}
+                        onChange={handleChange}
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="brzina_obicna_download">Uobičajena brzina preuzimanja</Label>
-                    <Input
-                      id="brzina_obicna_download"
-                      name="brzina_obicna_download"
-                      value={formData.brzina_obicna_download || ""}
-                      onChange={handleChange}
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="brzina_obicna_download">Uobičajena brzina preuzimanja</Label>
+                      <Input
+                        id="brzina_obicna_download"
+                        name="brzina_obicna_download"
+                        value={formData.brzina_obicna_download || ""}
+                        onChange={handleChange}
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="brzina_obicna_upload">Uobičajena brzina slanja</Label>
-                    <Input
-                      id="brzina_obicna_upload"
-                      name="brzina_obicna_upload"
-                      value={formData.brzina_obicna_upload || ""}
-                      onChange={handleChange}
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="brzina_obicna_upload">Uobičajena brzina slanja</Label>
+                      <Input
+                        id="brzina_obicna_upload"
+                        name="brzina_obicna_upload"
+                        value={formData.brzina_obicna_upload || ""}
+                        onChange={handleChange}
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="brzina_max_download">Maks. brzina preuzimanja</Label>
-                    <Input
-                      id="brzina_max_download"
-                      name="brzina_max_download"
-                      value={formData.brzina_max_download || ""}
-                      onChange={handleChange}
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="brzina_max_download">Maks. brzina preuzimanja</Label>
+                      <Input
+                        id="brzina_max_download"
+                        name="brzina_max_download"
+                        value={formData.brzina_max_download || ""}
+                        onChange={handleChange}
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="brzina_max_upload">Maks. brzina slanja</Label>
-                    <Input
-                      id="brzina_max_upload"
-                      name="brzina_max_upload"
-                      value={formData.brzina_max_upload || ""}
-                      onChange={handleChange}
-                    />
+                    <div className="space-y-2">
+                      <Label htmlFor="brzina_max_upload">Maks. brzina slanja</Label>
+                      <Input
+                        id="brzina_max_upload"
+                        name="brzina_max_upload"
+                        value={formData.brzina_max_upload || ""}
+                        onChange={handleChange}
+                      />
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -376,6 +382,7 @@ export default function ContractForm({
           <TabsContent value="tv" className="space-y-4 mt-4">
             <Card>
               <CardContent className="pt-6">
+                <h3 className="text-xl font-semibold mb-4">Osnovni podaci</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="tv_paket">TV paket</Label>
@@ -401,22 +408,25 @@ export default function ContractForm({
                       rows={3}
                     />
                   </div>
-                  {/* Added Price Fields for TV */}
-                  <h4 className="text-md font-medium mt-6 mb-3">Periodična cijena</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                </div>
+                
+                <div className="mt-8 border-t pt-6">
+                  <h3 className="text-xl font-semibold mb-4">Periodična cijena</h3>
+                  <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="promo_price_tv">Promotivna mjesečna naknada (TV)</Label>
-                      <Input id="promo_price_tv" name="promo_price_tv" type="number" step="0.01" value={formData.promo_price_tv ?? ""} onChange={handleNumberChange} />
+                      <Label htmlFor="tv_naziv_ugovorene_usluge">Naziv ugovorene usluge</Label>
+                      <Input id="tv_naziv_ugovorene_usluge" name="tv_naziv_ugovorene_usluge" value={formData.tv_naziv_ugovorene_usluge || ""} onChange={handleChange} />
                     </div>
-                    <div className="space-y-2 w-full">
-                      <Label htmlFor="regular_price_tv">Redovna mjesečna naknada (TV)</Label>
-                      <Input id="regular_price_tv" name="regular_price_tv" type="number" step="0.01" value={formData.regular_price_tv ?? ""} onChange={handleNumberChange} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="promo_price_tv">Promotivna mjesečna naknada (TV)</Label>
+                        <Input id="promo_price_tv" name="promo_price_tv" type="number" step="0.01" value={formData.promo_price_tv ?? ""} onChange={handleNumberChange} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="regular_price_tv">Redovna mjesečna naknada (TV)</Label>
+                        <Input id="regular_price_tv" name="regular_price_tv" type="number" step="0.01" value={formData.regular_price_tv ?? ""} onChange={handleNumberChange} />
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-2 mt-4">
-                    <Label htmlFor="tv_naziv_ugovorene_usluge">Naziv ugovorene usluge</Label>
-                    <Input id="tv_naziv_ugovorene_usluge" name="tv_naziv_ugovorene_usluge" value={formData.tv_naziv_ugovorene_usluge || ""} onChange={handleChange} />
                   </div>
                 </div>
               </CardContent>
@@ -426,6 +436,7 @@ export default function ContractForm({
           <TabsContent value="telephone" className="space-y-4 mt-4">
             <Card>
               <CardContent className="pt-6">
+                <h3 className="text-xl font-semibold mb-4">Osnovni podaci</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="pretplatnicki_broj">Pretplatnički broj</Label>
@@ -460,22 +471,25 @@ export default function ContractForm({
                       rows={3}
                     />
                   </div>
-                  {/* Added Price Fields for Telephone */}
-                  <h4 className="text-md font-medium mt-6 mb-3">Periodična cijena</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                </div>
+                
+                <div className="mt-8 border-t pt-6">
+                  <h3 className="text-xl font-semibold mb-4">Periodična cijena</h3>
+                  <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="promo_price_phone">Promotivna mjesečna naknada (Telefon)</Label>
-                      <Input id="promo_price_phone" name="promo_price_phone" type="number" step="0.01" value={formData.promo_price_phone ?? ""} onChange={handleNumberChange} />
+                      <Label htmlFor="tel_naziv_ugovorene_usluge">Naziv ugovorene usluge</Label>
+                      <Input id="tel_naziv_ugovorene_usluge" name="tel_naziv_ugovorene_usluge" value={formData.tel_naziv_ugovorene_usluge || ""} onChange={handleChange} />
                     </div>
-                    <div className="space-y-2 w-full">
-                      <Label htmlFor="regular_price_phone">Redovna mjesečna naknada (Telefon)</Label>
-                      <Input id="regular_price_phone" name="regular_price_phone" type="number" step="0.01" value={formData.regular_price_phone ?? ""} onChange={handleNumberChange} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="promo_price_phone">Promotivna mjesečna naknada (Telefon)</Label>
+                        <Input id="promo_price_phone" name="promo_price_phone" type="number" step="0.01" value={formData.promo_price_phone ?? ""} onChange={handleNumberChange} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="regular_price_phone">Redovna mjesečna naknada (Telefon)</Label>
+                        <Input id="regular_price_phone" name="regular_price_phone" type="number" step="0.01" value={formData.regular_price_phone ?? ""} onChange={handleNumberChange} />
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-2 mt-4">
-                    <Label htmlFor="tel_naziv_ugovorene_usluge">Naziv ugovorene usluge</Label>
-                    <Input id="tel_naziv_ugovorene_usluge" name="tel_naziv_ugovorene_usluge" value={formData.tel_naziv_ugovorene_usluge || ""} onChange={handleChange} />
                   </div>
                 </div>
               </CardContent>

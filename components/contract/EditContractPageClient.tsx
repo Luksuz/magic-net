@@ -112,7 +112,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
         // Hide the message after a short delay
         setTimeout(() => {
           setPdfGenerationMessage(false);
-        }, 500);
+      }, 500);
       }, 1000);
       return () => clearTimeout(timer);
     }
@@ -130,8 +130,8 @@ export default function EditContractPageClient({ contract, profile }: Props) {
     
     // Set small delay before switching views to ensure message is visible
     setTimeout(() => {
-      setIsGeneratingPdf(true);
-      setUseTableView(false);
+    setIsGeneratingPdf(true);
+    setUseTableView(false);
     }, 100);
   };
 

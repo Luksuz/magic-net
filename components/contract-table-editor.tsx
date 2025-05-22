@@ -184,9 +184,9 @@ export default function ContractTableEditor({
         { key: "fiksne_dodatne_usluge", label: "Dodatne fiksne usluge", type: "textarea" },
         { key: "fiksna_oprema", label: "Fiksna oprema", type: "textarea" },
         { subheading: "Periodična cijena" },
+        { key: "fiksni_naziv_ugovorene_usluge", label: "Naziv ugovorene usluge", type: "text" },
         { key: "promo_price_fiksni", label: "Promotivna mj. naknada (Internet)", type: "number" },
         { key: "regular_price_fiksni", label: "Redovna mj. naknada (Internet)", type: "number" },
-        { key: "fiksni_naziv_ugovorene_usluge", label: "Naziv ugovorene usluge", type: "text" },
         { key: "brzina_min_download", label: "Min. brzina downloada", type: "text" },
         { key: "brzina_min_upload", label: "Min. brzina uploada", type: "text" },
         { key: "brzina_obicna_download", label: "Uobičajena brzina downloada", type: "text" },
@@ -202,9 +202,9 @@ export default function ContractTableEditor({
         { key: "tv_dodatne_usluge", label: "Dodatne TV usluge", type: "textarea" },
         { key: "tv_oprema", label: "TV oprema", type: "textarea" },
         { subheading: "Periodična cijena" },
+        { key: "tv_naziv_ugovorene_usluge", label: "Naziv ugovorene usluge", type: "text" },
         { key: "promo_price_tv", label: "Promotivna mj. naknada (TV)", type: "number" },
-        { key: "regular_price_tv", label: "Redovna mj. naknada (TV)", type: "number" },
-        { key: "tv_naziv_ugovorene_usluge", label: "Naziv ugovorene usluge", type: "text" }
+        { key: "regular_price_tv", label: "Redovna mj. naknada (TV)", type: "number" }
       ]
     },
     {
@@ -215,9 +215,9 @@ export default function ContractTableEditor({
         { key: "tel_dodatne_usluge", label: "Dodatne telefonske usluge", type: "textarea" },
         { key: "tel_oprema", label: "Telefonska oprema", type: "textarea" },
         { subheading: "Periodična cijena" },
+        { key: "tel_naziv_ugovorene_usluge", label: "Naziv ugovorene usluge", type: "text" },
         { key: "promo_price_phone", label: "Promotivna mj. naknada (Telefon)", type: "number" },
-        { key: "regular_price_phone", label: "Redovna mj. naknada (Telefon)", type: "number" },
-        { key: "tel_naziv_ugovorene_usluge", label: "Naziv ugovorene usluge", type: "text" }
+        { key: "regular_price_phone", label: "Redovna mj. naknada (Telefon)", type: "number" }
       ]
     },
     {
