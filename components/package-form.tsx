@@ -38,12 +38,14 @@ const emptyPackage: Partial<ContractData> = {
   promo_price_fiksni: null,
   contract_price_fiksni: null,
   regular_price_fiksni: null,
+  fiksni_naziv_ugovorene_usluge: "",
   tv_paket: "",
   tv_dodatne_usluge: "",
   tv_oprema: "",
   promo_price_tv: null,
   contract_price_tv: null,
   regular_price_tv: null,
+  tv_naziv_ugovorene_usluge: "",
   pretplatnicki_broj: "",
   tarifa: "",
   tel_dodatne_usluge: "",
@@ -51,6 +53,7 @@ const emptyPackage: Partial<ContractData> = {
   promo_price_phone: null,
   contract_price_phone: null,
   regular_price_phone: null,
+  tel_naziv_ugovorene_usluge: "",
   uredaj_proizvodac_model: "",
   uredaj_cijena: null,
   uredaj_popust: null,
@@ -354,6 +357,11 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
                   </div>
                 </div>
 
+                <div className="space-y-2 mt-4">
+                  <Label htmlFor="fiksni_naziv_ugovorene_usluge">Naziv ugovorene usluge</Label>
+                  <Input id="fiksni_naziv_ugovorene_usluge" name="fiksni_naziv_ugovorene_usluge" value={formState.fiksni_naziv_ugovorene_usluge || ""} onChange={handleInputChange} />
+                </div>
+
                 <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="brzina_min_download">Min brzina preuzimanja</Label>
@@ -462,6 +470,11 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
                     <Input id="regular_price_tv" name="regular_price_tv" type="number" step="0.01" value={formState.regular_price_tv === null ? "" : formState.regular_price_tv} onChange={handleInputChange} />
                   </div>
                 </div>
+
+                <div className="space-y-2 mt-4">
+                  <Label htmlFor="tv_naziv_ugovorene_usluge">Naziv ugovorene usluge</Label>
+                  <Input id="tv_naziv_ugovorene_usluge" name="tv_naziv_ugovorene_usluge" value={formState.tv_naziv_ugovorene_usluge || ""} onChange={handleInputChange} />
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -518,6 +531,11 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
                     <Label htmlFor="regular_price_phone">Redovna mjesečna naknada (Telefon)</Label>
                     <Input id="regular_price_phone" name="regular_price_phone" type="number" step="0.01" value={formState.regular_price_phone === null ? "" : formState.regular_price_phone} onChange={handleInputChange} />
                   </div>
+                </div>
+
+                <div className="space-y-2 mt-4">
+                  <Label htmlFor="tel_naziv_ugovorene_usluge">Naziv ugovorene usluge</Label>
+                  <Input id="tel_naziv_ugovorene_usluge" name="tel_naziv_ugovorene_usluge" value={formState.tel_naziv_ugovorene_usluge || ""} onChange={handleInputChange} />
                 </div>
               </CardContent>
             </Card>
