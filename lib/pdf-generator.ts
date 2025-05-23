@@ -569,6 +569,15 @@ function formatHtml(
       safeReplace('EQUIPMENT_QUANTITY_3', "")
       safeReplace('EQUIPMENT_PRICE_3', "")
     }
+
+    if (terminalEquipment.length >= 4) {
+      safeReplace('EQUIPMENT_NAME_4', terminalEquipment[3].name)
+      safeReplace('EQUIPMENT_QUANTITY_4', terminalEquipment[3].quantity)
+      safeReplace('EQUIPMENT_PRICE_4', terminalEquipment[3].price ? `${terminalEquipment[3].price} EUR` : "")
+    } else {
+      safeReplace('EQUIPMENT_NAME_4', "")
+    }
+    
   } else {
     // Empty equipment
     safeReplace('EQUIPMENT_NAME_1', "")
