@@ -472,7 +472,7 @@ function formatHtml(
 
   // Helper function to format currency values
   const formatCurrency = (value: number | null | undefined): string => {
-    if (value === null || value === undefined) return "0,00 EUR"
+    if (value === null || value === undefined || isNaN(value)) return "0,00 EUR"
     return value.toFixed(2).replace(".", ",") + " EUR"
   }
 
@@ -541,7 +541,7 @@ function formatHtml(
     if (terminalEquipment.length >= 1) {
       safeReplace('EQUIPMENT_NAME_1', terminalEquipment[0].name)
       safeReplace('EQUIPMENT_QUANTITY_1', terminalEquipment[0].quantity)
-      safeReplace('EQUIPMENT_PRICE_1', terminalEquipment[0].price ? `${terminalEquipment[0].price} EUR` : "")
+      safeReplace('EQUIPMENT_PRICE_1', formatCurrency(parseFloat(terminalEquipment[0].price)))
     } else {
       safeReplace('EQUIPMENT_NAME_1', "")
       safeReplace('EQUIPMENT_QUANTITY_1', "")
@@ -552,7 +552,7 @@ function formatHtml(
     if (terminalEquipment.length >= 2) {
       safeReplace('EQUIPMENT_NAME_2', terminalEquipment[1].name)
       safeReplace('EQUIPMENT_QUANTITY_2', terminalEquipment[1].quantity)
-      safeReplace('EQUIPMENT_PRICE_2', terminalEquipment[1].price ? `${terminalEquipment[1].price} EUR` : "")
+      safeReplace('EQUIPMENT_PRICE_2', formatCurrency(parseFloat(terminalEquipment[1].price)))
     } else {
       safeReplace('EQUIPMENT_NAME_2', "")
       safeReplace('EQUIPMENT_QUANTITY_2', "")
@@ -563,7 +563,7 @@ function formatHtml(
     if (terminalEquipment.length >= 3) {
       safeReplace('EQUIPMENT_NAME_3', terminalEquipment[2].name)
       safeReplace('EQUIPMENT_QUANTITY_3', terminalEquipment[2].quantity)
-      safeReplace('EQUIPMENT_PRICE_3', terminalEquipment[2].price ? `${terminalEquipment[2].price} EUR` : "")
+      safeReplace('EQUIPMENT_PRICE_3', formatCurrency(parseFloat(terminalEquipment[2].price)))
     } else {
       safeReplace('EQUIPMENT_NAME_3', "")
       safeReplace('EQUIPMENT_QUANTITY_3', "")
@@ -573,10 +573,22 @@ function formatHtml(
     if (terminalEquipment.length >= 4) {
       safeReplace('EQUIPMENT_NAME_4', terminalEquipment[3].name)
       safeReplace('EQUIPMENT_QUANTITY_4', terminalEquipment[3].quantity)
-      safeReplace('EQUIPMENT_PRICE_4', terminalEquipment[3].price ? `${terminalEquipment[3].price} EUR` : "")
+      safeReplace('EQUIPMENT_PRICE_4', formatCurrency(parseFloat(terminalEquipment[3].price)))
     } else {
       safeReplace('EQUIPMENT_NAME_4', "")
+      safeReplace('EQUIPMENT_QUANTITY_4', "")
+      safeReplace('EQUIPMENT_PRICE_4', "")
     }
+    if (terminalEquipment.length >= 5) {
+      safeReplace('EQUIPMENT_NAME_5', terminalEquipment[3].name)
+      safeReplace('EQUIPMENT_QUANTITY_5', terminalEquipment[3].quantity)
+      safeReplace('EQUIPMENT_PRICE_5', formatCurrency(parseFloat(terminalEquipment[3].price)))
+    } else {
+      safeReplace('EQUIPMENT_NAME_5', "")
+      safeReplace('EQUIPMENT_QUANTITY_5', "")
+      safeReplace('EQUIPMENT_PRICE_5', "")
+    }
+
     
   } else {
     // Empty equipment
@@ -592,6 +604,9 @@ function formatHtml(
     safeReplace('EQUIPMENT_NAME_4', "")
     safeReplace('EQUIPMENT_QUANTITY_4', "")
     safeReplace('EQUIPMENT_PRICE_4', "")
+    safeReplace('EQUIPMENT_NAME_5', "")
+    safeReplace('EQUIPMENT_QUANTITY_5', "")
+    safeReplace('EQUIPMENT_PRICE_5', "")
   }
 
   // Internet speeds
@@ -638,21 +653,21 @@ function formatHtml(
   // Periodic Pricing Section
   safeReplace('FIKSNI_PAKET', data.fiksni_paket)
   safeReplace('FIKSNA_BRZINA', data.fiksna_brzina)
-  safeReplace('PROMO_PRICE_FIKSNI', (data as any).promo_price_fiksni ? formatCurrency((data as any).promo_price_fiksni) : "")
-  safeReplace('CONTRACT_PRICE_FIKSNI', (data as any).contract_price_fiksni ? formatCurrency((data as any).contract_price_fiksni) : "")
-  safeReplace('REGULAR_PRICE_FIKSNI', (data as any).regular_price_fiksni ? formatCurrency((data as any).regular_price_fiksni) : "")
+  safeReplace('PROMO_PRICE_FIKSNI', formatCurrency((data as any).promo_price_fiksni))
+  safeReplace('CONTRACT_PRICE_FIKSNI', formatCurrency((data as any).contract_price_fiksni))
+  safeReplace('REGULAR_PRICE_FIKSNI', formatCurrency((data as any).regular_price_fiksni))
   
   safeReplace('TV_PAKET', data.tv_paket)
   safeReplace('TV_DODATNE_USLUGE', data.tv_dodatne_usluge)
-  safeReplace('PROMO_PRICE_TV', (data as any).promo_price_tv ? formatCurrency((data as any).promo_price_tv) : "")
-  safeReplace('CONTRACT_PRICE_TV', (data as any).contract_price_tv ? formatCurrency((data as any).contract_price_tv) : "")
-  safeReplace('REGULAR_PRICE_TV', (data as any).regular_price_tv ? formatCurrency((data as any).regular_price_tv) : "")
+  safeReplace('PROMO_PRICE_TV', formatCurrency((data as any).promo_price_tv))
+  safeReplace('CONTRACT_PRICE_TV', formatCurrency((data as any).contract_price_tv))
+  safeReplace('REGULAR_PRICE_TV', formatCurrency((data as any).regular_price_tv))
   
   safeReplace('TARIFA', data.tarifa)
   safeReplace('PRETPLATNICKI_BROJ', data.pretplatnicki_broj)
-  safeReplace('PROMO_PRICE_PHONE', (data as any).promo_price_phone ? formatCurrency((data as any).promo_price_phone) : "")
-  safeReplace('CONTRACT_PRICE_PHONE', (data as any).contract_price_phone ? formatCurrency((data as any).contract_price_phone) : "")
-  safeReplace('REGULAR_PRICE_PHONE', (data as any).regular_price_phone ? formatCurrency((data as any).regular_price_phone) : "")
+  safeReplace('PROMO_PRICE_PHONE', formatCurrency((data as any).promo_price_phone))
+  safeReplace('CONTRACT_PRICE_PHONE', formatCurrency((data as any).contract_price_phone))
+  safeReplace('REGULAR_PRICE_PHONE', formatCurrency((data as any).regular_price_phone))
   
   // Total prices
   safeReplace('TOTAL_PROMO_PRICE', formatCurrency(calculateTotalPrice(data, 'promo')))
@@ -699,8 +714,8 @@ function formatHtml(
     safeReplace('FIKSNI_PAKET_OR_TV_PAKET_OR_TARIFA', servicesText)
     
     safeReplace('ADDITIONAL_SERVICES', userInfo.additionalServices)
-    safeReplace('ACTIVATION_COST', userInfo.activationCost)
-    safeReplace('EXTERNAL_WORKS_COST', userInfo.externalWorksCost)
+    safeReplace('ACTIVATION_COST', formatCurrency(parseFloat(userInfo.activationCost || '0')))
+    safeReplace('EXTERNAL_WORKS_COST', formatCurrency(parseFloat(userInfo.externalWorksCost || '0')))
     
     // Formatted methods
     const invoiceMethodMap: Record<string, string> = {
