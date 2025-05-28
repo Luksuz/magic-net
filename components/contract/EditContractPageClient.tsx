@@ -48,7 +48,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
     additionalServices: "",
     activationCost: "",
     externalWorksCost: "",
-    invoiceDeliveryMethod: "mail",
+    invoiceDeliveryMethod: ["mail"],
     marketingContact: [],
     generalTermsDelivery: "provided",
     paymentMethod: "oneTime",

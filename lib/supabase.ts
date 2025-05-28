@@ -54,6 +54,15 @@ export type ContractData = {
   created_at: string | null
 }
 
+export type MagicNetDevice = {
+  id: number
+  created_at: string
+  updated_at: string | null
+  device_model: string | null
+  device_price: number | null
+  device_discount: number | null
+}
+
 export async function getPackages() {
   const { data, error } = await supabase
     .from("magic_net_ugovori")
@@ -342,4 +351,140 @@ export async function getContractCreationStats(startDate: string, endDate: strin
     count: count || 0,
     byUser: byUser
   }
+}
+
+// Device management functions
+export async function getDevices() {
+  const { data, error } = await supabase
+    .from("magic_net_devices")
+    .select("*")
+    .order("device_model", { ascending: true })
+  
+  if (error) {
+    console.error("Error fetching devices:", error)
+    return { success: false, error: error.message, data: [] }
+  }
+  
+  return { success: true, error: null, data: data || [] }
+}
+
+export async function createDevice(device: Omit<MagicNetDevice, 'id' | 'created_at' | 'updated_at'>) {
+  const { data, error } = await supabase
+    .from("magic_net_devices")
+    .insert([device])
+    .select()
+    .single()
+  
+  if (error) {
+    console.error("Error creating device:", error)
+    return { success: false, error: error.message, data: null }
+  }
+  
+  return { success: true, error: null, data }
+}
+
+export async function updateDevice(id: number, device: Partial<Omit<MagicNetDevice, 'id' | 'created_at'>>) {
+  const { data, error } = await supabase
+    .from("magic_net_devices")
+    .update({ ...device, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select()
+    .single()
+  
+  if (error) {
+    console.error("Error updating device:", error)
+    return { success: false, error: error.message, data: null }
+  }
+  
+  return { success: true, error: null, data }
+}
+
+export async function deleteDevice(id: number) {
+  const { error } = await supabase
+    .from("magic_net_devices")
+    .delete()
+    .eq("id", id)
+  
+  if (error) {
+    console.error("Error deleting device:", error)
+    return { success: false, error: error.message }
+  }
+  
+  return { success: true, error: null }
+}
+
+// Document management functions for additional_docs folder in images bucket
+export async function getDocuments() {
+  const { data, error } = await supabase.storage
+    .from("images")
+    .list("additional_docs", {
+      limit: 100,
+      offset: 0,
+      sortBy: { column: "name", order: "asc" }
+    })
+  
+  if (error) {
+    console.error("Error fetching documents:", error)
+    return { success: false, error: error.message, data: [] }
+  }
+  
+  return { success: true, error: null, data: data || [] }
+}
+
+export async function uploadDocument(file: File) {
+  const fileName = `additional_docs/${file.name}`
+  
+  const { data, error } = await supabase.storage
+    .from("images")
+    .upload(fileName, file, {
+      cacheControl: "3600",
+      upsert: false
+    })
+  
+  if (error) {
+    console.error("Error uploading document:", error)
+    return { success: false, error: error.message, data: null }
+  }
+  
+  return { success: true, error: null, data }
+}
+
+export async function deleteDocument(fileName: string) {
+  const filePath = fileName.startsWith('additional_docs/') ? fileName : `additional_docs/${fileName}`
+  
+  const { error } = await supabase.storage
+    .from("images")
+    .remove([filePath])
+  
+  if (error) {
+    console.error("Error deleting document:", error)
+    return { success: false, error: error.message }
+  }
+  
+  return { success: true, error: null }
+}
+
+export function getDocumentUrl(fileName: string) {
+  const filePath = fileName.startsWith('additional_docs/') ? fileName : `additional_docs/${fileName}`
+  
+  const { data } = supabase.storage
+    .from("images")
+    .getPublicUrl(filePath)
+  
+  return data.publicUrl
+}
+
+export async function downloadDocument(fileName: string) {
+  const filePath = fileName.startsWith('additional_docs/') ? fileName : `additional_docs/${fileName}`
+  
+  const { data, error } = await supabase.storage
+    .from("images")
+    .download(filePath)
+  
+  if (error) {
+    console.error("Error downloading document:", error)
+    return { success: false, error: error.message, data: null }
+  }
+  
+  return { success: true, error: null, data }
 }

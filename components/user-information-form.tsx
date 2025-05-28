@@ -27,7 +27,7 @@ export interface UserInformation {
   additionalServices: string
   activationCost: string
   externalWorksCost: string
-  invoiceDeliveryMethod: "mail" | "email" | "eInvoice" | "contactEmail"
+  invoiceDeliveryMethod: string[]
   marketingContact: string[]
   generalTermsDelivery: "provided" | "selfDownload"
   paymentMethod: "oneTime" | "installments"
@@ -35,6 +35,19 @@ export interface UserInformation {
   sellerPlace: string
   sellerDate: string
   changeOperator: boolean
+}
+
+export interface OperatorChangeData {
+  existingOperatorName: string
+  contractOnDistance: boolean
+  agreeToPayDebts: boolean
+  numberTransfer: boolean
+  notificationAgreement: boolean
+  vpnSeries: boolean
+  servicesToCancel: string[]
+  servicesToKeep: string[]
+  userAccountsToKeep: string[]
+  wholesaleService: boolean
 }
 
 const defaultUserInfo: UserInformation = {
@@ -53,7 +66,7 @@ const defaultUserInfo: UserInformation = {
   additionalServices: "",
   activationCost: "",
   externalWorksCost: "",
-  invoiceDeliveryMethod: "mail",
+  invoiceDeliveryMethod: [],
   marketingContact: [],
   generalTermsDelivery: "provided",
   paymentMethod: "oneTime",
@@ -77,6 +90,7 @@ export default function UserInformationForm({
   subscriptionNumber,
 }: UserInformationFormProps) {
   const { profile } = useAuth()
+  const [oibError, setOibError] = useState<string>("")
   const [userInfo, setUserInfo] = useState<UserInformation>(() => {
     // Initialize with defaultUserInfo and initialData
     // Then, if profile is available, merge sellerCode from it immediately.
@@ -106,7 +120,34 @@ export default function UserInformationForm({
     }
   }, [profile, userInfo.sellerCode]); // Added userInfo.sellerCode to dependencies
 
+  const validateOib = (oib: string) => {
+    if (oib.length === 0) {
+      setOibError("")
+      return true
+    }
+    
+    // Check if OIB contains only digits
+    if (!/^\d+$/.test(oib)) {
+      setOibError("OIB može sadržavati samo brojeve")
+      return false
+    }
+    
+    // Check if OIB has exactly 11 digits
+    if (oib.length !== 11) {
+      setOibError("OIB mora imati točno 11 znamenaka")
+      return false
+    }
+    
+    setOibError("")
+    return true
+  }
+
   const handleChange = (field: keyof UserInformation, value: any) => {
+    // Special handling for OIB validation
+    if (field === "oib") {
+      validateOib(value)
+    }
+    
     const updatedInfo = { ...userInfo, [field]: value }
     setUserInfo(updatedInfo)
     onChange(updatedInfo)
@@ -220,10 +261,14 @@ export default function UserInformationForm({
               value={userInfo.oib}
               onChange={(e) => handleChange("oib", e.target.value)}
               placeholder="npr. 12345678910"
+              className={oibError ? "border-red-500" : ""}
             />
+            {oibError && (
+              <p className="text-sm text-red-500 mt-1">{oibError}</p>
+            )}
           </div>
 
-          {/* <div className="space-y-2">
+          <div className="space-y-2">
             <Label htmlFor="idCardNumber">Broj osobne iskaznice</Label>
             <Input
               id="idCardNumber"
@@ -231,7 +276,7 @@ export default function UserInformationForm({
               onChange={(e) => handleChange("idCardNumber", e.target.value)}
               placeholder="npr. 123456789"
             />
-          </div> */}
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="contactPhone">Kontakt telefon/mobitel</Label>
@@ -329,11 +374,6 @@ export default function UserInformationForm({
             </div>
 
             <div className="space-y-2">
-              <Label>Broj ugovora</Label>
-              <div className="p-2 border rounded-md bg-muted/20">{getAgreementNumber(profile)}</div>
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="activationCost">Trošak aktivacije usluge</Label>
               <Select
                 value={userInfo.activationCost}
@@ -371,35 +411,60 @@ export default function UserInformationForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-3">
               <Label>Način dostave računa</Label>
-              <RadioGroup
-                value={userInfo.invoiceDeliveryMethod}
-                onValueChange={(value) => handleChange("invoiceDeliveryMethod", value as any)}
-              >
+              <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="mail" id="mail" />
-                  <Label htmlFor="mail" className="font-normal">
+                  <Checkbox
+                    id="invoiceMail"
+                    checked={userInfo.invoiceDeliveryMethod.includes("mail")}
+                    onCheckedChange={(checked) => {
+                      if (checked) handleCheckboxChange("invoiceDeliveryMethod", "mail")
+                      else handleCheckboxChange("invoiceDeliveryMethod", "mail")
+                    }}
+                  />
+                  <Label htmlFor="invoiceMail" className="font-normal">
                     Poštom
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="eInvoice" id="eInvoice" />
-                  <Label htmlFor="eInvoice" className="font-normal">
+                  <Checkbox
+                    id="invoiceEInvoice"
+                    checked={userInfo.invoiceDeliveryMethod.includes("eInvoice")}
+                    onCheckedChange={(checked) => {
+                      if (checked) handleCheckboxChange("invoiceDeliveryMethod", "eInvoice")
+                      else handleCheckboxChange("invoiceDeliveryMethod", "eInvoice")
+                    }}
+                  />
+                  <Label htmlFor="invoiceEInvoice" className="font-normal">
                     eRačun
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="email" id="email" />
-                  <Label htmlFor="email" className="font-normal">
+                  <Checkbox
+                    id="invoiceEmail"
+                    checked={userInfo.invoiceDeliveryMethod.includes("email")}
+                    onCheckedChange={(checked) => {
+                      if (checked) handleCheckboxChange("invoiceDeliveryMethod", "email")
+                      else handleCheckboxChange("invoiceDeliveryMethod", "email")
+                    }}
+                  />
+                  <Label htmlFor="invoiceEmail" className="font-normal">
                     Mailom vlasniku
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="contactEmail" id="contactEmail" />
-                  <Label htmlFor="contactEmail" className="font-normal">
+                  <Checkbox
+                    id="invoiceContactEmail"
+                    checked={userInfo.invoiceDeliveryMethod.includes("contactEmail")}
+                    onCheckedChange={(checked) => {
+                      if (checked) handleCheckboxChange("invoiceDeliveryMethod", "contactEmail")
+                      else handleCheckboxChange("invoiceDeliveryMethod", "contactEmail")
+                    }}
+                  />
+                  <Label htmlFor="invoiceContactEmail" className="font-normal">
                     Mailom kontakt osobi
                   </Label>
                 </div>
-              </RadioGroup>
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -524,7 +589,7 @@ export default function UserInformationForm({
                     <SelectLabel>Poslovnice</SelectLabel>
                     <SelectItem value="Koprivnička 17C, 42230 Ludbreg">MAGIC NET D.O.O. - Koprivnička 17C, 42230 Ludbreg</SelectItem>
                     <SelectItem value="Kratka 2, 42000 Varaždin">MAGIC NET D.O.O. - Kratka 2, 42000 Varaždin</SelectItem>
-                    <SelectItem value="Nepoznata adresa">MAGIC NET D.O.O. - Nepoznata adresa</SelectItem>
+                    <SelectItem value="Poduzetnička 18, 42202, Trnovec">MAGIC NET D.O.O. - Poduzetnička 18, 42202, Trnovec</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>

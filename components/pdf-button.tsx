@@ -6,7 +6,7 @@ import { Settings2 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import type { ContractData } from "@/lib/supabase"
 import { generatePDF, type TerminalEquipment } from "@/lib/pdf-generator"
-import type { UserInformation } from "@/components/user-information-form"
+import type { UserInformation, OperatorChangeData } from "@/components/user-information-form"
 import { useAuth } from "@/app/contexts/authContext"
 import { toast } from "@/components/ui/use-toast"
 import { getEditableTemplate } from "@/lib/template-service"
@@ -18,9 +18,20 @@ interface PdfButtonProps {
   terminalEquipment?: TerminalEquipment[]
   buttonRef?: (button: HTMLButtonElement | null) => void
   contractConcludedOnPremises?: boolean
+  operatorChangeData?: OperatorChangeData
+  calculatedData?: {
+    phoneServices?: string
+    phonePromoPrice?: number
+    phoneRegularPrice?: number
+    phoneServiceName?: string
+    tvServices?: string
+    tvPromoPrice?: number
+    tvRegularPrice?: number
+    tvServiceName?: string
+  }
 }
 
-export default function PdfButton({ formData, userInfo, setActiveTab, terminalEquipment, buttonRef, contractConcludedOnPremises }: PdfButtonProps) {
+export default function PdfButton({ formData, userInfo, setActiveTab, terminalEquipment, buttonRef, contractConcludedOnPremises, operatorChangeData, calculatedData }: PdfButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isLibraryLoaded, setIsLibraryLoaded] = useState(false)
   const [showStyleOptions, setShowStyleOptions] = useState(false)
@@ -102,6 +113,7 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
       const safeFormData = deepClone(formData);
       const safeUserInfo = userInfo ? deepClone(userInfo) : undefined;
       const safeTerminalEquipment = terminalEquipment ? deepClone(terminalEquipment) : undefined;
+      const safeOperatorChangeData = operatorChangeData ? deepClone(operatorChangeData) : undefined;
       
       console.log("Priprema za generiranje PDF-a s korisničkim informacijama:", !!safeUserInfo);
       
@@ -117,7 +129,9 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
           safeUserInfo, 
           safeTerminalEquipment, 
           editableTemplate.html,
-          contractConcludedOnPremises
+          contractConcludedOnPremises,
+          safeOperatorChangeData,
+          calculatedData
         )
       } else {
         console.error("Korisnički ID nije dostupan.")

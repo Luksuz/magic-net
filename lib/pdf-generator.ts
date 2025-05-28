@@ -1,7 +1,7 @@
 "use client"
 
 import type { ContractData } from "@/lib/supabase"
-import type { UserInformation } from "@/components/user-information-form"
+import type { UserInformation, OperatorChangeData } from "@/components/user-information-form"
 import { getEditableTemplate } from "@/lib/template-service"
 import { trackContractCreation, getUserCode } from "@/lib/supabase"
 
@@ -107,7 +107,18 @@ export async function generatePDF(
   userInfo?: UserInformation,
   terminalEquipment?: TerminalEquipment[],
   customHtml?: string,
-  contractConcludedOnPremises?: boolean
+  contractConcludedOnPremises?: boolean,
+  operatorChangeData?: OperatorChangeData,
+  calculatedData?: {
+    phoneServices?: string
+    phonePromoPrice?: number
+    phoneRegularPrice?: number
+    phoneServiceName?: string
+    tvServices?: string
+    tvPromoPrice?: number
+    tvRegularPrice?: number
+    tvServiceName?: string
+  }
 ) {
   // Make sure html2pdf is available
   if (typeof window === "undefined" || !window.html2pdf) {
@@ -283,7 +294,9 @@ export async function generatePDF(
       finalTerminalEquipmentList, 
       promjenaOperateraHtmlContent,
       contractConcludedOnPremises,
-      contractNumber // Pass the contract number to formatHtml
+      contractNumber, // Pass the contract number to formatHtml
+      operatorChangeData,
+      calculatedData
     );
     
     // Start: Added logic to hide empty tables
@@ -445,7 +458,18 @@ function formatHtml(
   terminalEquipment?: TerminalEquipment[], 
   promjenaOperateraHtmlContent?: string,
   contractConcludedOnPremises?: boolean,
-  contractNumber?: string
+  contractNumber?: string,
+  operatorChangeData?: OperatorChangeData,
+  calculatedData?: {
+    phoneServices?: string
+    phonePromoPrice?: number
+    phoneRegularPrice?: number
+    phoneServiceName?: string
+    tvServices?: string
+    tvPromoPrice?: number
+    tvRegularPrice?: number
+    tvServiceName?: string
+  }
 ): string {
   if (!html) throw new Error("HTML is required")
   if (!data) throw new Error("Data is required")
@@ -488,6 +512,86 @@ function formatHtml(
     
     console.log(promjenaOperateraHtmlContent)
     html = html.replace('<!-- ZAHTJEV_ZA_PROMJENU_OPERATERA -->', promjenaOperateraHtmlContent);
+    
+    // Process operator change data if available
+    if (operatorChangeData) {
+      // Replace operator change specific placeholders
+      let operatorHtml = html;
+      
+      // Basic operator information
+      operatorHtml = operatorHtml.replace(/____________________/g, operatorChangeData.existingOperatorName || '____________________');
+      
+      // Checkboxes for boolean values
+      operatorHtml = operatorHtml.replace(/id="daljina_da" name="ugovor_daljina" value="da"/g, 
+        `id="daljina_da" name="ugovor_daljina" value="da"${operatorChangeData.contractOnDistance ? ' checked' : ''}`);
+      operatorHtml = operatorHtml.replace(/id="daljina_ne" name="ugovor_daljina" value="ne"/g, 
+        `id="daljina_ne" name="ugovor_daljina" value="ne"${!operatorChangeData.contractOnDistance ? ' checked' : ''}`);
+      
+      operatorHtml = operatorHtml.replace(/id="podmiriti_dugovanja" name="podmiriti_dugovanja"/g, 
+        `id="podmiriti_dugovanja" name="podmiriti_dugovanja"${operatorChangeData.agreeToPayDebts ? ' checked' : ''}`);
+      
+      operatorHtml = operatorHtml.replace(/id="prijenos_da" name="prijenos_broja" value="da"/g, 
+        `id="prijenos_da" name="prijenos_broja" value="da"${operatorChangeData.numberTransfer ? ' checked' : ''}`);
+      operatorHtml = operatorHtml.replace(/id="prijenos_ne" name="prijenos_broja" value="ne"/g, 
+        `id="prijenos_ne" name="prijenos_broja" value="ne"${!operatorChangeData.numberTransfer ? ' checked' : ''}`);
+      
+      operatorHtml = operatorHtml.replace(/id="obavijest_datum" name="obavijest_datum"/g, 
+        `id="obavijest_datum" name="obavijest_datum"${operatorChangeData.notificationAgreement ? ' checked' : ''}`);
+      
+      operatorHtml = operatorHtml.replace(/id="vpn_da" name="vpn_serija" value="da"/g, 
+        `id="vpn_da" name="vpn_serija" value="da"${operatorChangeData.vpnSeries ? ' checked' : ''}`);
+      operatorHtml = operatorHtml.replace(/id="vpn_ne" name="vpn_serija" value="ne"/g, 
+        `id="vpn_ne" name="vpn_serija" value="ne"${!operatorChangeData.vpnSeries ? ' checked' : ''}`);
+      
+      operatorHtml = operatorHtml.replace(/id="veleprodaja_da" name="veleprodaja_usluga" value="da"/g, 
+        `id="veleprodaja_da" name="veleprodaja_usluga" value="da"${operatorChangeData.wholesaleService ? ' checked' : ''}`);
+      operatorHtml = operatorHtml.replace(/id="veleprodaja_ne" name="veleprodaja_usluga" value="ne"/g, 
+        `id="veleprodaja_ne" name="veleprodaja_usluga" value="ne"${!operatorChangeData.wholesaleService ? ' checked' : ''}`);
+      
+      // Services to cancel checkboxes
+      const servicesToCancelMap = {
+        'Pristup mreži': 'pristup_mrezi',
+        'Govorna usluga': 'govorna_usluga', 
+        'Internet': 'internet',
+        'Televizija': 'televizija',
+        'Sve usluge': 'sve_usluge'
+      };
+      
+      Object.entries(servicesToCancelMap).forEach(([service, id]) => {
+        const isChecked = operatorChangeData.servicesToCancel.includes(service);
+        operatorHtml = operatorHtml.replace(
+          new RegExp(`<input type="checkbox"> ${service}`, 'g'),
+          `<input type="checkbox"${isChecked ? ' checked' : ''}> ${service}`
+        );
+      });
+      
+      // Services to keep checkboxes  
+      Object.entries(servicesToCancelMap).forEach(([service, id]) => {
+        const isChecked = operatorChangeData.servicesToKeep.includes(service);
+        const regex = new RegExp(`(<input type="checkbox"(?:[^>]*?)>) ${service}`, 'g');
+        operatorHtml = operatorHtml.replace(regex, (match, inputTag) => {
+          if (match.includes('checked')) return match; // Already processed in cancel section
+          return `<input type="checkbox"${isChecked ? ' checked' : ''}> ${service}`;
+        });
+      });
+      
+      // User accounts to keep checkboxes
+      const accountsMap = {
+        'web hosting': 'web_hosting',
+        'adrese elektroničke pošte': 'email_addresses',
+        'svi korisnički računi': 'all_accounts'
+      };
+      
+      Object.entries(accountsMap).forEach(([account, id]) => {
+        const isChecked = operatorChangeData.userAccountsToKeep.includes(account);
+        operatorHtml = operatorHtml.replace(
+          new RegExp(`<input type="checkbox"> ${account}`, 'g'),
+          `<input type="checkbox"${isChecked ? ' checked' : ''}> ${account}`
+        );
+      });
+      
+      html = operatorHtml;
+    }
   } else {
     html = html.replace('<!-- ZAHTJEV_ZA_PROMJENU_OPERATERA -->', '');
   }
@@ -506,18 +610,18 @@ function formatHtml(
 
   // TV service details
   safeReplace('TV_SERVICE_NAME', 'Usluga Televizije')
-  safeReplace('TV_PACKAGE_NAME', data.tv_paket)
-  safeReplace('TV_ADDITIONAL_SERVICES', data.tv_dodatne_usluge)
+  safeReplace('TV_PACKAGE', data.tv_paket)
+  safeReplace('TV_ADDITIONAL_SERVICES', calculatedData?.tvServices || data.tv_dodatne_usluge)
   safeReplace('TV_EQUIPMENT', data.tv_oprema)
-  safeReplace('TV_NAZIV_USLUGE', data.tv_naziv_ugovorene_usluge)
+  safeReplace('TV_NAZIV_USLUGE', calculatedData?.tvServiceName || data.tv_naziv_ugovorene_usluge)
 
   // Phone service details
   safeReplace('PHONE_SERVICE_NAME', 'Usluga Telefona')
   safeReplace('PHONE_NUMBER', data.pretplatnicki_broj)
   safeReplace('PHONE_TARIFF', data.tarifa)
-  safeReplace('PHONE_ADDITIONAL_SERVICES', data.tel_dodatne_usluge)
+  safeReplace('PHONE_ADDITIONAL_SERVICES', calculatedData?.phoneServices || data.tel_dodatne_usluge)
   safeReplace('PHONE_EQUIPMENT', data.tel_oprema)
-  safeReplace('TEL_NAZIV_USLUGE', data.tel_naziv_ugovorene_usluge)
+  safeReplace('TEL_NAZIV_USLUGE', calculatedData?.phoneServiceName || data.tel_naziv_ugovorene_usluge)
 
   // Equipment details
   safeReplace('EQUIPMENT__MODEL', data.uredaj_proizvodac_model)
@@ -665,9 +769,9 @@ function formatHtml(
   
   safeReplace('TARIFA', data.tarifa)
   safeReplace('PRETPLATNICKI_BROJ', data.pretplatnicki_broj)
-  safeReplace('PROMO_PRICE_PHONE', formatCurrency((data as any).promo_price_phone))
-  safeReplace('CONTRACT_PRICE_PHONE', formatCurrency((data as any).contract_price_phone))
-  safeReplace('REGULAR_PRICE_PHONE', formatCurrency((data as any).regular_price_phone))
+  safeReplace('PROMO_PRICE_PHONE', formatCurrency(calculatedData?.phonePromoPrice ?? (data as any).promo_price_phone))
+  safeReplace('CONTRACT_PRICE_PHONE', formatCurrency(calculatedData?.phonePromoPrice ?? (data as any).contract_price_phone))
+  safeReplace('REGULAR_PRICE_PHONE', formatCurrency(calculatedData?.phoneRegularPrice ?? (data as any).regular_price_phone))
   
   // Total prices
   safeReplace('TOTAL_PROMO_PRICE', formatCurrency(calculateTotalPrice(data, 'promo')))
@@ -690,10 +794,10 @@ function formatHtml(
     safeReplace('CONTACT_PERSON_EMAIL', userInfo.contactPersonEmail)
     
     // Invoice delivery method checkboxes
-    safeReplace('INVOICE_DELIVERY_METHOD_MAIL', userInfo.invoiceDeliveryMethod === 'mail' ? '☑' : '☐')
-    safeReplace('INVOICE_DELIVERY_METHOD_EINVOICE', userInfo.invoiceDeliveryMethod === 'eInvoice' ? '☑' : '☐')
-    safeReplace('INVOICE_DELIVERY_METHOD_EMAIL', userInfo.invoiceDeliveryMethod === 'email' ? '☑' : '☐')
-    safeReplace('INVOICE_DELIVERY_METHOD_CONTACT_EMAIL', userInfo.invoiceDeliveryMethod === 'contactEmail' ? '☑' : '☐')
+    safeReplace('INVOICE_DELIVERY_METHOD_MAIL', userInfo.invoiceDeliveryMethod.includes('mail') ? '☑' : '☐')
+    safeReplace('INVOICE_DELIVERY_METHOD_EINVOICE', userInfo.invoiceDeliveryMethod.includes('eInvoice') ? '☑' : '☐')
+    safeReplace('INVOICE_DELIVERY_METHOD_EMAIL', userInfo.invoiceDeliveryMethod.includes('email') ? '☑' : '☐')
+    safeReplace('INVOICE_DELIVERY_METHOD_CONTACT_EMAIL', userInfo.invoiceDeliveryMethod.includes('contactEmail') ? '☑' : '☐')
     
     // Marketing contact checkboxes
     safeReplace('MARKETING_CONTACT_PHONE', userInfo.marketingContact?.includes('phone') ? '☑' : '☐')
@@ -726,7 +830,7 @@ function formatHtml(
     }
     
     safeReplace('INVOICE_DELIVERY_METHOD_FORMATTED', 
-      userInfo.invoiceDeliveryMethod ? invoiceMethodMap[userInfo.invoiceDeliveryMethod] || userInfo.invoiceDeliveryMethod : '')
+      userInfo.invoiceDeliveryMethod ? invoiceMethodMap[userInfo.invoiceDeliveryMethod[0]] || userInfo.invoiceDeliveryMethod[0] : '')
     
     const marketingContactText = userInfo.marketingContact?.map(method => {
       if (method === 'phone') return 'telefonom'

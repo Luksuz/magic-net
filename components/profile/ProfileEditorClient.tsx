@@ -101,7 +101,7 @@ export function ProfileEditorClient({ profile }: Props) {
           )}
         </div>
 
-        {/* Agreement Number */}
+        {/* Agreement Number
         <div className="space-y-2">
           <Label>Broj ugovora</Label>
           {isEditing ? (
@@ -120,7 +120,7 @@ export function ProfileEditorClient({ profile }: Props) {
               {form.agreement_number ?? "Nije postavljen"}
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* Activation Fees */}
         <div className="space-y-2">

@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "@/components/ui/use-toast"
 import { FileText, X, Paperclip, Upload } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { sendEmail } from "@/lib/sendEmail"
 
 interface SendEmailPageProps {
   contractNumber?: string | null;
@@ -37,12 +36,16 @@ export default function SendEmailPage({
     if (recipientEmail) {
       setRecipient(recipientEmail);
     }
-    if (contractNumber && serviceName) {
-      setSubject(`Ugovor: ${contractNumber} - ${serviceName}`);
-    } else if (contractNumber) {
-      setSubject(`Ugovor: ${contractNumber}`);
+    if (contractNumber) {
+      // Remove "UG" prefix if it exists and format as ime-prezime-broj ugovora
+      const cleanContractNumber = contractNumber.replace(/^UG\s*/, '');
+      if (recipientName) {
+        setSubject(`${recipientName} - Aktivacija usluge`);
+      } else {
+        setSubject(cleanContractNumber);
+      }
     }
-  }, [contractNumber, serviceName, recipientEmail]);
+  }, [contractNumber, serviceName, recipientEmail, recipientName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

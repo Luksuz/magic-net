@@ -26,46 +26,42 @@ export default function AdminDashboard() {
       <section>
         <h2 className="text-2xl font-semibold mb-4">Upravljanje Korisnicima</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link href="/admin/create-user" legacyBehavior passHref>
-            <a className="block h-full">
-              <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <UserPlus className="mr-2 h-5 w-5 text-primary" />
-                    Kreiraj Novog Korisnika
-                  </CardTitle>
-                  <CardDescription>
-                    Dodajte novog korisnika u sustav.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-sm text-muted-foreground">
-                    Omogućuje administratorima kreiranje korisničkih računa.
-                  </p>
-                </CardContent>
-              </Card>
-            </a>
+          <Link href="/admin/create-user" className="block h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <UserPlus className="mr-2 h-5 w-5 text-primary" />
+                  Kreiraj Novog Korisnika
+                </CardTitle>
+                <CardDescription>
+                  Dodajte novog korisnika u sustav.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground">
+                  Omogućuje administratorima kreiranje korisničkih računa.
+                </p>
+              </CardContent>
+            </Card>
           </Link>
 
-          <Link href="/admin/delete-user" legacyBehavior passHref>
-            <a className="block h-full">
-              <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <DeleteUserIcon className="mr-2 h-5 w-5 text-destructive" />
-                    Obriši Korisnika
-                  </CardTitle>
-                  <CardDescription>
-                    Pregledajte i odaberite korisnika za brisanje.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-sm text-muted-foreground">
-                    Vodi na stranicu za odabir i potvrdu brisanja korisnika.
-                  </p>
-                </CardContent>
-              </Card>
-            </a>
+          <Link href="/admin/delete-user" className="block h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <DeleteUserIcon className="mr-2 h-5 w-5 text-destructive" />
+                  Obriši Korisnika
+                </CardTitle>
+                <CardDescription>
+                  Pregledajte i odaberite korisnika za brisanje.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground">
+                  Vodi na stranicu za odabir i potvrdu brisanja korisnika.
+                </p>
+              </CardContent>
+            </Card>
           </Link>
         </div>
       </section>
@@ -73,46 +69,61 @@ export default function AdminDashboard() {
       <section>
         <h2 className="text-2xl font-semibold mb-4">Upravljanje Paketima Usluga</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link href="/admin/add-package" legacyBehavior passHref>
-            <a className="block h-full">
-              <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <PackagePlus className="mr-2 h-5 w-5 text-primary" />
-                    Dodaj Novi Paket
-                  </CardTitle>
-                  <CardDescription>
-                    Kreirajte novi paket usluga.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-sm text-muted-foreground">
-                    Definirajte detalje i cijene novih paketa dostupnih korisnicima.
-                  </p>
-                </CardContent>
-              </Card>
-            </a>
+          <Link href="/admin/add-package" className="block h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <PackagePlus className="mr-2 h-5 w-5 text-primary" />
+                  Dodaj Novi Paket
+                </CardTitle>
+                <CardDescription>
+                  Kreirajte novi paket usluga.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground">
+                  Definirajte detalje i cijene novih paketa dostupnih korisnicima.
+                </p>
+              </CardContent>
+            </Card>
           </Link>
 
-          <Link href="/admin/edit-package" legacyBehavior passHref>
-            <a className="block h-full">
-              <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Edit3Icon className="mr-2 h-5 w-5 text-primary" />
-                    Uredi Postojeći Paket
-                  </CardTitle>
-                  <CardDescription>
-                    Izmijenite detalje postojećih paketa.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-sm text-muted-foreground">
-                    Pregledajte listu paketa i odaberite paket za uređivanje.
-                  </p>
-                </CardContent>
-              </Card>
-            </a>
+          <Link href="/admin/edit-package" className="block h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Edit3Icon className="mr-2 h-5 w-5 text-primary" />
+                  Uredi Postojeći Paket
+                </CardTitle>
+                <CardDescription>
+                  Izmijenite detalje postojećih paketa.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground">
+                  Pregledajte listu paketa i odaberite paket za uređivanje.
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/admin/manage-devices" className="block h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Settings className="mr-2 h-5 w-5 text-primary" />
+                  Upravljaj Uređajima
+                </CardTitle>
+                <CardDescription>
+                  Dodajte, uredite ili obrišite uređaje.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground">
+                  Upravljajte listom dostupnih uređaja s cijenama i popustima.
+                </p>
+              </CardContent>
+            </Card>
           </Link>
         </div>
       </section>
@@ -120,25 +131,42 @@ export default function AdminDashboard() {
       <section>
         <h2 className="text-2xl font-semibold mb-4">Ostale Postavke</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link href="/admin/templates" legacyBehavior passHref>
-            <a className="block h-full">
-              <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <FileText className="mr-2 h-5 w-5 text-primary" />
-                    PDF Predlošci
-                  </CardTitle>
-                  <CardDescription>
-                    Uredi predloške za PDF ugovore.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-sm text-muted-foreground">
-                    Prilagodite izgled PDF ugovora.
-                  </p>
-                </CardContent>
-              </Card>
-            </a>
+          <Link href="/admin/templates" className="block h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <FileText className="mr-2 h-5 w-5 text-primary" />
+                  PDF Predlošci
+                </CardTitle>
+                <CardDescription>
+                  Uredi predloške za PDF ugovore.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground">
+                  Prilagodite izgled PDF ugovora.
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/admin/manage-documents" className="block h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <FileText className="mr-2 h-5 w-5 text-primary" />
+                  Upravljaj Dokumentima
+                </CardTitle>
+                <CardDescription>
+                  Upravljajte dokumentima koji se automatski priložuju u emailove.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground">
+                  Dodajte, pregledajte ili obrišite dokumente koji se šalju uz svaki email.
+                </p>
+              </CardContent>
+            </Card>
           </Link>
         </div>
       </section>

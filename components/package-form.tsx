@@ -299,10 +299,10 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
                     <Input id="usluga" name="usluga" value={formState.usluga || ""} onChange={handleInputChange} required />
                   </div>
 
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <Label htmlFor="broj_ugovora">Broj ugovora</Label>
                     <Input id="broj_ugovora" name="broj_ugovora" value={formState.broj_ugovora || ""} onChange={handleInputChange} />
-                  </div>
+                  </div> */}
                 </div>
               </CardContent>
             </Card>
@@ -544,17 +544,6 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
           <TabsContent value="pricing" className="space-y-4 mt-4">
             <Card>
               <CardContent className="pt-6">
-                <h3 className="text-lg font-medium mb-4">Informacije o uređaju</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="uredaj_proizvodac_model">Proizvođač/model uređaja</Label>
-                    <Input
-                      id="uredaj_proizvodac_model"
-                      name="uredaj_proizvodac_model"
-                      value={formState.uredaj_proizvodac_model || ""}
-                      onChange={handleInputChange}
-                    />
-                  </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="uredaj_cijena">Cijena uređaja</Label>
@@ -636,7 +625,6 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
                       onChange={handleInputChange}
                     />
                   </div>
-                </div>
 
                 <h3 className="text-lg font-medium mt-8 mb-4">Naknade za priključenje</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
