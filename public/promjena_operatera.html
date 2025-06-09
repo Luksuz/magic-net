@@ -1,64 +1,177 @@
-<div style="margin-top: 30px; page-break-before: always;">
-    <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-        <caption><h2 style="font-size: 14px; font-weight: bold; text-align: center; margin-bottom: 10px;">ZAHTJEV ZA PROMJENU OPERATORA</h2></caption>
-        <tr><td style="font-weight: bold; padding-bottom:10px;" colspan="2">Broj ugovora: [AGREEMENT_NUMBER]</td></tr>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 10px;
+        margin: 0;
+        padding: 0;
+        background-color: #eef;
+        line-height: 1.1;
+    }
+    .pdf-content {
+        padding: 8px;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        color: #1a3c5e;
+        margin-top: 8px;
+        margin-bottom: 4px;
+        line-height: 1.1;
+    }
+    .page-break-placeholder {
+         height: 20px;
+         border-top: 2px dashed #ccc;
+         margin: 10px 0;
+         text-align: center;
+         color: #999;
+         font-style: italic;
+    }
+    .page-break-placeholder::before {
+        content: "--- Page Break ---";
+    }
+    .page-break {
+          page-break-after: always !important;
+          break-after: page !important;
+          height: 0;
+          display: block;
+      }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 8px;
+        table-layout: fixed;
+        max-width: 100%;
+        font-size: 9px;
+    }
+    th, td {
+        padding: 3px;
+        border: 1px solid #ddd;
+        line-height: 1.1;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+        max-width: 100%;
+        vertical-align: top;
+    }
+    th {
+        background-color: #f2f2f2;
+        text-align: center;
+        font-weight: bold;
+        font-size: 9px;
+    }
+    td {
+        vertical-align: top;
+    }
+    a { color: #1a3c5e; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    p {
+        margin: 2px 0;
+        line-height: 1.2;
+    }
+    ul {
+        margin: 4px 0;
+        padding-left: 15px;
+    }
+    li {
+        margin-bottom: 1px;
+    }
+</style>
 
-        <tr><th colspan="2" style="font-size: 13px; text-align:left; padding-top:15px; padding-bottom:10px; border-bottom: 1px solid #ccc;">OSNOVNI PODACI O KORISNIKU</th></tr>
-        <tr><td style="width:40%; padding:6px;">Ime i prezime/naziv:</td><td style="padding:6px;">[USER_NAME] / [LEGAL_ENTITY]</td></tr>
-        <tr><td style="padding:6px;">OIB podnositelja zahtjeva:</td><td style="padding:6px;">[OIB]</td></tr>
-        <tr><td style="padding:6px;">Ime i prezime ovlaštene osobe (samo za pravne osobe):</td><td style="padding:6px;">[USER_NAME]</td></tr>
-        <tr><td style="padding:6px;">Telefonski broj/brojevi/ID usluge (za prijenos):</td><td style="padding:6px;">[PHONE_NUMBER]</td></tr>
-        <tr><td style="padding:6px;">Kontakt telefon:</td><td style="padding:6px;">[CONTACT_PHONE]</td></tr>
-        <tr><td style="padding:6px;">Kontakt e-pošta:</td><td style="padding:6px;">[EMAIL]</td></tr>
+<div class="pdf-container" style="font-family: Arial, sans-serif;
+  font-size: 10px;
+  color: #333;
+  margin: 10px auto;
+  padding: 8px;
+  border: 1px solid #ccc;
+  width: 180mm; 
+  max-width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  background-color: white;">
+  <div class="pdf-content">
+    <div style="overflow: hidden; margin-bottom: 8px;">
+        <div style="float: right; margin-left: 8px; width: 60px; height: 60px; border-radius: 50%; background-color: #1a3c5e; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; font-weight: bold;">
+            <img src="https://qfpjbgjxkpwtsegtkaze.supabase.co/storage/v1/object/public/images//logo.png" alt="Company Logo" style="width: 100%; height: 100%; border-radius: 50%;">
+        </div>
+        <div>
+            <p style="margin: 0; font-weight: bold; font-size: 11px;">MAGIC NET – d.o.o.</p>
+            <p style="margin: 0; font-size: 9px;">Koprivnička 17 C, HR - 42230 Ludbreg</p>
+            <p style="margin: 0; font-size: 9px;">OIB : 92188488799</p>
+            <p style="margin: 0; font-size: 9px;"><a href="http://www.mtnet.hr">www.mtnet.hr</a></p>
+            <p style="margin: 0; font-size: 9px;"><a href="mailto:info@mtnet.hr">info@mtnet.hr</a></p>
+            <p style="margin: 0; font-size: 9px;">Služba za korisnike: 042 420 420</p>
+            <p style="margin: 0; font-size: 9px;">Fax: 042 420 429</p>
+        </div>
+    </div>
+    <div style="clear: both;"></div>
+
+    <div style="margin-top: 12px;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
+        <caption><h2 style="font-size: 12px; font-weight: bold; text-align: center; margin-bottom: 6px;">ZAHTJEV ZA PROMJENU OPERATORA</h2></caption>
+        <tr><td style="font-weight: bold; padding-bottom:6px; font-size: 10px;" colspan="2">Broj ugovora: [AGREEMENT_NUMBER]</td></tr>
+
+        <tr><th colspan="2" style="font-size: 10px; text-align:left; padding-top:8px; padding-bottom:6px; border-bottom: 1px solid #ccc;">OSNOVNI PODACI O KORISNIKU</th></tr>
+        <tr><td style="width:40%; padding:3px;">Ime i prezime/naziv:</td><td style="padding:3px;">[USER_NAME] / [LEGAL_ENTITY]</td></tr>
+        <tr><td style="padding:3px;">OIB podnositelja zahtjeva:</td><td style="padding:3px;">[OIB]</td></tr>
+        <tr><td style="padding:3px;">Ime i prezime ovlaštene osobe (samo za pravne osobe):</td><td style="padding:3px;">[USER_NAME]</td></tr>
+        <tr><td style="padding:3px;">Telefonski broj/brojevi/ID usluge (za prijenos):</td><td style="padding:3px;">[PHONE_NUMBER]</td></tr>
+        <tr><td style="padding:3px;">Kontakt telefon:</td><td style="padding:3px;">[CONTACT_PHONE]</td></tr>
+        <tr><td style="padding:3px;">Kontakt e-pošta:</td><td style="padding:3px;">[EMAIL]</td></tr>
         <tr>
-            <td style="padding:6px;">Ugovor sklopljen na daljinu:</td>
-            <td style="padding:6px;"><input type="checkbox" id="daljina_da" name="ugovor_daljina" value="da"><label for="daljina_da" style="margin-right:10px;"> Da</label> <input type="checkbox" id="daljina_ne" name="ugovor_daljina" value="ne"><label for="daljina_ne"> Ne</label></td>
+            <td style="padding:3px;">Ugovor sklopljen na daljinu:</td>
+            <td style="padding:3px;"><input type="checkbox" id="daljina_da" name="ugovor_daljina" value="da"><label for="daljina_da" style="margin-right:6px;"> Da</label> <input type="checkbox" id="daljina_ne" name="ugovor_daljina" value="ne"><label for="daljina_ne"> Ne</label></td>
         </tr>
         <tr>
-            <td colspan="2" style="padding:6px;"><input type="checkbox" id="podmiriti_dugovanja" name="podmiriti_dugovanja"> <label for="podmiriti_dugovanja">Korisnik je upoznat i pristaje podmiriti dugovanja postojećem/im operatoru/ima zbog prijevremenog raskida ugovora.</label></td>
+            <td colspan="2" style="padding:3px;"><input type="checkbox" id="podmiriti_dugovanja" name="podmiriti_dugovanja"> <label for="podmiriti_dugovanja">Korisnik je upoznat i pristaje podmiriti dugovanja postojećem/im operatoru/ima zbog prijevremenog raskida ugovora.</label></td>
         </tr>
 
-        <tr><th colspan="2" style="font-size: 13px; text-align:left; padding-top:15px; padding-bottom:10px; border-bottom: 1px solid #ccc; border-top: 1px solid #ccc;">PODACI O OPERATORU</th></tr>
-        <tr><td style="padding:6px;">Naziv davatelja broja/postojećeg operatora:</td><td style="padding:6px;">____________________</td></tr>
-        <tr><td style="padding:6px;">Naziv primatelja broja/novog operatora:</td><td style="padding:6px;">MAGIC NET - d.o.o.</td></tr>
+        <tr><th colspan="2" style="font-size: 10px; text-align:left; padding-top:8px; padding-bottom:6px; border-bottom: 1px solid #ccc; border-top: 1px solid #ccc;">PODACI O OPERATORU</th></tr>
+        <tr><td style="padding:3px;">Naziv davatelja broja/postojećeg operatora:</td><td style="padding:3px;">____________________</td></tr>
+        <tr><td style="padding:3px;">Naziv primatelja broja/novog operatora:</td><td style="padding:3px;">MAGIC NET - d.o.o.</td></tr>
 
-        <tr><th colspan="2" style="font-size: 13px; text-align:left; padding-top:15px; padding-bottom:10px; border-bottom: 1px solid #ccc; border-top: 1px solid #ccc;">USLUGE U NEPOKRETNOJ MREŽI</th></tr>
+        <tr><th colspan="2" style="font-size: 10px; text-align:left; padding-top:8px; padding-bottom:6px; border-bottom: 1px solid #ccc; border-top: 1px solid #ccc;">USLUGE U NEPOKRETNOJ MREŽI</th></tr>
         <tr>
-            <td style="padding:6px;">Prijenos broja:</td>
-            <td style="padding:6px;"><input type="checkbox" id="prijenos_da" name="prijenos_broja" value="da"><label for="prijenos_da" style="margin-right:10px;"> Da</label> <input type="checkbox" id="prijenos_ne" name="prijenos_broja" value="ne"><label for="prijenos_ne"> Ne</label></td>
+            <td style="padding:3px;">Prijenos broja:</td>
+            <td style="padding:3px;"><input type="checkbox" id="prijenos_da" name="prijenos_broja" value="da"><label for="prijenos_da" style="margin-right:6px;"> Da</label> <input type="checkbox" id="prijenos_ne" name="prijenos_broja" value="ne"><label for="prijenos_ne"> Ne</label></td>
         </tr>
         <tr>
-            <td colspan="2" style="padding:6px;"><input type="checkbox" id="obavijest_datum" name="obavijest_datum"> <label for="obavijest_datum">Korisnik je upoznat da će u roku od 15 dana biti obaviješten o datumu promjene operatora.</label></td>
+            <td colspan="2" style="padding:3px;"><input type="checkbox" id="obavijest_datum" name="obavijest_datum"> <label for="obavijest_datum">Korisnik je upoznat da će u roku od 15 dana biti obaviješten o datumu promjene operatora.</label></td>
         </tr>
         <tr>
-            <td style="padding:6px;">VPN serija ili niz na priključku:</td>
-            <td style="padding:6px;"><input type="checkbox" id="vpn_da" name="vpn_serija" value="da"><label for="vpn_da" style="margin-right:10px;"> Da</label> <input type="checkbox" id="vpn_ne" name="vpn_serija" value="ne"><label for="vpn_ne"> Ne</label></td>
+            <td style="padding:3px;">VPN serija ili niz na priključku:</td>
+            <td style="padding:3px;"><input type="checkbox" id="vpn_da" name="vpn_serija" value="da"><label for="vpn_da" style="margin-right:6px;"> Da</label> <input type="checkbox" id="vpn_ne" name="vpn_serija" value="ne"><label for="vpn_ne"> Ne</label></td>
         </tr>
-        <tr><td style="padding:6px;">Adresa priključka:</td><td style="padding:6px;">[CONNECTION_ADDRESS]</td></tr>
+        <tr><td style="padding:3px;">Adresa priključka:</td><td style="padding:3px;">[CONNECTION_ADDRESS]</td></tr>
         <tr>
-            <td style="padding:6px;">Usluge koje korisnik želi raskinuti s postojećim operatorom:</td>
-            <td style="padding:6px;"><input type="checkbox"> Pristup mreži <input type="checkbox"> Govorna usluga <input type="checkbox"> Internet <input type="checkbox"> Televizija <input type="checkbox"> Sve usluge</td>
-        </tr>
-        <tr>
-            <td style="padding:6px;">Usluge koje korisnik želi zadržati s postojećim operatorom:</td>
-            <td style="padding:6px;"><input type="checkbox"> Pristup mreži <input type="checkbox"> Govorna usluga <input type="checkbox"> Internet <input type="checkbox"> Televizija <input type="checkbox"> Sve usluge</td>
+            <td style="padding:3px;">Usluge koje korisnik želi raskinuti s postojećim operatorom:</td>
+            <td style="padding:3px;"><input type="checkbox"> Pristup mreži <input type="checkbox"> Govorna usluga <input type="checkbox"> Internet <input type="checkbox"> Televizija <input type="checkbox"> Sve usluge</td>
         </tr>
         <tr>
-            <td style="padding:6px;">Vezano uz uslugu pristupa internetu zadržavaju se korisnički računi:</td>
-            <td style="padding:6px;"><input type="checkbox"> web hosting <input type="checkbox"> adrese elektroničke pošte <input type="checkbox"> svi korisnički računi</td>
+            <td style="padding:3px;">Usluge koje korisnik želi zadržati s postojećim operatorom:</td>
+            <td style="padding:3px;"><input type="checkbox"> Pristup mreži <input type="checkbox"> Govorna usluga <input type="checkbox"> Internet <input type="checkbox"> Televizija <input type="checkbox"> Sve usluge</td>
         </tr>
         <tr>
-            <td style="padding:6px;">Zahtjev za promjenu operatora je vezan za veleprodajnu uslugu:</td>
-            <td style="padding:6px;"><input type="checkbox" id="veleprodaja_da" name="veleprodaja_usluga" value="da"><label for="veleprodaja_da" style="margin-right:10px;"> Da</label> <input type="checkbox" id="veleprodaja_ne" name="veleprodaja_usluga" value="ne"><label for="veleprodaja_ne"> Ne</label></td>
+            <td style="padding:3px;">Vezano uz uslugu pristupa internetu zadržavaju se korisnički računi:</td>
+            <td style="padding:3px;"><input type="checkbox"> web hosting <input type="checkbox"> adrese elektroničke pošte <input type="checkbox"> svi korisnički računi</td>
+        </tr>
+        <tr>
+            <td style="padding:3px;">Zahtjev za promjenu operatora je vezan za veleprodajnu uslugu:</td>
+            <td style="padding:3px;"><input type="checkbox" id="veleprodaja_da" name="veleprodaja_usluga" value="da"><label for="veleprodaja_da" style="margin-right:6px;"> Da</label> <input type="checkbox" id="veleprodaja_ne" name="veleprodaja_usluga" value="ne"><label for="veleprodaja_ne"> Ne</label></td>
         </tr>
 
-        <tr><th colspan="2" style="font-size: 13px; text-align:left; padding-top:25px; padding-bottom:10px; border-bottom: 1px solid #ccc; border-top: 1px solid #ccc;">MJESTO, DATUM I POTPIS</th></tr>
-        <tr><td style="padding:6px;">Mjesto i datum:</td><td style="padding:6px;">[SELLER_PLACE], [CURRENT_DATE]</td></tr>
-        <tr><td style="padding:6px;">Potpis podnositelja Zahtjeva:</td><td style="padding:6px;">____________________ ([USER_NAME])</td></tr>
-        <tr><td style="padding:6px;">Potpis ovlaštene osobe novog operatora/primatelja broja:</td><td style="padding:6px;">____________________</td></tr>
-
-        <p>Zahtjev za promjenu operatora smatra se zahtjevom za raskid ugovora s postojećim operatorom.
-        <p>Podnositelj zahtjeva svojim potpisom ovlašćuje novog i postojećeg operatora provesti postupak promjene operatora sukladno Zakonu o elektroničkim komunikacijama i Pravilniku o načinu i uvjetima obavljanja djelatnosti elektroničkih komunikacijskih mreža i usluga.</p>
-        <p>Sve informacije vezano za postupak promjene operatora (razlozi odgode, odbijanja, odustanka, pravo na naknadu u slučaju nepravovremene promjene operatora i dr.) sadržane su u uvjetima za promjenu operatora koji su sastavni dio ugovora sklopljenog s novim operatorom.</p>
+        <tr><th colspan="2" style="font-size: 10px; text-align:left; padding-top:12px; padding-bottom:6px; border-bottom: 1px solid #ccc; border-top: 1px solid #ccc;">MJESTO, DATUM I POTPIS</th></tr>
+        <tr><td style="padding:3px;">Mjesto i datum:</td><td style="padding:3px;">[SELLER_PLACE], [CURRENT_DATE]</td></tr>
+        <tr><td style="padding:3px;">Potpis podnositelja Zahtjeva:</td><td style="padding:3px;">____________________ ([USER_NAME])</td></tr>
+        <tr><td style="padding:3px;">Potpis ovlaštene osobe novog operatora/primatelja broja:</td><td style="padding:3px;">____________________</td></tr>
     </table>
-</div>
+
+    <div style="margin-top: 8px; font-size: 8px;">
+        <p style="margin-bottom: 3px;">Zahtjev za promjenu operatora smatra se zahtjevom za raskid ugovora s postojećim operatorom.</p>
+        <p style="margin-bottom: 3px;">Podnositelj zahtjeva svojim potpisom ovlašćuje novog i postojećeg operatora provesti postupak promjene operatora sukladno Zakonu o elektroničkim komunikacijama i Pravilniku o načinu i uvjetima obavljanja djelatnosti elektroničkih komunikacijskih mreža i usluga.</p>
+        <p style="margin-bottom: 3px;">Sve informacije vezano za postupak promjene operatora (razlozi odgode, odbijanja, odustanka, pravo na naknadu u slučaju nepravovremene promjene operatora i dr.) sadržane su u uvjetima za promjenu operatora koji su sastavni dio ugovora sklopljenog s novim operatorom.</p>
+    </div>
+    
+    </div>
+  </div><!-- End pdf-content -->
+</div><!-- End pdf-container -->

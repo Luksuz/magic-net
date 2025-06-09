@@ -28,6 +28,7 @@ interface ContractFormProps {
   onContractConcludedOnPremisesChange?: (value: boolean) => void
   operatorChangeDataInitial?: OperatorChangeData
   onOperatorChangeDataChange?: (data: OperatorChangeData) => void
+  contractNumber?: string | null
 }
 
 export default function ContractForm({ 
@@ -40,9 +41,28 @@ export default function ContractForm({
   contractConcludedOnPremises,
   onContractConcludedOnPremisesChange,
   operatorChangeDataInitial,
-  onOperatorChangeDataChange
+  onOperatorChangeDataChange,
+  contractNumber
 }: ContractFormProps) {
-  const [formData, setFormData] = useState<ContractData>(initialData)
+  const [formData, setFormData] = useState<ContractData>(() => {
+    // Clean contract number by removing UG prefix if it exists
+    const cleanContractNumber = contractNumber ? contractNumber.replace(/^UG\s*/, '') : '';
+    
+    // If we have both user name and contract number, format as "userName-contractNumber"
+    let finalContractNumber = '';
+    if (cleanContractNumber && userInfoInitial?.userName) {
+      // Replace spaces with hyphens in user name and combine with contract number
+      const formattedUserName = userInfoInitial.userName.trim().replace(/\s+/g, '-');
+      finalContractNumber = `${formattedUserName}-${cleanContractNumber}`;
+    } else if (cleanContractNumber) {
+      finalContractNumber = cleanContractNumber;
+    }
+    
+    return {
+      ...initialData,
+      broj_ugovora: finalContractNumber || initialData.broj_ugovora || ""
+    };
+  })
   const [userInfo, setUserInfo] = useState<UserInformation>(userInfoInitial || {
     userId: "",
     userName: "",
@@ -65,7 +85,7 @@ export default function ContractForm({
     paymentMethod: "oneTime",
     sellerCode: 0,
     sellerPlace: "",
-    sellerDate: new Date().toISOString().split("T")[0],
+    sellerDate: "",
     changeOperator: false,
   })
   const [terminalEquipment, setTerminalEquipment] = useState<TerminalEquipment[]>(terminalEquipmentInitial || [
@@ -77,7 +97,9 @@ export default function ContractForm({
   ])
   const [isGenerating, setIsGenerating] = useState(false)
   const [activeTab, setActiveTab] = useState("basic")
-  const [extraMeshEnabled, setExtraMeshEnabled] = useState(false)
+  const [freeMeshEnabled, setFreeMeshEnabled] = useState(false)
+  const [rentalMeshEnabled, setRentalMeshEnabled] = useState(false)
+  const [extraRentalMeshCount, setExtraRentalMeshCount] = useState(0)
   const [filmskiPackageEnabled, setFilmskiPackageEnabled] = useState(false)
   const [odrasliPackageEnabled, setOdrasliPackageEnabled] = useState(false)
   const [additionalTvCardEnabled, setAdditionalTvCardEnabled] = useState(false)
@@ -237,40 +259,82 @@ export default function ContractForm({
     }
   }
   
-  // Handler for extra MESH checkbox
-  const handleExtraMeshChange = (checked: boolean) => {
-    setExtraMeshEnabled(checked)
+  // Handler for extra MESH checkbox - REMOVED (now using new MESH system)
+
+  // Handler for FREE MESH checkbox
+  const handleFreeMeshChange = (checked: boolean) => {
+    setFreeMeshEnabled(checked)
+  }
+
+  // Handler for RENTAL MESH checkbox
+  const handleRentalMeshChange = (checked: boolean) => {
+    setRentalMeshEnabled(checked)
+    if (!checked) {
+      setExtraRentalMeshCount(0) // Reset extra rental mesh count when main rental is disabled
+    }
+  }
+
+  // Handler for extra rental MESH checkboxes
+  const handleExtraRentalMeshChange = (index: number, checked: boolean) => {
+    if (checked) {
+      setExtraRentalMeshCount(prev => Math.max(prev, index + 1))
+    } else {
+      // Remove this specific extra mesh
+      if (index === extraRentalMeshCount - 1) {
+        // If removing the last one, decrease count
+        setExtraRentalMeshCount(prev => prev - 1)
+      }
+    }
+  }
+
+  // Effect to update MESH in equipment and services when MESH states change
+  useEffect(() => {
+    console.log('MESH useEffect triggered with states:', { 
+      freeMeshEnabled, 
+      rentalMeshEnabled, 
+      extraRentalMeshCount
+    })
     
+    // Calculate total MESH quantity
+    let totalMeshQuantity = 0
+    let meshServices = []
+    
+    if (freeMeshEnabled) {
+      totalMeshQuantity += 1
+      meshServices.push("BESPLATAN MESH")
+    }
+    
+    if (rentalMeshEnabled) {
+      totalMeshQuantity += 1 + extraRentalMeshCount
+      const rentalCount = 1 + extraRentalMeshCount
+      meshServices.push(`EXTRA MESH U NAJAM (${rentalCount})`)
+    }
+
+    console.log('Calculated MESH data:', { totalMeshQuantity, meshServices })
+    console.log('Terminal equipment before update:', terminalEquipment)
+
     // Update MESH equipment quantity
     const updatedEquipment = terminalEquipment.map(item => 
-      item.id === 5 ? { ...item, quantity: checked ? "1" : "" } : item
+      item.id === 5 ? { ...item, quantity: totalMeshQuantity.toString() } : item
     )
+    
+    console.log('Terminal equipment after update:', updatedEquipment)
     setTerminalEquipment(updatedEquipment)
+
+    // Update services in formData
+    const servicesText = meshServices.join(', ')
+    console.log('Services before update:', formData.fiksne_dodatne_usluge)
+    console.log('Services after update:', servicesText)
+    
+    setFormData(prev => ({
+      ...prev,
+      fiksne_dodatne_usluge: servicesText
+    }))
+
     if (onTerminalEquipmentChange) {
       onTerminalEquipmentChange(updatedEquipment)
     }
-    
-    // Update additional services field
-    const currentServices = formData.fiksne_dodatne_usluge || ""
-    let updatedServices = currentServices
-    
-    if (checked) {
-      // Add MESH if not already present
-      if (!currentServices.toLowerCase().includes("mesh")) {
-        updatedServices = currentServices ? `${currentServices}, MESH` : "MESH"
-      }
-    } else {
-      // Remove MESH from services
-      updatedServices = currentServices
-        .split(',')
-        .map(service => service.trim())
-        .filter(service => service.toLowerCase() !== "mesh")
-        .join(', ')
-        .replace(/^,\s*|,\s*$/g, '') // Remove leading/trailing commas
-    }
-    
-    setFormData(prev => ({ ...prev, fiksne_dodatne_usluge: updatedServices }))
-  }
+  }, [freeMeshEnabled, rentalMeshEnabled, extraRentalMeshCount])
 
   // Handler for FILMSKI package checkbox
   const handleFilmskiPackageChange = (checked: boolean) => {
@@ -336,11 +400,8 @@ export default function ContractForm({
 
     const basePrice = baseTvPrice || 0
     
-    // Create service name from selected packages
+    // Create service name from base service only (additional packages shown separately)
     let serviceName = formData.tv_paket || "TV usluga"
-    if (selectedPackageNames.length > 0) {
-      serviceName = `${serviceName} + ${selectedPackageNames.join(', ')}`
-    }
     
     return {
       services: selectedPackages.join(', '),
@@ -389,18 +450,69 @@ export default function ContractForm({
 
     const basePrice = basePhonePrice || 0
     
-    // Create service name from selected services
+    // Create service name from base service only (additional services shown separately)
     let serviceName = formData.tarifa || "Telefonska usluga"
-    if (selectedServiceNames.length > 0) {
-      serviceName = `${serviceName} + ${selectedServiceNames.join(', ')}`
-    }
     
     return {
       services: selectedServices.join(', '),
-      serviceName: serviceName,
-      promoPrice: basePrice + additionalPrice,
-      regularPrice: basePrice + additionalPrice
+      serviceName: serviceName, // Only base service name, not including additional services
+      promoPrice: basePrice, // Only base price, additional services shown separately
+      regularPrice: basePrice // Only base price, additional services shown separately
     }
+  }
+
+  // Calculate current Internet services and price including MESH
+  const getCurrentInternetData = () => {
+    let additionalServices: string[] = []
+    
+    // MESH services are handled separately in getMeshServiceData
+    // Internet base services only
+    const basePrice = formData.promo_price_fiksni || 0
+    
+    // Create service name
+    let serviceName = formData.fiksni_naziv_ugovorene_usluge || "Internet usluga"
+    
+    return {
+      services: additionalServices.join(', '),
+      serviceName: serviceName,
+      promoPrice: basePrice, // Internet base price only
+      regularPrice: basePrice // Internet base price only
+    }
+  }
+
+  // Calculate MESH service pricing separately
+  const getMeshServiceData = () => {
+    let meshServices = []
+    let totalPromoPrice = 0
+    let totalRegularPrice = 0
+    
+    console.log('getMeshServiceData called:', { freeMeshEnabled, rentalMeshEnabled, extraRentalMeshCount })
+    
+    if (freeMeshEnabled) {
+      meshServices.push("BESPLATAN MESH")
+      totalPromoPrice += 0 // Free
+      totalRegularPrice += 3.00 // 3 EUR regular
+      console.log('Added BESPLATAN MESH to services')
+    }
+    
+    if (rentalMeshEnabled) {
+      const rentalCount = 1 + extraRentalMeshCount
+      meshServices.push(`EXTRA MESH U NAJAM (${rentalCount})`)
+      totalPromoPrice += rentalCount * 3.00 // 3 EUR per unit
+      totalRegularPrice += rentalCount * 3.00 // 3 EUR per unit
+      console.log(`Added EXTRA MESH U NAJAM (${rentalCount}) to services`)
+    }
+    
+    const result = {
+      hasServices: meshServices.length > 0,
+      serviceName: meshServices.join(', '),
+      services: meshServices.join(', '),
+      promoPrice: totalPromoPrice,
+      regularPrice: totalRegularPrice
+    }
+    
+    console.log('getMeshServiceData result:', result)
+    return result
   }
 
   // Auto-generate PDF when shouldGeneratePdf is true
@@ -411,23 +523,49 @@ export default function ContractForm({
       
       // Small delay to ensure tab switch completes
       const timer = setTimeout(() => {
-        // Click the PDF button programmatically
-        if (pdfButtonRef.current) {
-          pdfButtonRef.current.click()
+        // Check if we should generate operator change PDF
+        const shouldGenerateOperatorChange = (initialData as any)?._generateOperatorChange
+        
+        // Find the appropriate button to click
+        const pdfButtonContainer = pdfButtonRef.current?.parentElement
+        if (pdfButtonContainer && shouldGenerateOperatorChange) {
+          // Look for the operator change button
+          const operatorChangeButton = pdfButtonContainer.querySelector('button[data-type="operator-change"]') as HTMLButtonElement
+          if (operatorChangeButton) {
+            operatorChangeButton.click()
+          } else {
+            // Fallback to main button if operator change button not found
+            pdfButtonRef.current?.click()
+          }
+        } else {
+          // Click the main PDF button
+          if (pdfButtonRef.current) {
+            pdfButtonRef.current.click()
+          }
         }
       }, 300)
       
       return () => clearTimeout(timer)
     }
-  }, [shouldGeneratePdf])
+  }, [shouldGeneratePdf, initialData])
 
-  // Initialize extra MESH state based on existing equipment data
+  // Initialize new MESH states based on existing services
   useEffect(() => {
-    const meshItem = terminalEquipment.find(item => item.id === 5)
-    if (meshItem && meshItem.quantity && meshItem.quantity !== "") {
-      setExtraMeshEnabled(true)
+    const fiksneServices = formData.fiksne_dodatne_usluge || ""
+    
+    // Check for free MESH
+    setFreeMeshEnabled(fiksneServices.toLowerCase().includes("besplatan mesh"))
+    
+    // Check for rental MESH
+    const rentalMeshMatch = fiksneServices.match(/extra mesh u najam \((\d+)\)/i)
+    if (rentalMeshMatch) {
+      setRentalMeshEnabled(true)
+      const totalRentalCount = parseInt(rentalMeshMatch[1], 10)
+      setExtraRentalMeshCount(Math.max(0, totalRentalCount - 1)) // Subtract 1 for the main rental mesh
+    } else {
+      setRentalMeshEnabled(fiksneServices.toLowerCase().includes("extra mesh u najam"))
     }
-  }, [terminalEquipment])
+  }, [formData.fiksne_dodatne_usluge])
 
   // Initialize TV package states based on existing data
   useEffect(() => {
@@ -527,6 +665,28 @@ export default function ContractForm({
     pdfButtonRef.current = el
   }
 
+  // Update contract number when user name changes
+  useEffect(() => {
+    if (contractNumber && userInfo?.userName) {
+      const cleanContractNumber = contractNumber.replace(/^UG\s*/, '');
+      const formattedUserName = userInfo.userName.trim().replace(/\s+/g, '-');
+      const finalContractNumber = `${formattedUserName}-${cleanContractNumber}`;
+      
+      // Only update if the current contract number is empty or matches our expected format
+      const currentNumber = formData.broj_ugovora || '';
+      const shouldUpdate = !currentNumber || 
+                          currentNumber === cleanContractNumber || 
+                          currentNumber.endsWith(`-${cleanContractNumber}`);
+      
+      if (shouldUpdate) {
+        setFormData(prev => ({
+          ...prev,
+          broj_ugovora: finalContractNumber
+        }));
+      }
+    }
+  }, [userInfo?.userName, contractNumber]);
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="basic" className="w-full tabs-container" onValueChange={setActiveTab} value={activeTab}>
@@ -553,7 +713,7 @@ export default function ContractForm({
                     <Input id="usluga" name="usluga" value={formData.usluga || ""} onChange={handleChange} />
                   </div>
 
-                  {/* <div className="space-y-2">
+                  <div className="space-y-2">
                     <Label htmlFor="broj_ugovora">Broj ugovora</Label>
                     <Input
                       id="broj_ugovora"
@@ -561,7 +721,18 @@ export default function ContractForm({
                       value={formData.broj_ugovora || ""}
                       onChange={handleChange}
                     />
-                  </div> */}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="contract_duration">Trajanje ugovora</Label>
+                    <Input
+                      id="contract_duration"
+                      name="contract_duration"
+                      value={formData.contract_duration || ""}
+                      onChange={handleChange}
+                      placeholder="npr. 24 mjeseca, neodređeno"
+                    />
+                  </div>
                 </div>
 
                 <div className="mt-8 border-t pt-6">
@@ -591,9 +762,9 @@ export default function ContractForm({
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <option value="">Odaberite mjesto</option>
-                        <option value="Koprivnička 17C, 42230 Ludbreg">MAGIC NET D.O.O. - Koprivnička 17C, 42230 Ludbreg</option>
-                        <option value="Kratka 2, 42000 Varaždin">MAGIC NET D.O.O. - Kratka 2, 42000 Varaždin</option>
-                        <option value="Poduzetnička 18, 42202, Trnovec">MAGIC NET D.O.O. - Poduzetnička 18, 42202, Trnovec</option>
+                        <option value="Ludbreg">Ludbreg</option>
+                        <option value="Varaždin">Varaždin</option>
+                        <option value="Trnovec">Trnovec</option>
                       </select>
                     </div>
 
@@ -645,15 +816,32 @@ export default function ContractForm({
                       rows={3}
                     />
                   </div>
-                  <div className="flex items-center space-x-2 md:col-span-2">
-                    <Checkbox
-                      id="extraMesh"
-                      checked={extraMeshEnabled}
-                      onCheckedChange={(checked) => handleExtraMeshChange(checked as boolean)}
-                    />
-                    <Label htmlFor="extraMesh" className="font-normal">
-                      Dodaj extra MESH uređaj (65,00 EUR)
-                    </Label>
+                  <div className="space-y-4 md:col-span-2">
+                    <h4 className="text-md font-medium">MESH uređaji</h4>
+                    <div className="flex flex-col space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="freeMesh"
+                          checked={freeMeshEnabled}
+                          onCheckedChange={(checked) => handleFreeMeshChange(checked as boolean)}
+                        />
+                        <Label htmlFor="freeMesh" className="font-normal">
+                          Dodaj BESPLATAN MESH uređaj (65,00 EUR) - Promotivna naknada: 0,00 EUR/mj, Redovna naknada: 3,00 EUR/mj
+                        </Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="rentalMesh"
+                          checked={rentalMeshEnabled}
+                          onCheckedChange={(checked) => handleRentalMeshChange(checked as boolean)}
+                        />
+                        <Label htmlFor="rentalMesh" className="font-normal">
+                          Dodaj EXTRA MESH U NAJAM uređaj (65,00 EUR) - Naknada: 3,00 EUR/mj
+                        </Label>
+                      </div>
+                      
+                    </div>
                   </div>
                 </div>
 
@@ -662,7 +850,7 @@ export default function ContractForm({
                   <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="fiksni_naziv_ugovorene_usluge">Naziv ugovorene usluge</Label>
-                      <Input id="fiksni_naziv_ugovorene_usluge" name="fiksni_naziv_ugovorene_usluge" value={formData.fiksni_naziv_ugovorene_usluge || ""} onChange={handleChange} />
+                      <Input id="fiksni_naziv_ugovorene_usluge" name="fiksni_naziv_ugovorene_usluge" value={formData.fiksni_paket || ""} onChange={handleChange} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -1501,7 +1689,15 @@ export default function ContractForm({
               tvServices: getCurrentTvData().services,
               tvPromoPrice: getCurrentTvData().promoPrice,
               tvRegularPrice: getCurrentTvData().regularPrice,
-              tvServiceName: getCurrentTvData().serviceName
+              tvServiceName: getCurrentTvData().serviceName,
+              internetServices: getCurrentInternetData().services,
+              internetPromoPrice: getCurrentInternetData().promoPrice,
+              internetRegularPrice: getCurrentInternetData().regularPrice,
+              internetServiceName: getCurrentInternetData().serviceName,
+              meshServices: getMeshServiceData().services,
+              meshPromoPrice: getMeshServiceData().promoPrice,
+              meshRegularPrice: getMeshServiceData().regularPrice,
+              meshServiceName: getMeshServiceData().serviceName
             }}
           />
         </div>

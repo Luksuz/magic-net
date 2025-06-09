@@ -35,7 +35,8 @@ export default function ContractTableEditor({
   onTerminalEquipmentChange,
   onGeneratePdf,
   contractConcludedOnPremises,
-  onContractConcludedOnPremisesChange
+  onContractConcludedOnPremisesChange,
+  contractNumber
 }: { 
   initialData: ContractData
   userInfo: UserInformation
@@ -45,9 +46,31 @@ export default function ContractTableEditor({
   onGeneratePdf: (data: ContractData, equipmentData: TerminalEquipment[]) => void
   contractConcludedOnPremises?: boolean
   onContractConcludedOnPremisesChange?: (value: boolean) => void
+  contractNumber?: string | null
 }) {
-  const [formData, setFormData] = useState<ContractData>(initialData)
+  const [formData, setFormData] = useState<ContractData>(() => {
+    // Clean contract number by removing UG prefix if it exists
+    const cleanContractNumber = contractNumber ? contractNumber.replace(/^UG\s*/, '') : '';
+    
+    // If we have both user name and contract number, format as "userName-contractNumber"
+    let finalContractNumber = '';
+    if (cleanContractNumber && userInfo?.userName) {
+      // Replace spaces with hyphens in user name and combine with contract number
+      const formattedUserName = userInfo.userName.trim().replace(/\s+/g, '-');
+      finalContractNumber = `${formattedUserName}-${cleanContractNumber}`;
+    } else if (cleanContractNumber) {
+      finalContractNumber = cleanContractNumber;
+    }
+    
+    return {
+      ...initialData,
+      broj_ugovora: finalContractNumber || initialData.broj_ugovora || ""
+    };
+  })
   const [terminalEquipment, setTerminalEquipment] = useState<TerminalEquipment[]>(initialTerminalEquipment)
+  const [freeMeshEnabled, setFreeMeshEnabled] = useState(false)
+  const [rentalMeshEnabled, setRentalMeshEnabled] = useState(false)
+  const [extraRentalMeshCount, setExtraRentalMeshCount] = useState(0)
   
   // Calculate monthly payment when component mounts or relevant values change
   useEffect(() => {
@@ -58,9 +81,43 @@ export default function ContractTableEditor({
     }
   }, [formData.uredaj_otplata_na_rate, formData.uredaj_za_placanje, formData.uredaj_inicijalna_uplata, formData.uredaj_broj_obroka]);
   
+  // Update contract number when user name changes
+  useEffect(() => {
+    if (contractNumber && userInfo?.userName) {
+      const cleanContractNumber = contractNumber.replace(/^UG\s*/, '');
+      const formattedUserName = userInfo.userName.trim().replace(/\s+/g, '-');
+      const finalContractNumber = `${formattedUserName}-${cleanContractNumber}`;
+      
+      // Only update if the current contract number is empty or matches our expected format
+      const currentNumber = formData.broj_ugovora || '';
+      const shouldUpdate = !currentNumber || 
+                          currentNumber === cleanContractNumber || 
+                          currentNumber.endsWith(`-${cleanContractNumber}`);
+      
+      if (shouldUpdate) {
+        setFormData(prev => ({
+          ...prev,
+          broj_ugovora: finalContractNumber
+        }));
+      }
+    }
+  }, [userInfo?.userName, contractNumber]);
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value }
+      
+      // Auto-sync fiksni_paket and fiksni_naziv_ugovorene_usluge for consistency
+      if (name === 'fiksni_paket' && value) {
+        newData.fiksni_naziv_ugovorene_usluge = value
+      } else if (name === 'fiksni_naziv_ugovorene_usluge' && value) {
+        newData.fiksni_paket = value
+      }
+      
+      return newData
+    })
   }
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,6 +219,78 @@ export default function ContractTableEditor({
     setTerminalEquipment(updatedEquipment)
     onTerminalEquipmentChange(updatedEquipment)
   }
+
+  // Handler for FREE MESH checkbox
+  const handleFreeMeshChange = (checked: boolean) => {
+    setFreeMeshEnabled(checked)
+    updateMeshInEquipmentAndServices()
+  }
+
+  // Handler for RENTAL MESH checkbox
+  const handleRentalMeshChange = (checked: boolean) => {
+    setRentalMeshEnabled(checked)
+    if (!checked) {
+      setExtraRentalMeshCount(0) // Reset extra rental mesh count when main rental is disabled
+    }
+    updateMeshInEquipmentAndServices()
+  }
+
+  // Handler for extra rental MESH checkboxes
+  const handleExtraRentalMeshChange = (index: number, checked: boolean) => {
+    if (checked) {
+      setExtraRentalMeshCount(prev => Math.max(prev, index + 1))
+    } else {
+      // Remove this specific extra mesh
+      if (index === extraRentalMeshCount - 1) {
+        // If removing the last one, decrease count
+        setExtraRentalMeshCount(prev => prev - 1)
+      }
+    }
+    updateMeshInEquipmentAndServices()
+  }
+
+  // Helper function to update MESH in equipment and services
+  const updateMeshInEquipmentAndServices = () => {
+    // Calculate total MESH quantity
+    let totalMeshQuantity = 0
+    let meshServices = []
+    
+    if (freeMeshEnabled) {
+      totalMeshQuantity += 1
+      meshServices.push("BESPLATAN MESH")
+    }
+    
+    if (rentalMeshEnabled) {
+      totalMeshQuantity += 1 + extraRentalMeshCount
+      const rentalCount = 1 + extraRentalMeshCount
+      meshServices.push(`EXTRA MESH U NAJAM (${rentalCount})`)
+    }
+
+    // Update MESH equipment quantity (assuming MESH has id 5)
+    const updatedEquipment = terminalEquipment.map(item => 
+      item.id === 5 ? { ...item, quantity: totalMeshQuantity > 0 ? totalMeshQuantity.toString() : "" } : item
+    )
+    setTerminalEquipment(updatedEquipment)
+    onTerminalEquipmentChange(updatedEquipment)
+    
+    // Update additional services field
+    const currentServices = formData.fiksne_dodatne_usluge || ""
+    
+    // Remove existing MESH services
+    let updatedServices = currentServices
+      .split(',')
+      .map(service => service.trim())
+      .filter(service => !service.toLowerCase().includes("mesh"))
+      .filter(service => service !== "")
+      .join(', ')
+    
+    // Add new MESH services
+    if (meshServices.length > 0) {
+      updatedServices = updatedServices ? `${updatedServices}, ${meshServices.join(', ')}` : meshServices.join(', ')
+    }
+    
+    setFormData(prev => ({ ...prev, fiksne_dodatne_usluge: updatedServices }))
+  }
   
   const handleGeneratePdf = () => {
     onGeneratePdf(formData, terminalEquipment)
@@ -173,7 +302,8 @@ export default function ContractTableEditor({
       name: "Osnovne informacije",
       fields: [
         { key: "usluga", label: "Usluga", type: "text" },
-        { key: "broj_ugovora", label: "Broj ugovora", type: "text" }
+        { key: "broj_ugovora", label: "Broj ugovora", type: "text" },
+        { key: "contract_duration", label: "Trajanje ugovora", type: "text" }
       ]
     },
     {

@@ -2,10 +2,10 @@
 
 import { useState, useEffect, RefObject } from "react"
 import { Button } from "@/components/ui/button"
-import { Settings2 } from "lucide-react"
+import { Settings2, FileText } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import type { ContractData } from "@/lib/supabase"
-import { generatePDF, type TerminalEquipment } from "@/lib/pdf-generator"
+import { generatePDF, generateOperatorChangePDF, type TerminalEquipment } from "@/lib/pdf-generator"
 import type { UserInformation, OperatorChangeData } from "@/components/user-information-form"
 import { useAuth } from "@/app/contexts/authContext"
 import { toast } from "@/components/ui/use-toast"
@@ -28,11 +28,20 @@ interface PdfButtonProps {
     tvPromoPrice?: number
     tvRegularPrice?: number
     tvServiceName?: string
+    internetServices?: string
+    internetPromoPrice?: number
+    internetRegularPrice?: number
+    internetServiceName?: string
+    meshServices?: string
+    meshPromoPrice?: number
+    meshRegularPrice?: number
+    meshServiceName?: string
   }
 }
 
 export default function PdfButton({ formData, userInfo, setActiveTab, terminalEquipment, buttonRef, contractConcludedOnPremises, operatorChangeData, calculatedData }: PdfButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isGeneratingOperatorChange, setIsGeneratingOperatorChange] = useState(false)
   const [isLibraryLoaded, setIsLibraryLoaded] = useState(false)
   const [showStyleOptions, setShowStyleOptions] = useState(false)
   const { user, profile, updateProfile } = useAuth()
@@ -161,17 +170,87 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
     }
   }
 
+  const handleOperatorChangeExport = async () => {
+    if (!isLibraryLoaded) {
+      alert("Biblioteka za generiranje PDF-a se još učitava. Pokušajte ponovno za trenutak.")
+      return
+    }
+
+    if (!userInfo?.changeOperator) {
+      alert("Zahtjev za promjenu operatera nije označen. Molimo označite opciju u korisničkim informacijama.")
+      return
+    }
+    
+    // Switch to basic tab before generating PDF
+    setActiveTab("basic")
+    
+    // Wait for tab switch to complete
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    setIsGeneratingOperatorChange(true)
+    try {
+      // Create deep clones of the data to prevent reference issues
+      const safeFormData = deepClone(formData);
+      const safeUserInfo = userInfo ? deepClone(userInfo) : undefined;
+      const safeOperatorChangeData = operatorChangeData ? deepClone(operatorChangeData) : undefined;
+      
+      console.log("Priprema za generiranje PDF-a promjene operatera:", !!safeOperatorChangeData);
+      
+      // Add a longer delay to ensure content is fully prepared before generation
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      let success = false;
+      if (profile && profile.user_id) {
+        success = await generateOperatorChangePDF(
+          safeFormData, 
+          safeUserInfo, 
+          safeOperatorChangeData
+        )
+      } else {
+        console.error("Korisnički ID nije dostupan.")
+      }
+      
+      if (success) {
+        toast({
+          title: "Uspješno generirano",
+          description: "PDF zahtjeva za promjenu operatera je uspješno generiran.",
+        })
+      } else {
+        throw new Error("Neuspješno generiranje PDF-a")
+      }
+      
+    } catch (error) {
+      console.error("Greška pri generiranju PDF-a promjene operatera:", error)
+      alert("Neuspjelo generiranje PDF-a promjene operatera. Molimo pokušajte ponovno.")
+    } finally {
+      setIsGeneratingOperatorChange(false)
+    }
+  }
+
   return (
     <div className="flex gap-2">
       <Button 
         onClick={handleExport} 
         size="lg" 
-        disabled={isGenerating || !isLibraryLoaded} 
+        disabled={isGenerating || isGeneratingOperatorChange || !isLibraryLoaded} 
         className="min-w-[200px]"
         ref={buttonRef ? (el) => buttonRef(el) : undefined}
       >
         {isGenerating ? "Generiranje PDF-a..." : isLibraryLoaded ? "Izvezi u PDF" : "Učitavanje PDF generatora..."}
       </Button>
+      
+      {userInfo?.changeOperator && (
+        <Button 
+          onClick={handleOperatorChangeExport} 
+          size="lg" 
+          variant="outline"
+          disabled={isGenerating || isGeneratingOperatorChange || !isLibraryLoaded} 
+          className="min-w-[250px]"
+        >
+          <FileText className="mr-2 h-4 w-4" />
+          {isGeneratingOperatorChange ? "Generiranje..." : "Izvezi Promjenu Operatera"}
+        </Button>
+      )}
     </div>
   )
 }

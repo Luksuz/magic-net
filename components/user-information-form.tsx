@@ -72,7 +72,7 @@ const defaultUserInfo: UserInformation = {
   paymentMethod: "oneTime",
   sellerCode: 0,
   sellerPlace: "Koprivnička 17C, 42230 Ludbreg",
-  sellerDate: new Date().toISOString().split("T")[0],
+  sellerDate: "",
   changeOperator: false
 }
 
@@ -586,10 +586,10 @@ export default function UserInformationForm({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectLabel>Poslovnice</SelectLabel>
-                    <SelectItem value="Koprivnička 17C, 42230 Ludbreg">MAGIC NET D.O.O. - Koprivnička 17C, 42230 Ludbreg</SelectItem>
-                    <SelectItem value="Kratka 2, 42000 Varaždin">MAGIC NET D.O.O. - Kratka 2, 42000 Varaždin</SelectItem>
-                    <SelectItem value="Poduzetnička 18, 42202, Trnovec">MAGIC NET D.O.O. - Poduzetnička 18, 42202, Trnovec</SelectItem>
+                    <SelectLabel>Mjesto</SelectLabel>
+                    <SelectItem value="Ludbreg">Ludbreg</SelectItem>
+                    <SelectItem value="Varaždin">Varaždin</SelectItem>
+                    <SelectItem value="Trnovec">Trnovec</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>

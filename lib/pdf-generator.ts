@@ -118,6 +118,14 @@ export async function generatePDF(
     tvPromoPrice?: number
     tvRegularPrice?: number
     tvServiceName?: string
+    internetServices?: string
+    internetPromoPrice?: number
+    internetRegularPrice?: number
+    internetServiceName?: string
+    meshServices?: string
+    meshPromoPrice?: number
+    meshRegularPrice?: number
+    meshServiceName?: string
   }
 ) {
   // Make sure html2pdf is available
@@ -305,26 +313,31 @@ export async function generatePDF(
     const allTables = tempHtmlDiv.querySelectorAll('table');
 
     allTables.forEach(table => {
-      let tableHasMeaningfulData = false;
       const rows = table.querySelectorAll('tr');
 
       for (const row of Array.from(rows)) {
         const cells = row.querySelectorAll('td');
-        // If a row has no <td> elements (e.g., it's purely <th> or empty), it doesn't have data cells.
+        // If a row has no <td> elements (e.g., it's purely <th> for headers), skip it
         if (cells.length === 0) {
           continue;
         }
 
         let rowHasActualValue = false;
-        for (const cell of Array.from(cells)) {
+        for (let i = 0; i < cells.length; i++) {
+          const cell = cells[i];
           const trimmedCellText = cell.textContent?.trim() || '';
           
-          // Heuristic to identify common static label patterns.
-          // This includes text ending with a colon (e.g., "Name:", "Price (EUR):")
-          // or numbered items (e.g., "1.", "2.").
-          // The character set includes common European characters, symbols, and punctuation.
-          const isLikelyStaticLabel = /^[A-ZČĆŽŠĐa-zčćžšđ\s\d(),%/€.'"-À-ÖØ-öø-ÿ]+:$/.test(trimmedCellText) || /^\d+\.$/.test(trimmedCellText);
-          const isPlaceholderText = /^\\[[A-Z0-9_]+\\]$/.test(trimmedCellText); // Checks for unreplaced placeholders like [FOO_BAR]
+          // Skip the first column if it's just a row number (like "1.", "2.", etc.)
+          if (i === 0) {
+            const isRowNumber = /^\d+\.$/.test(trimmedCellText);
+            if (isRowNumber) {
+              continue; // Don't count row numbers as meaningful data
+            }
+          }
+          
+          // Check for meaningful content (not empty, not placeholder, not just labels)
+          const isLikelyStaticLabel = /^[A-ZČĆŽŠĐa-zčćžšđ\s\d(),%/€.'"-À-ÖØ-öø-ÿ]+:$/.test(trimmedCellText);
+          const isPlaceholderText = /^\[[A-Z0-9_]+\]$/.test(trimmedCellText); // Checks for unreplaced placeholders like [FOO_BAR]
 
           if (trimmedCellText !== '' && !isLikelyStaticLabel && !isPlaceholderText) {
             rowHasActualValue = true;
@@ -332,14 +345,10 @@ export async function generatePDF(
           }
         }
 
-        if (rowHasActualValue) {
-          tableHasMeaningfulData = true;
-          break; // Found a row with meaningful data in this table
+        // Hide the row if it doesn't have meaningful data
+        if (!rowHasActualValue) {
+          row.style.display = 'none';
         }
-      }
-
-      if (!tableHasMeaningfulData) {
-        table.style.display = 'none'; // Hide the table if no meaningful data was found
       }
     });
 
@@ -469,6 +478,14 @@ function formatHtml(
     tvPromoPrice?: number
     tvRegularPrice?: number
     tvServiceName?: string
+    internetServices?: string
+    internetPromoPrice?: number
+    internetRegularPrice?: number
+    internetServiceName?: string
+    meshServices?: string
+    meshPromoPrice?: number
+    meshRegularPrice?: number
+    meshServiceName?: string
   }
 ): string {
   if (!html) throw new Error("HTML is required")
@@ -506,99 +523,16 @@ function formatHtml(
     html = html.replace(new RegExp(`\\[${placeholder}\\]`, 'g'), stringValue)
   }
 
-    // Conditionally include Zahtjev za promjenu operatera
-  if (userInfo && userInfo.changeOperator && promjenaOperateraHtmlContent) {
-    // Assuming promjenaOperateraHtmlContent is defined or fetched elsewhere and available here
-    
-    console.log(promjenaOperateraHtmlContent)
-    html = html.replace('<!-- ZAHTJEV_ZA_PROMJENU_OPERATERA -->', promjenaOperateraHtmlContent);
-    
-    // Process operator change data if available
-    if (operatorChangeData) {
-      // Replace operator change specific placeholders
-      let operatorHtml = html;
-      
-      // Basic operator information
-      operatorHtml = operatorHtml.replace(/____________________/g, operatorChangeData.existingOperatorName || '____________________');
-      
-      // Checkboxes for boolean values
-      operatorHtml = operatorHtml.replace(/id="daljina_da" name="ugovor_daljina" value="da"/g, 
-        `id="daljina_da" name="ugovor_daljina" value="da"${operatorChangeData.contractOnDistance ? ' checked' : ''}`);
-      operatorHtml = operatorHtml.replace(/id="daljina_ne" name="ugovor_daljina" value="ne"/g, 
-        `id="daljina_ne" name="ugovor_daljina" value="ne"${!operatorChangeData.contractOnDistance ? ' checked' : ''}`);
-      
-      operatorHtml = operatorHtml.replace(/id="podmiriti_dugovanja" name="podmiriti_dugovanja"/g, 
-        `id="podmiriti_dugovanja" name="podmiriti_dugovanja"${operatorChangeData.agreeToPayDebts ? ' checked' : ''}`);
-      
-      operatorHtml = operatorHtml.replace(/id="prijenos_da" name="prijenos_broja" value="da"/g, 
-        `id="prijenos_da" name="prijenos_broja" value="da"${operatorChangeData.numberTransfer ? ' checked' : ''}`);
-      operatorHtml = operatorHtml.replace(/id="prijenos_ne" name="prijenos_broja" value="ne"/g, 
-        `id="prijenos_ne" name="prijenos_broja" value="ne"${!operatorChangeData.numberTransfer ? ' checked' : ''}`);
-      
-      operatorHtml = operatorHtml.replace(/id="obavijest_datum" name="obavijest_datum"/g, 
-        `id="obavijest_datum" name="obavijest_datum"${operatorChangeData.notificationAgreement ? ' checked' : ''}`);
-      
-      operatorHtml = operatorHtml.replace(/id="vpn_da" name="vpn_serija" value="da"/g, 
-        `id="vpn_da" name="vpn_serija" value="da"${operatorChangeData.vpnSeries ? ' checked' : ''}`);
-      operatorHtml = operatorHtml.replace(/id="vpn_ne" name="vpn_serija" value="ne"/g, 
-        `id="vpn_ne" name="vpn_serija" value="ne"${!operatorChangeData.vpnSeries ? ' checked' : ''}`);
-      
-      operatorHtml = operatorHtml.replace(/id="veleprodaja_da" name="veleprodaja_usluga" value="da"/g, 
-        `id="veleprodaja_da" name="veleprodaja_usluga" value="da"${operatorChangeData.wholesaleService ? ' checked' : ''}`);
-      operatorHtml = operatorHtml.replace(/id="veleprodaja_ne" name="veleprodaja_usluga" value="ne"/g, 
-        `id="veleprodaja_ne" name="veleprodaja_usluga" value="ne"${!operatorChangeData.wholesaleService ? ' checked' : ''}`);
-      
-      // Services to cancel checkboxes
-      const servicesToCancelMap = {
-        'Pristup mreži': 'pristup_mrezi',
-        'Govorna usluga': 'govorna_usluga', 
-        'Internet': 'internet',
-        'Televizija': 'televizija',
-        'Sve usluge': 'sve_usluge'
-      };
-      
-      Object.entries(servicesToCancelMap).forEach(([service, id]) => {
-        const isChecked = operatorChangeData.servicesToCancel.includes(service);
-        operatorHtml = operatorHtml.replace(
-          new RegExp(`<input type="checkbox"> ${service}`, 'g'),
-          `<input type="checkbox"${isChecked ? ' checked' : ''}> ${service}`
-        );
-      });
-      
-      // Services to keep checkboxes  
-      Object.entries(servicesToCancelMap).forEach(([service, id]) => {
-        const isChecked = operatorChangeData.servicesToKeep.includes(service);
-        const regex = new RegExp(`(<input type="checkbox"(?:[^>]*?)>) ${service}`, 'g');
-        operatorHtml = operatorHtml.replace(regex, (match, inputTag) => {
-          if (match.includes('checked')) return match; // Already processed in cancel section
-          return `<input type="checkbox"${isChecked ? ' checked' : ''}> ${service}`;
-        });
-      });
-      
-      // User accounts to keep checkboxes
-      const accountsMap = {
-        'web hosting': 'web_hosting',
-        'adrese elektroničke pošte': 'email_addresses',
-        'svi korisnički računi': 'all_accounts'
-      };
-      
-      Object.entries(accountsMap).forEach(([account, id]) => {
-        const isChecked = operatorChangeData.userAccountsToKeep.includes(account);
-        operatorHtml = operatorHtml.replace(
-          new RegExp(`<input type="checkbox"> ${account}`, 'g'),
-          `<input type="checkbox"${isChecked ? ' checked' : ''}> ${account}`
-        );
-      });
-      
-      html = operatorHtml;
-    }
-  } else {
+  // Remove operator change content from main contract - now handled separately
     html = html.replace('<!-- ZAHTJEV_ZA_PROMJENU_OPERATERA -->', '');
-  }
 
   // If we have a contractNumber from tracking, use it; otherwise use fallback
   const agreementNumber = contractNumber || data.broj_ugovora || `${data.id}`;
   safeReplace('AGREEMENT_NUMBER', agreementNumber)
+
+  // Contract duration
+  safeReplace('PACKAGE_NAME', (data as any).fiksni_paket || '')
+  safeReplace('CONTRACT_DURATION', (data as any).contract_duration || '')
 
   // Internet service details
   safeReplace('INTERNET_SERVICE_NAME', 'Usluga fiksne mreže putem svjetlovodnog priključka')
@@ -610,10 +544,54 @@ function formatHtml(
 
   // TV service details
   safeReplace('TV_SERVICE_NAME', 'Usluga Televizije')
-  safeReplace('TV_PACKAGE', data.tv_paket)
+  safeReplace('TV_PACKAGE_NAME', data.tv_paket)
   safeReplace('TV_ADDITIONAL_SERVICES', calculatedData?.tvServices || data.tv_dodatne_usluge)
   safeReplace('TV_EQUIPMENT', data.tv_oprema)
   safeReplace('TV_NAZIV_USLUGE', calculatedData?.tvServiceName || data.tv_naziv_ugovorene_usluge)
+
+  // Additional TV packages - FILMSKI
+  const hasFilmskiPackage = calculatedData?.tvServices?.toLowerCase().includes('filmski') || data.tv_dodatne_usluge?.toLowerCase().includes('filmski')
+  safeReplace('FILMSKI_SERVICE_NAME', hasFilmskiPackage ? 'FILMSKI paket' : '')
+  safeReplace('FILMSKI_PROMO_PRICE', hasFilmskiPackage ? formatCurrency(5.00) : '')
+  safeReplace('FILMSKI_REGULAR_PRICE', hasFilmskiPackage ? formatCurrency(5.00) : '')
+
+  // Additional TV packages - ODRASLI
+  const hasOdrasliPackage = calculatedData?.tvServices?.toLowerCase().includes('odrasli') || data.tv_dodatne_usluge?.toLowerCase().includes('odrasli')
+  safeReplace('ODRASLI_SERVICE_NAME', hasOdrasliPackage ? 'ODRASLI paket' : '')
+  safeReplace('ODRASLI_PROMO_PRICE', hasOdrasliPackage ? formatCurrency(5.00) : '')
+  safeReplace('ODRASLI_REGULAR_PRICE', hasOdrasliPackage ? formatCurrency(5.00) : '')
+
+  // Additional TV Card
+  const hasAdditionalTvCard = calculatedData?.tvServices?.toLowerCase().includes('dodatna tv kartica') || data.tv_dodatne_usluge?.toLowerCase().includes('dodatna tv kartica')
+  safeReplace('ADDITIONAL_TV_CARD_SERVICE_NAME', hasAdditionalTvCard ? 'Dodatna TV kartica' : '')
+  safeReplace('ADDITIONAL_TV_CARD_PROMO_PRICE', hasAdditionalTvCard ? formatCurrency(3.98) : '')
+  safeReplace('ADDITIONAL_TV_CARD_REGULAR_PRICE', hasAdditionalTvCard ? formatCurrency(3.98) : '')
+
+  // MESH services using calculatedData or formData
+  const meshServices = calculatedData?.meshServices || data.fiksne_dodatne_usluge || '';
+  console.log('PDF Generator MESH debug:', {
+    'calculatedData?.meshServices': calculatedData?.meshServices,
+    'data.fiksne_dodatne_usluge': data.fiksne_dodatne_usluge,
+    'final meshServices': meshServices
+  })
+  
+  const hasFreeMesh = meshServices.toLowerCase().includes('besplatan mesh')
+  safeReplace('FREE_MESH_SERVICE_NAME', hasFreeMesh ? 'BESPLATAN MESH' : '')
+  safeReplace('FREE_MESH_PROMO_PRICE', hasFreeMesh ? formatCurrency(0.00) : '')
+  safeReplace('FREE_MESH_REGULAR_PRICE', hasFreeMesh ? formatCurrency(3.00) : '')
+  
+  console.log('Free MESH detected:', hasFreeMesh)
+
+  // Extract rental mesh count for pricing using calculatedData or formData
+  const rentalMeshMatch = meshServices.match(/extra mesh u najam \((\d+)\)/i)
+  const rentalMeshCount = rentalMeshMatch ? parseInt(rentalMeshMatch[1], 10) : 
+    (meshServices.toLowerCase().includes('extra mesh u najam') ? 1 : 0)
+  
+  console.log('Rental MESH detected:', { rentalMeshMatch, rentalMeshCount })
+  
+  safeReplace('RENTAL_MESH_SERVICE_NAME', rentalMeshCount > 0 ? `EXTRA MESH U NAJAM (${rentalMeshCount})` : '')
+  safeReplace('RENTAL_MESH_PROMO_PRICE', rentalMeshCount > 0 ? formatCurrency(rentalMeshCount * 3.00) : '')
+  safeReplace('RENTAL_MESH_REGULAR_PRICE', rentalMeshCount > 0 ? formatCurrency(rentalMeshCount * 3.00) : '')
 
   // Phone service details
   safeReplace('PHONE_SERVICE_NAME', 'Usluga Telefona')
@@ -623,7 +601,40 @@ function formatHtml(
   safeReplace('PHONE_EQUIPMENT', data.tel_oprema)
   safeReplace('TEL_NAZIV_USLUGE', calculatedData?.phoneServiceName || data.tel_naziv_ugovorene_usluge)
 
-  // Equipment details
+  // Additional phone services
+  const hasTelMix1 = calculatedData?.phoneServices?.toLowerCase().includes('telefonski mix 1') || data.tel_dodatne_usluge?.toLowerCase().includes('telefonski mix 1')
+  safeReplace('TEL_MIX1_SERVICE_NAME', hasTelMix1 ? 'Telefonski MIX 1' : '')
+  safeReplace('TEL_MIX1_PROMO_PRICE', hasTelMix1 ? formatCurrency(2.65) : '')
+  safeReplace('TEL_MIX1_REGULAR_PRICE', hasTelMix1 ? formatCurrency(2.65) : '')
+
+  const hasTelMix2 = calculatedData?.phoneServices?.toLowerCase().includes('telefonski mix 2') || data.tel_dodatne_usluge?.toLowerCase().includes('telefonski mix 2')
+  safeReplace('TEL_MIX2_SERVICE_NAME', hasTelMix2 ? 'Telefonski MIX 2' : '')
+  safeReplace('TEL_MIX2_PROMO_PRICE', hasTelMix2 ? formatCurrency(4.65) : '')
+  safeReplace('TEL_MIX2_REGULAR_PRICE', hasTelMix2 ? formatCurrency(4.65) : '')
+
+  const hasTelEuropa1_100 = calculatedData?.phoneServices?.toLowerCase().includes('telefon europa 1 / 100 fix') || data.tel_dodatne_usluge?.toLowerCase().includes('telefon europa 1 / 100 fix')
+  safeReplace('TEL_EUROPA1_100_SERVICE_NAME', hasTelEuropa1_100 ? 'Telefon Europa 1 / 100 FIX' : '')
+  safeReplace('TEL_EUROPA1_100_PROMO_PRICE', hasTelEuropa1_100 ? formatCurrency(5.18) : '')
+  safeReplace('TEL_EUROPA1_100_REGULAR_PRICE', hasTelEuropa1_100 ? formatCurrency(5.18) : '')
+
+  const hasTelEuropa1_200 = calculatedData?.phoneServices?.toLowerCase().includes('telefon europa 1 / 200 fix') || data.tel_dodatne_usluge?.toLowerCase().includes('telefon europa 1 / 200 fix')
+  safeReplace('TEL_EUROPA1_200_SERVICE_NAME', hasTelEuropa1_200 ? 'Telefon Europa 1 / 200 FIX' : '')
+  safeReplace('TEL_EUROPA1_200_PROMO_PRICE', hasTelEuropa1_200 ? formatCurrency(9.95) : '')
+  safeReplace('TEL_EUROPA1_200_REGULAR_PRICE', hasTelEuropa1_200 ? formatCurrency(9.95) : '')
+
+  const hasTelEuropa2_100 = calculatedData?.phoneServices?.toLowerCase().includes('telefon europa 2 / 100 fix') || data.tel_dodatne_usluge?.toLowerCase().includes('telefon europa 2 / 100 fix')
+  safeReplace('TEL_EUROPA2_100_SERVICE_NAME', hasTelEuropa2_100 ? 'Telefon Europa 2 / 100 FIX' : '')
+  safeReplace('TEL_EUROPA2_100_PROMO_PRICE', hasTelEuropa2_100 ? formatCurrency(7.30) : '')
+  safeReplace('TEL_EUROPA2_100_REGULAR_PRICE', hasTelEuropa2_100 ? formatCurrency(7.30) : '')
+
+  const hasTelEuropa2_200 = calculatedData?.phoneServices?.toLowerCase().includes('telefon europa 2 / 200 fix') || data.tel_dodatne_usluge?.toLowerCase().includes('telefon europa 2 / 200 fix')
+  safeReplace('TEL_EUROPA2_200_SERVICE_NAME', hasTelEuropa2_200 ? 'Telefon Europa 2 / 200 FIX' : '')
+  safeReplace('TEL_EUROPA2_200_PROMO_PRICE', hasTelEuropa2_200 ? formatCurrency(13.14) : '')
+  safeReplace('TEL_EUROPA2_200_REGULAR_PRICE', hasTelEuropa2_200 ? formatCurrency(13.14) : '')
+
+  // Equipment details - conditionally remove section if no device data
+  const hasDeviceData = !!(data.uredaj_proizvodac_model || data.uredaj_cijena || data.uredaj_popust || data.uredaj_za_placanje)
+  
   safeReplace('EQUIPMENT__MODEL', data.uredaj_proizvodac_model)
   safeReplace('EQUIPMENT_PRICE', formatCurrency(data.uredaj_cijena))
   safeReplace('EQUIPMENT_DISCOUNT', formatCurrency(data.uredaj_popust))
@@ -638,6 +649,7 @@ function formatHtml(
   safeReplace('EQUIPMENT_PAYMENT_INSTALLMENTS', data.uredaj_broj_obroka)
   safeReplace('EQUIPMENT_INITIAL_PAYMENT', formatCurrency(data.uredaj_inicijalna_uplata))
   safeReplace('EQUIPMENT_MONTHLY_RATE', formatCurrency(data.uredaj_mjesecna_rata))
+  
 
   // Terminal equipment
   if (terminalEquipment && terminalEquipment.length > 0) {
@@ -773,10 +785,10 @@ function formatHtml(
   safeReplace('CONTRACT_PRICE_PHONE', formatCurrency(calculatedData?.phonePromoPrice ?? (data as any).contract_price_phone))
   safeReplace('REGULAR_PRICE_PHONE', formatCurrency(calculatedData?.phoneRegularPrice ?? (data as any).regular_price_phone))
   
-  // Total prices
-  safeReplace('TOTAL_PROMO_PRICE', formatCurrency(calculateTotalPrice(data, 'promo')))
-  safeReplace('TOTAL_CONTRACT_PRICE', formatCurrency(calculateTotalPrice(data, 'contract')))
-  safeReplace('TOTAL_REGULAR_PRICE', formatCurrency(calculateTotalPrice(data, 'regular')))
+  // Calculate and set total prices (moved to end to include all additional services)
+  safeReplace('TOTAL_PROMO_PRICE', formatCurrency(calculateTotalPrice(data, 'promo', calculatedData)))
+  safeReplace('TOTAL_CONTRACT_PRICE', formatCurrency(calculateTotalPrice(data, 'contract', calculatedData)))
+  safeReplace('TOTAL_REGULAR_PRICE', formatCurrency(calculateTotalPrice(data, 'regular', calculatedData)))
   
   // User & Contract Information
   if (userInfo) {
@@ -868,10 +880,465 @@ function formatHtml(
 }
 
 // Helper function to calculate total prices
-function calculateTotalPrice(data: ContractData, type: 'promo' | 'contract' | 'regular'): number {
+function calculateTotalPrice(
+  data: ContractData, 
+  type: 'promo' | 'contract' | 'regular',
+  calculatedData?: {
+    phoneServices?: string
+    phonePromoPrice?: number
+    phoneRegularPrice?: number
+    phoneServiceName?: string
+    tvServices?: string
+    tvPromoPrice?: number
+    tvRegularPrice?: number
+    tvServiceName?: string
+    internetServices?: string
+    internetPromoPrice?: number
+    internetRegularPrice?: number
+    internetServiceName?: string
+    meshServices?: string
+    meshPromoPrice?: number
+    meshRegularPrice?: number
+    meshServiceName?: string
+  }
+): number {
   const fiksniPrice = (data as any)[`${type}_price_fiksni`] || 0;
   const tvPrice = (data as any)[`${type}_price_tv`] || 0;
   const phonePrice = (data as any)[`${type}_price_phone`] || 0;
   
-  return fiksniPrice + tvPrice + phonePrice;
+  console.log(`Calculating ${type} total:`, {
+    fiksniPrice,
+    tvPrice,
+    phonePrice,
+    tv_dodatne_usluge: data.tv_dodatne_usluge,
+    fiksne_dodatne_usluge: data.fiksne_dodatne_usluge,
+    tel_dodatne_usluge: data.tel_dodatne_usluge,
+    calculatedData
+  });
+  
+  let additionalServicesPrice = 0;
+  
+  // Use calculatedData for TV services if available, otherwise fall back to data fields
+  const tvServices = calculatedData?.tvServices || data.tv_dodatne_usluge || '';
+  const phoneServices = calculatedData?.phoneServices || data.tel_dodatne_usluge || '';
+  const meshServices = calculatedData?.meshServices || data.fiksne_dodatne_usluge || '';
+  
+  // Add TV additional packages using calculatedData or formData
+  if (tvServices.toLowerCase().includes('filmski')) {
+    additionalServicesPrice += 5.00;
+    console.log('Added FILMSKI: +5.00');
+  }
+  if (tvServices.toLowerCase().includes('odrasli')) {
+    additionalServicesPrice += 5.00;
+    console.log('Added ODRASLI: +5.00');
+  }
+  if (tvServices.toLowerCase().includes('dodatna tv kartica')) {
+    additionalServicesPrice += 3.98;
+    console.log('Added Dodatna TV kartica: +3.98');
+  }
+  
+  // Add MESH services using calculatedData or formData
+  if (meshServices.toLowerCase().includes('besplatan mesh')) {
+    if (type === 'promo') {
+      additionalServicesPrice += 0.00; // Free in promo period
+      console.log('Added BESPLATAN MESH (promo): +0.00');
+    } else {
+      additionalServicesPrice += 3.00; // Regular price
+      console.log('Added BESPLATAN MESH (regular): +3.00');
+    }
+  }
+  
+  // Add rental MESH services using calculatedData or formData
+  const rentalMeshMatch = meshServices.match(/extra mesh u najam \((\d+)\)/i);
+  const rentalMeshCount = rentalMeshMatch ? parseInt(rentalMeshMatch[1], 10) : 
+    (meshServices.toLowerCase().includes('extra mesh u najam') ? 1 : 0);
+  
+  if (rentalMeshCount > 0) {
+    additionalServicesPrice += rentalMeshCount * 3.00; // 3 EUR per unit for both promo and regular
+    console.log(`Added ${rentalMeshCount} RENTAL MESH: +${rentalMeshCount * 3.00}`);
+  }
+  
+  // Add phone additional services using calculatedData or formData
+  if (phoneServices.toLowerCase().includes('telefonski mix 1')) {
+    additionalServicesPrice += 2.65;
+    console.log('Added Telefonski MIX 1: +2.65');
+  }
+  if (phoneServices.toLowerCase().includes('telefonski mix 2')) {
+    additionalServicesPrice += 4.65;
+    console.log('Added Telefonski MIX 2: +4.65');
+  }
+  if (phoneServices.toLowerCase().includes('telefon europa 1 / 100 fix')) {
+    additionalServicesPrice += 5.18;
+    console.log('Added Telefon Europa 1 / 100 FIX: +5.18');
+  }
+  if (phoneServices.toLowerCase().includes('telefon europa 1 / 200 fix')) {
+    additionalServicesPrice += 9.95;
+    console.log('Added Telefon Europa 1 / 200 FIX: +9.95');
+  }
+  if (phoneServices.toLowerCase().includes('telefon europa 2 / 100 fix')) {
+    additionalServicesPrice += 7.30;
+    console.log('Added Telefon Europa 2 / 100 FIX: +7.30');
+  }
+  if (phoneServices.toLowerCase().includes('telefon europa 2 / 200 fix')) {
+    additionalServicesPrice += 13.14;
+    console.log('Added Telefon Europa 2 / 200 FIX: +13.14');
+  }
+  
+  const total = fiksniPrice + tvPrice + phonePrice + additionalServicesPrice;
+  console.log(`Total ${type}: ${total} (base: ${fiksniPrice + tvPrice + phonePrice}, additional: ${additionalServicesPrice})`);
+  
+  return total;
+}
+
+export async function generateOperatorChangePDF(
+  data: ContractData,
+  userInfo?: UserInformation,
+  operatorChangeData?: OperatorChangeData
+) {
+  // Make sure html2pdf is available
+  if (typeof window === "undefined" || !window.html2pdf) {
+    throw new Error("html2pdf is not available")
+  }
+
+  // Hide UI elements temporarily (navigation bars, buttons, etc.)
+  const hideUIForPdfGeneration = () => {
+    // Store original styles to restore later
+    const elementsToHide = [
+      document.querySelector('nav'),
+      document.querySelector('header'),
+      ...Array.from(document.querySelectorAll('button:not(.pdf-content button)')),
+      ...Array.from(document.querySelectorAll('.pdf-button-container')),
+      document.querySelector('footer'),
+      ...Array.from(document.querySelectorAll('.ui-element')), // Add class to any custom UI elements
+      ...Array.from(document.querySelectorAll('[role="tablist"]')),
+      ...Array.from(document.querySelectorAll('.tabs-container')),
+      document.querySelector('.mt-12.pt-8.border-t') // Email section
+    ];
+
+    // Store original display values to restore later
+    const originalStyles: Map<HTMLElement, string> = new Map();
+    
+    elementsToHide.forEach(el => {
+      if (el && el instanceof HTMLElement) {
+        originalStyles.set(el, el.style.display);
+        el.style.display = 'none';
+      }
+    });
+
+    return originalStyles;
+  };
+
+  // Restore UI elements after PDF generation
+  const restoreUI = (originalStyles: Map<HTMLElement, string>) => {
+    originalStyles.forEach((originalDisplay, element) => {
+      if (element) {
+        element.style.display = originalDisplay;
+      }
+    });
+  };
+
+  // Merge default options with provided options
+  const options = { ...defaultStyleOptions }
+
+  // Generate agreement number with user's agreement_number if available
+  let agreementNumber = data.broj_ugovora || `${data.id}`
+  
+  // If userInfo has userId populated, use that with a hyphen and agreement_number from userInfo
+  if (userInfo?.userId) {
+    // Check if we should append agreement_number from profile
+    if (userInfo.userId && window.hasOwnProperty('profileData')) {
+      const profileData = (window as any).profileData
+      if (profileData && profileData.agreement_number) {
+        agreementNumber = `${userInfo.userId}-${profileData.agreement_number}`
+      } else {
+        agreementNumber = userInfo.userId
+      }
+    } else {
+      agreementNumber = userInfo.userId
+    }
+  }
+
+  // Create a container reference that will be accessible in finally block
+  let container: HTMLDivElement | null = null;
+  let originalStyles: Map<HTMLElement, string> | null = null;
+
+  try {
+    // Hide UI elements before generating PDF
+    originalStyles = hideUIForPdfGeneration();
+
+    // Get the operator change HTML template
+    const response = await fetch('/promjena_operatera.html');
+    const promjenaOperateraHtmlContent = await response.text();
+    
+    if (!promjenaOperateraHtmlContent) {
+      throw new Error('No operator change template found');
+    }
+    
+    // Track contract creation to get a proper contract number
+    let contractNumber = '';
+    
+    try {
+      // Get user_id directly from auth context
+      let userId = null;
+      let userCode = null;
+      
+      // Get profile data if available
+      if (window.hasOwnProperty('profileData')) {
+        const profileData = (window as any).profileData;
+        console.log("Profile data:", profileData);
+        
+        // Always use the user_id from profileData which comes from auth context
+        if (profileData && profileData.user_id) {
+          userId = profileData.user_id;
+          
+          // Get user code for contract numbering - always use user_number
+          if (profileData.user_number) {
+            userCode = String(profileData.user_number).padStart(2, '0');
+          } else {
+            userCode = getUserCode(profileData);
+          }
+        }
+      }
+
+      console.log("User ID from auth context:", userId, "User Code:", userCode);
+      
+      // Track contract creation and get the generated contract number
+      if (userId) {
+        const result = await trackContractCreation(
+          userId || undefined,
+          userCode || undefined
+        );
+        console.log("Contract creation tracked in database:", result);
+        
+        // If successful, store the generated contract number
+        if (result && result.success && result.contract_number) {
+          contractNumber = result.contract_number;
+          console.log("Using contract number:", contractNumber);
+          
+          // Store for future reference
+          if (typeof window !== "undefined") {
+            (window as any).lastContractNumber = contractNumber;
+          }
+        }
+      }
+    } catch (trackingError) {
+      console.error("Error tracking contract creation:", trackingError);
+      // Don't fail the entire operation if tracking fails
+    }
+    
+    // Process only the operator change template with actual data
+    const processedHtml = formatOperatorChangeHtml(
+      promjenaOperateraHtmlContent, 
+      data, 
+      userInfo, 
+      contractNumber || agreementNumber,
+      operatorChangeData
+    );
+    
+    let htmlContentForPdf = processedHtml;
+    const logoUrl = "https://qfpjbgjxkpwtsegtkaze.supabase.co/storage/v1/object/public/images//logo.png";
+
+    try {
+      console.log("Attempting to embed logo as Base64...");
+      const base64Logo = await imageUrlToBase64(logoUrl);
+      
+      const tempRenderDiv = document.createElement('div');
+      tempRenderDiv.innerHTML = htmlContentForPdf;
+      
+      const logoImgElement = tempRenderDiv.querySelector(`img[src="${logoUrl}"]`) as HTMLImageElement | null;
+      
+      if (logoImgElement) {
+        logoImgElement.src = base64Logo;
+        htmlContentForPdf = tempRenderDiv.innerHTML;
+        console.log("Logo successfully embedded as Base64.");
+      } else {
+        // Fallback selector in case the URL has slight variations (e.g. normalized slashes)
+        const genericLogoImgElement = tempRenderDiv.querySelector('img[src*="supabase.co/storage/v1/object/public/images"][src*="logo.png"]') as HTMLImageElement | null;
+        if (genericLogoImgElement && genericLogoImgElement.src.includes("logo.png")) {
+            console.warn(`Logo image tag not found with exact URL: ${logoUrl}. Found with generic selector: ${genericLogoImgElement.src}. Replacing this one.`);
+            genericLogoImgElement.src = base64Logo;
+            htmlContentForPdf = tempRenderDiv.innerHTML;
+            console.log("Logo (found generically) embedded as Base64.");
+        } else {
+            console.warn(`Logo image tag not found with URL: ${logoUrl}. PDF might not render the logo correctly. The original URL will be used.`);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch or convert logo to Base64. PDF will use the original URL:", error);
+      // htmlContentForPdf remains processedHtml, html2pdf will attempt to fetch it using its own mechanisms.
+    }
+    
+    console.log("HTML content for operator change PDF:", htmlContentForPdf);
+
+    // Create a container for the PDF content
+    container = document.createElement("div");
+    container.className = "pdf-content";
+    
+    // Set the processed HTML to the container
+    container.innerHTML = htmlContentForPdf;
+    
+    // Temporarily append to document to render
+    document.body.appendChild(container);
+    
+    // Generate PDF with proper contract numbering
+    const ownerPassword = process.env.NEXT_PUBLIC_PDF_OWNER_PASSWORD
+    
+    // Use the contract number if available
+    const pdfOptions = {
+      filename: `operator-change-${contractNumber || agreementNumber}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        letterRendering: true,
+      },
+      jsPDF: {
+        unit: "mm",
+        format: options.pageSize,
+        orientation: options.orientation,
+        compress: true,
+        hotfixes: ["px_scaling"],
+        autoPaging: 'text',
+        encryption: userInfo?.oib && userInfo.oib.trim() !== '' ? {
+          userPassword: userInfo.oib,
+          ownerPassword: ownerPassword,
+          userPermissions: ["print", "modify", "copy", "annot-forms"],
+          ownerPermissions: ["print", "modify", "copy", "annot-forms"]
+        } : {
+          ownerPassword: ownerPassword,
+          ownerPermissions: ["print", "modify", "copy", "annot-forms"]
+        }
+      },
+      pagebreak: { mode: ["avoid", "css", "legacy"] },
+    }
+
+    // Use window.html2pdf instead of importing the library
+    await window.html2pdf().from(container).set(pdfOptions).save()
+    
+    return true
+  } catch (error) {
+    console.error("Error generating operator change PDF:", error)
+    return false
+  } finally {
+    // Clean up the container that was added to the body
+    if (container && document.body.contains(container)) {
+      document.body.removeChild(container);
+    }
+    
+    // Restore UI elements
+    if (originalStyles) {
+      restoreUI(originalStyles);
+    }
+  }
+}
+
+function formatOperatorChangeHtml(
+  html: string, 
+  data: ContractData, 
+  userInfo?: UserInformation, 
+  contractNumber?: string,
+  operatorChangeData?: OperatorChangeData
+): string {
+  if (!html) throw new Error("HTML is required")
+  if (!data) throw new Error("Data is required")
+
+  // Helper function to safely replace placeholders
+  const safeReplace = (placeholder: string, value: string | number | null | undefined) => {
+    const stringValue = value !== null && value !== undefined ? String(value) : ""
+    html = html.replace(new RegExp(`\\[${placeholder}\\]`, 'g'), stringValue)
+  }
+
+  // Replace basic placeholders
+  safeReplace('AGREEMENT_NUMBER', contractNumber || data.broj_ugovora || `${data.id}`)
+  safeReplace('CURRENT_DATE', new Date().toLocaleDateString())
+
+  // User information
+  if (userInfo) {
+    safeReplace('USER_NAME', userInfo.userName)
+    safeReplace('LEGAL_ENTITY', userInfo.legalEntity)
+    safeReplace('OIB', userInfo.oib)
+    safeReplace('PHONE_NUMBER', data.pretplatnicki_broj)
+    safeReplace('CONTACT_PHONE', userInfo.contactPhone)
+    safeReplace('EMAIL', userInfo.email)
+    safeReplace('CONNECTION_ADDRESS', userInfo.connectionAddress)
+    safeReplace('SELLER_PLACE', userInfo.sellerPlace)
+  }
+
+  // Process operator change data if available
+  if (operatorChangeData) {
+    // Basic operator information
+    html = html.replace(/____________________/g, operatorChangeData.existingOperatorName || '____________________');
+    
+    // Checkboxes for boolean values
+    html = html.replace(/id="daljina_da" name="ugovor_daljina" value="da"/g, 
+      `id="daljina_da" name="ugovor_daljina" value="da"${operatorChangeData.contractOnDistance ? ' checked' : ''}`);
+    html = html.replace(/id="daljina_ne" name="ugovor_daljina" value="ne"/g, 
+      `id="daljina_ne" name="ugovor_daljina" value="ne"${!operatorChangeData.contractOnDistance ? ' checked' : ''}`);
+    
+    html = html.replace(/id="podmiriti_dugovanja" name="podmiriti_dugovanja"/g, 
+      `id="podmiriti_dugovanja" name="podmiriti_dugovanja"${operatorChangeData.agreeToPayDebts ? ' checked' : ''}`);
+    
+    html = html.replace(/id="prijenos_da" name="prijenos_broja" value="da"/g, 
+      `id="prijenos_da" name="prijenos_broja" value="da"${operatorChangeData.numberTransfer ? ' checked' : ''}`);
+    html = html.replace(/id="prijenos_ne" name="prijenos_broja" value="ne"/g, 
+      `id="prijenos_ne" name="prijenos_broja" value="ne"${!operatorChangeData.numberTransfer ? ' checked' : ''}`);
+    
+    html = html.replace(/id="obavijest_datum" name="obavijest_datum"/g, 
+      `id="obavijest_datum" name="obavijest_datum"${operatorChangeData.notificationAgreement ? ' checked' : ''}`);
+    
+    html = html.replace(/id="vpn_da" name="vpn_serija" value="da"/g, 
+      `id="vpn_da" name="vpn_serija" value="da"${operatorChangeData.vpnSeries ? ' checked' : ''}`);
+    html = html.replace(/id="vpn_ne" name="vpn_serija" value="ne"/g, 
+      `id="vpn_ne" name="vpn_serija" value="ne"${!operatorChangeData.vpnSeries ? ' checked' : ''}`);
+    
+    html = html.replace(/id="veleprodaja_da" name="veleprodaja_usluga" value="da"/g, 
+      `id="veleprodaja_da" name="veleprodaja_usluga" value="da"${operatorChangeData.wholesaleService ? ' checked' : ''}`);
+    html = html.replace(/id="veleprodaja_ne" name="veleprodaja_usluga" value="ne"/g, 
+      `id="veleprodaja_ne" name="veleprodaja_usluga" value="ne"${!operatorChangeData.wholesaleService ? ' checked' : ''}`);
+    
+    // Services to cancel checkboxes
+    const servicesToCancelMap = {
+      'Pristup mreži': 'pristup_mrezi',
+      'Govorna usluga': 'govorna_usluga', 
+      'Internet': 'internet',
+      'Televizija': 'televizija',
+      'Sve usluge': 'sve_usluge'
+    };
+    
+    Object.entries(servicesToCancelMap).forEach(([service, id]) => {
+      const isChecked = operatorChangeData.servicesToCancel.includes(service);
+      html = html.replace(
+        new RegExp(`<input type="checkbox"> ${service}`, 'g'),
+        `<input type="checkbox"${isChecked ? ' checked' : ''}> ${service}`
+      );
+    });
+    
+    // Services to keep checkboxes  
+    Object.entries(servicesToCancelMap).forEach(([service, id]) => {
+      const isChecked = operatorChangeData.servicesToKeep.includes(service);
+      const regex = new RegExp(`(<input type="checkbox"(?:[^>]*?)>) ${service}`, 'g');
+      html = html.replace(regex, (match, inputTag) => {
+        if (match.includes('checked')) return match; // Already processed in cancel section
+        return `<input type="checkbox"${isChecked ? ' checked' : ''}> ${service}`;
+      });
+    });
+    
+    // User accounts to keep checkboxes
+    const accountsMap = {
+      'web hosting': 'web_hosting',
+      'adrese elektroničke pošte': 'email_addresses',
+      'svi korisnički računi': 'all_accounts'
+    };
+    
+    Object.entries(accountsMap).forEach(([account, id]) => {
+      const isChecked = operatorChangeData.userAccountsToKeep.includes(account);
+      html = html.replace(
+        new RegExp(`<input type="checkbox"> ${account}`, 'g'),
+        `<input type="checkbox"${isChecked ? ' checked' : ''}> ${account}`
+      );
+    });
+  }
+
+  return html
 }

@@ -130,10 +130,22 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    setFormState(prev => ({
-      ...prev,
-      [name]: type === 'number' && value !== '' ? parseFloat(value) : value,
-    }));
+    
+    setFormState(prev => {
+      const newState = {
+        ...prev,
+        [name]: type === 'number' && value !== '' ? parseFloat(value) : value,
+      };
+      
+      // Auto-sync fiksni_paket and fiksni_naziv_ugovorene_usluge for consistency
+      if (name === 'fiksni_paket' && value) {
+        newState.fiksni_naziv_ugovorene_usluge = value;
+      } else if (name === 'fiksni_naziv_ugovorene_usluge' && value) {
+        newState.fiksni_paket = value;
+      }
+      
+      return newState;
+    });
   };
 
   const handleCheckboxChange = (name: keyof ContractData, checked: boolean) => {
@@ -314,7 +326,7 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="fiksni_paket">Fiksni paket</Label>
-                    <Input id="usluga" name="fiksni_paket" value={formState.usluga || ""} onChange={handleInputChange} />
+                    <Input id="fiksni_paket" name="fiksni_paket" value={formState.fiksni_paket || ""} onChange={handleInputChange} />
                   </div>
 
                   <div className="space-y-2">

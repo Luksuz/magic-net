@@ -54,7 +54,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
     paymentMethod: "oneTime",
     sellerCode: 0,
     sellerPlace: "",
-    sellerDate: new Date().toISOString().split("T")[0],
+    sellerDate: "",
     changeOperator: false,
   });
 
@@ -225,6 +225,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
             onGeneratePdf={handlePdfFromTableView}
             contractConcludedOnPremises={contractConcludedOnPremises}
             onContractConcludedOnPremisesChange={setContractConcludedOnPremises}
+            contractNumber={contractData?.broj_ugovora}
           />
         ) : (
           <ContractForm
@@ -236,6 +237,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
             shouldGeneratePdf={isGeneratingPdf}
             contractConcludedOnPremises={contractConcludedOnPremises}
             onContractConcludedOnPremisesChange={setContractConcludedOnPremises}
+            contractNumber={contractData?.broj_ugovora}
           />
         )}
       </div>

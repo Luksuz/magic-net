@@ -1,24 +1,29 @@
-
 <style>
     body {
         font-family: Arial, sans-serif;
-        font-size: 11px;
+        font-size: 10px;
         margin: 0;
         padding: 0;
         background-color: #eef; /* Light background for contrast */
+        line-height: 1.1;
     }
     .pdf-content { /* Renamed from container class */
-        padding: 15px;
+        padding: 8px;
         box-sizing: border-box;
         width: 100%;
         max-width: 100%;
         overflow-x: hidden;
     }
-    h1, h2, h3, h4, h5, h6 { color: #1a3c5e; margin-top: 15px; margin-bottom: 10px; }
+    h1, h2, h3, h4, h5, h6 { 
+        color: #1a3c5e; 
+        margin-top: 8px;
+        margin-bottom: 4px;
+        line-height: 1.1;
+    }
     .page-break-placeholder { /* Simulate page break visually */
-         height: 30px;
+         height: 20px;
          border-top: 2px dashed #ccc;
-         margin: 20px 0;
+         margin: 10px 0;
          text-align: center;
          color: #999;
          font-style: italic;
@@ -37,76 +42,90 @@
     table {
         border-collapse: collapse; 
         width: 100%; 
-        margin-bottom: 15px; 
+        margin-bottom: 8px;
         table-layout: fixed; 
         max-width: 100%;
+        font-size: 9px;
     }
     th, td { 
-        padding: 6px; 
+        padding: 3px;
         border: 1px solid #ddd; 
-        line-height: 1.2; 
+        line-height: 1.1;
         overflow-wrap: break-word; 
         word-wrap: break-word; 
         max-width: 100%;
+        vertical-align: top;
     }
     th { 
         background-color: #f2f2f2; 
         text-align: center; 
         font-weight: bold;
+        font-size: 9px;
     }
     td { 
         vertical-align: top;
     }
     a { color: #1a3c5e; text-decoration: none; }
     a:hover { text-decoration: underline; }
+    p { 
+        margin: 2px 0;
+        line-height: 1.2;
+    }
+    ul { 
+        margin: 4px 0;
+        padding-left: 15px;
+    }
+    li {
+        margin-bottom: 1px;
+    }
     </style>
   
     <div class="pdf-container" style="font-family: Arial, sans-serif;
-      font-size: 11px;
+      font-size: 10px;
       color: #333;
-      margin: 20px auto;
-      padding: 15px;
+      margin: 10px auto;
+      padding: 8px;
       border: 1px solid #ccc;
-      width: 210mm; /* A4 width approx */
+      width: 180mm; /* Reduced from 210mm */
       max-width: 100%;
       box-sizing: border-box;
       position: relative;
       background-color: white; /* Added background for clarity */">
       <div class="pdf-content">
-      <div style="overflow: hidden; margin-bottom: 15px;"> <!-- Clearfix for floated logo -->
-          <div style="float: right; margin-left: 15px; width: 80px; height: 80px; border-radius: 50%; background-color: #1a3c5e; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold;">
+      <div style="overflow: hidden; margin-bottom: 8px;">
+          <div style="float: right; margin-left: 8px; width: 60px; height: 60px; border-radius: 50%; background-color: #1a3c5e; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; font-weight: bold;">
               <img src="https://qfpjbgjxkpwtsegtkaze.supabase.co/storage/v1/object/public/images//logo.png" alt="Company Logo" style="width: 100%; height: 100%; border-radius: 50%;">
           </div>
-          <div> <!-- Prevent text wrap if logo floats -->
-              <p style="margin: 0; font-weight: bold;">MAGIC NET – d.o.o.</p>
-              <p style="margin: 0;">Koprivnička 17 C, HR - 42230 Ludbreg</p>
-              <p style="margin: 0;">OIB : 92188488799</p>
-              <p style="margin: 0;"><a href="http://www.mtnet.hr">www.mtnet.hr</a></p>
-              <p style="margin: 0;"><a href="mailto:info@mtnet.hr">info@mtnet.hr</a></p>
-              <p style="margin: 0;">Služba za korisnike: 042 420 420</p>
-              <p style="margin: 0;">Fax: 042 420 429</p>
+          <div>
+              <p style="margin: 0; font-weight: bold; font-size: 11px;">MAGIC NET – d.o.o.</p>
+              <p style="margin: 0; font-size: 9px;">Koprivnička 17 C, HR - 42230 Ludbreg</p>
+              <p style="margin: 0; font-size: 9px;">OIB : 92188488799</p>
+              <p style="margin: 0; font-size: 9px;"><a href="http://www.mtnet.hr">www.mtnet.hr</a></p>
+              <p style="margin: 0; font-size: 9px;"><a href="mailto:info@mtnet.hr">info@mtnet.hr</a></p>
+              <p style="margin: 0; font-size: 9px;">Služba za korisnike: 042 420 420</p>
+              <p style="margin: 0; font-size: 9px;">Fax: 042 420 429</p>
           </div>
       </div>
-      <div style="clear: both;"></div> <!-- Clear float -->
+      <div style="clear: both;"></div>
   
-      <div style="text-align: center; margin: 30px 0;">
-          <p style="margin: 0; font-size: 14px; font-weight: bold;">Broj ugovora: [AGREEMENT_NUMBER]</p>
-          <p style="margin: 0; font-size: 16px; font-weight: bold;">SAŽETAK UGOVORA</p>
+      <div style="text-align: center; margin: 12px 0;">
+          <p style="margin: 0; font-size: 12px; font-weight: bold;">Broj ugovora: [AGREEMENT_NUMBER]</p>
+          <p style="margin: 0; font-size: 14px; font-weight: bold;">SAŽETAK UGOVORA</p>
       </div>
   
-      <div style="margin-bottom: 15px;">
-          <ul style="list-style-type: disc; padding-left: 20px;">
+      <div style="margin-bottom: 8px;">
+          <ul style="list-style-type: disc; padding-left: 15px; font-size: 9px;">
           <li>U ovom su sažetku ugovora navedeni glavni elementi ove ponude usluge u skladu s pravom EU-a¹.</li>
           <li>Sažetak Ugovora olakšava usporedbu različitih ponuda usluge.</li>
           <li>Potpune informacije o usluzi navedene su u drugim dokumentima.</li>
           </ul>
       </div>
-      <div style="margin-bottom: 15px;">
-          <h2 style="font-size: 14px; font-weight: bold; border-bottom: 1px solid #1a3c5e; padding-bottom: 5px;">Usluge i oprema</h2>
-          <p style="font-weight: bold; margin-bottom: 3px;">Podaci o ugovorenim uslugama</p>
+      <div style="margin-bottom: 8px;">
+          <h2 style="font-size: 12px; font-weight: bold; border-bottom: 1px solid #1a3c5e; padding-bottom: 2px; margin-bottom: 4px;">Usluge i oprema</h2>
+          <p style="font-weight: bold; margin-bottom: 2px; font-size: 10px;">Podaci o ugovorenim uslugama</p>
   
           <table>
-          <tr><td colspan="2">[INTERNET_SERVICE_NAME]</td></tr>
+          <tr><td colspan="2" style="font-weight: bold;">[FIKSNI_PAKET]</td></tr>
           <tr><td style="width: 30%;">1.</td><td></td></tr>
           <tr><td>Paket:</td><td>[INTERNET_PACKAGE_NAME]</td></tr>
           <tr><td>Brzina interneta:</td><td>[INTERNET_SPEED]</td></tr>
@@ -115,14 +134,14 @@
           </table>
   
           <table>
-          <tr><td colspan="2">[TV_SERVICE_NAME]</td></tr>
+          <tr><td colspan="2" style="font-weight: bold;">[TV_SERVICE_NAME]</td></tr>
           <tr><td>Paket:</td><td>[TV_PACKAGE_NAME]</td></tr>
           <tr><td>Dodatne usluge:</td><td>[TV_ADDITIONAL_SERVICES]</td></tr>
           <tr><td>Oprema:</td><td>[TV_EQUIPMENT]</td></tr>
           </table>
   
           <table>
-          <tr><td colspan="2">[PHONE_SERVICE_NAME]</td></tr>
+          <tr><td colspan="2" style="font-weight: bold;">[PHONE_SERVICE_NAME]</td></tr>
           <tr><td>Pretplatnički broj:</td><td>[PHONE_NUMBER]</td></tr>
           <tr><td>Tarifa:</td><td>[PHONE_TARIFF]</td></tr>
           <tr><td>Dodatne usluge:</td><td>[PHONE_ADDITIONAL_SERVICES]</td></tr>
@@ -130,9 +149,9 @@
           </table>
       </div>
   
-      <div style="margin-bottom: 15px;">
-          <h2 style="font-size: 14px; font-weight: bold; margin-bottom: 6px;">Podaci o kupljenim uređajima</h2>
-          <p style="font-weight: bold; margin-bottom: 3px;">Proizvođač i model: [EQUIPMENT__MODEL]</p>
+      <div style="margin-bottom: 8px;">
+          <h2 style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Podaci o kupljenim uređajima</h2>
+          <p style="font-weight: bold; margin-bottom: 2px; font-size: 10px;">Proizvođač i model: [EQUIPMENT__MODEL]</p>
           <table>
           <tr><td style="width: 50%;">Maloprodajna cijena:</td><td>[EQUIPMENT_PRICE]</td></tr>
           <tr><td>Popust na uređaj:</td><td>[EQUIPMENT_DISCOUNT]</td></tr>
@@ -148,23 +167,23 @@
        <!-- PAGE BREAK PLACEHOLDER -->
        <div class="page-break"></div>
   
-       <div style="margin-bottom: 15px;">
-           <h2 style="font-size: 14px; font-weight: bold; margin-bottom: 6px;">Brzine internetske usluge</h2>
-           <p style="margin-bottom: 3px;"><strong>Minimalna brzina</strong> Vašeg interneta za preuzimanje (download) jest [BRZINA_MIN_DOWNLOAD] Mbit/s, a za upload (učitavanje) jest [BRZINA_MIN_UPLOAD] Mbit/s.</p>
-           <p style="margin-bottom: 3px;"><strong>Uobičajeno dostupna brzina</strong> procijenjena je na [BRZINA_OBICNA_DOWNLOAD] Mbit/s za preuzimanje (download) i [BRZINA_OBICNA_UPLOAD] Mbit/s za učitavanje (upload) tijekom 99% vremena.</p>
-           <p style="margin-bottom: 3px;"><strong>Maksimalna brzina</strong> je [BRZINA_MAX_DOWNLOAD] Mbit/s za preuzimanje (download) i [BRZINA_MAX_UPLOAD] Mbit/s za učitavanje (upload).</p>
+       <div style="margin-bottom: 8px;">
+           <h2 style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Brzine internetske usluge</h2>
+           <p style="margin-bottom: 2px; font-size: 9px;"><strong>Minimalna brzina</strong> Vašeg interneta za preuzimanje (download) jest [BRZINA_MIN_DOWNLOAD] Mbit/s, a za upload (učitavanje) jest [BRZINA_MIN_UPLOAD] Mbit/s.</p>
+           <p style="margin-bottom: 2px; font-size: 9px;"><strong>Uobičajeno dostupna brzina</strong> procijenjena je na [BRZINA_OBICNA_DOWNLOAD] Mbit/s za preuzimanje (download) i [BRZINA_OBICNA_UPLOAD] Mbit/s za učitavanje (upload) tijekom 99% vremena.</p>
+           <p style="margin-bottom: 2px; font-size: 9px;"><strong>Maksimalna brzina</strong> je [BRZINA_MAX_DOWNLOAD] Mbit/s za preuzimanje (download) i [BRZINA_MAX_UPLOAD] Mbit/s za učitavanje (upload).</p>
        </div>
   
-       <div style="margin-bottom: 15px;">
-           <h2 style="font-size: 14px; font-weight: bold; margin-bottom: 6px;">Pravna sredstva u slučaju problema</h2>
-           <p style="margin-bottom: 3px;">U slučaju podnošenja prigovora na brzinu pristupa internetu, potrebno je da priložite rezultate minimalno 3 mjerenja provedenih tijekom 5 uzastopnih dana (najviše jedno mjerenje po danu) putem certificiranog alata HAKOmetar, izrađenog od strane HAKOM-a. Bitno je da mjerenje napravite s računalom koje je žičano spojeno s modemom. Vaš prigovor možemo uzeti u obzir i provjeriti situaciju samo u slučaju kada su mjerenja odrađena na opisan način.</p>
-           <p style="margin-bottom: 3px;">U slučaju da nismo osigurali minimalnu brzinu pristupa internetu, obvezni smo Vam ponuditi raskid ugovora bez plaćanja naknade zbog prijevremenog raskida ugovora, a dodatno Vam možemo omogućiti prelazak na paket koji je prikladniji stvarno ostvarivoj brzini pristupa internetu ili umanjenje mjesečne naknade.</p>
+       <div style="margin-bottom: 8px;">
+           <h2 style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Pravna sredstva u slučaju problema</h2>
+           <p style="margin-bottom: 2px; font-size: 9px;">U slučaju podnošenja prigovora na brzinu pristupa internetu, potrebno je da priložite rezultate minimalno 3 mjerenja provedenih tijekom 5 uzastopnih dana (najviše jedno mjerenje po danu) putem certificiranog alata HAKOmetar, izrađenog od strane HAKOM-a. Bitno je da mjerenje napravite s računalom koje je žičano spojeno s modemom. Vaš prigovor možemo uzeti u obzir i provjeriti situaciju samo u slučaju kada su mjerenja odrađena na opisan način.</p>
+           <p style="margin-bottom: 2px; font-size: 9px;">U slučaju da nismo osigurali minimalnu brzinu pristupa internetu, obvezni smo Vam ponuditi raskid ugovora bez plaćanja naknade zbog prijevremenog raskida ugovora, a dodatno Vam možemo omogućiti prelazak na paket koji je prikladniji stvarno ostvarivoj brzini pristupa internetu ili umanjenje mjesečne naknade.</p>
        </div>
   
-       <div style="margin-bottom: 15px;">
-           <h2 style="font-size: 14px; font-weight: bold; border-bottom: 1px solid #1a3c5e; padding-bottom: 5px;">Cijena</h2>
+       <div style="margin-bottom: 8px;">
+           <h2 style="font-size: 12px; font-weight: bold; border-bottom: 1px solid #1a3c5e; padding-bottom: 2px;">Cijena</h2>
   
-           <p style="font-weight: bold; margin: 10px 0 3px 0;">Cijena priključenja na svjetlovodnu mrežu</p>
+           <p style="font-weight: bold; margin: 6px 0 2px 0; font-size: 10px;">Cijena priključenja na svjetlovodnu mrežu</p>
            <table>
            <tr style="background-color: #f2f2f2;"><th>Redni broj</th><th>Jednokratna naknada</th><th>Cijena</th><th>Popust</th><th>Iznos za plaćanje</th></tr>
            <tr>
@@ -176,7 +195,7 @@
            </tr>
            </table>
   
-           <p style="font-weight: bold; margin: 10px 0 3px 0;">Cijena aktivacije usluge</p>
+           <p style="font-weight: bold; margin: 6px 0 2px 0; font-size: 10px;">Cijena aktivacije usluge</p>
            <table>
            <tr style="background-color: #f2f2f2;"><th>Redni broj</th><th>Jednokratna naknada</th><th>Cijena</th><th>Popust</th><th>Iznos za plaćanje</th></tr>
            <tr>
@@ -188,10 +207,13 @@
            </tr>
            </table>
   
-           <p style="font-weight: bold; margin: 10px 0 3px 0;">Periodična cijena</p>
+           <p style="font-weight: bold; margin: 6px 0 2px 0; font-size: 10px;">Periodična cijena</p>
            <table>
            <tr style="background-color: #f2f2f2;">
-               <th style="width: 4%;">R.br.</th><th style="width: 40%;">Ugovorene usluge</th><th style="width: 26%;">Promotivna mjesečna naknada*</th><th style="width: 26%;">Redovna mjesečna naknada</th>
+               <th style="width: 4%;">R.br.</th>
+               <th style="width: 40%;">Ugovorene usluge</th>
+               <th style="width: 26%;">Promotivna mjesečna naknada*</th>
+               <th style="width: 26%;">Redovna mjesečna naknada</th>
            </tr>
            <tr>
                <td style="text-align: center;">1.</td>
@@ -211,22 +233,93 @@
                <td style="text-align: right;">[PROMO_PRICE_PHONE]</td>
                <td style="text-align: right;">[REGULAR_PRICE_PHONE]</td>
            </tr>
-           <!-- Add more rows for additional services/equipment if needed -->
+           <!-- DODATNE TV USLUGE -->
            <tr>
-               <td style="text-align: center;"></td><td><strong>Ukupan iznos mjesečne naknade:</strong></td><td style="text-align: right; font-weight: bold;">[TOTAL_PROMO_PRICE]</td><td style="text-align: right; font-weight: bold;">[TOTAL_REGULAR_PRICE] EUR</td>
+               <td style="text-align: center;">4.</td>
+               <td>[FILMSKI_SERVICE_NAME]</td>
+               <td style="text-align: right;">[FILMSKI_PROMO_PRICE]</td>
+               <td style="text-align: right;">[FILMSKI_REGULAR_PRICE]</td>
+           </tr>
+           <tr>
+               <td style="text-align: center;">5.</td>
+               <td>[ODRASLI_SERVICE_NAME]</td>
+               <td style="text-align: right;">[ODRASLI_PROMO_PRICE]</td>
+               <td style="text-align: right;">[ODRASLI_REGULAR_PRICE]</td>
+           </tr>
+           <tr>
+               <td style="text-align: center;">6.</td>
+               <td>[ADDITIONAL_TV_CARD_SERVICE_NAME]</td>
+               <td style="text-align: right;">[ADDITIONAL_TV_CARD_PROMO_PRICE]</td>
+               <td style="text-align: right;">[ADDITIONAL_TV_CARD_REGULAR_PRICE]</td>
+           </tr>
+           <!-- DODATNE FIKSNE USLUGE (MESH) -->
+           <tr>
+               <td style="text-align: center;">7.</td>
+               <td>[FREE_MESH_SERVICE_NAME]</td>
+               <td style="text-align: right;">[FREE_MESH_PROMO_PRICE]</td>
+               <td style="text-align: right;">[FREE_MESH_REGULAR_PRICE]</td>
+           </tr>
+           <tr>
+               <td style="text-align: center;">8.</td>
+               <td>[RENTAL_MESH_SERVICE_NAME]</td>
+               <td style="text-align: right;">[RENTAL_MESH_PROMO_PRICE]</td>
+               <td style="text-align: right;">[RENTAL_MESH_REGULAR_PRICE]</td>
+           </tr>
+           <!-- DODATNE TELEFONSKE USLUGE -->
+           <tr>
+               <td style="text-align: center;">9.</td>
+               <td>[TEL_MIX1_SERVICE_NAME]</td>
+               <td style="text-align: right;">[TEL_MIX1_PROMO_PRICE]</td>
+               <td style="text-align: right;">[TEL_MIX1_REGULAR_PRICE]</td>
+           </tr>
+           <tr>
+               <td style="text-align: center;">10.</td>
+               <td>[TEL_MIX2_SERVICE_NAME]</td>
+               <td style="text-align: right;">[TEL_MIX2_PROMO_PRICE]</td>
+               <td style="text-align: right;">[TEL_MIX2_REGULAR_PRICE]</td>
+           </tr>
+           <tr>
+               <td style="text-align: center;">11.</td>
+               <td>[TEL_EUROPA1_100_SERVICE_NAME]</td>
+               <td style="text-align: right;">[TEL_EUROPA1_100_PROMO_PRICE]</td>
+               <td style="text-align: right;">[TEL_EUROPA1_100_REGULAR_PRICE]</td>
+           </tr>
+           <tr>
+               <td style="text-align: center;">12.</td>
+               <td>[TEL_EUROPA1_200_SERVICE_NAME]</td>
+               <td style="text-align: right;">[TEL_EUROPA1_200_PROMO_PRICE]</td>
+               <td style="text-align: right;">[TEL_EUROPA1_200_REGULAR_PRICE]</td>
+           </tr>
+           <tr>
+               <td style="text-align: center;">13.</td>
+               <td>[TEL_EUROPA2_100_SERVICE_NAME]</td>
+               <td style="text-align: right;">[TEL_EUROPA2_100_PROMO_PRICE]</td>
+               <td style="text-align: right;">[TEL_EUROPA2_100_REGULAR_PRICE]</td>
+           </tr>
+           <tr>
+               <td style="text-align: center;">14.</td>
+               <td>[TEL_EUROPA2_200_SERVICE_NAME]</td>
+               <td style="text-align: right;">[TEL_EUROPA2_200_PROMO_PRICE]</td>
+               <td style="text-align: right;">[TEL_EUROPA2_200_REGULAR_PRICE]</td>
+           </tr>
+           <!-- END DODATNE USLUGE -->
+           <tr>
+               <td style="text-align: center;"></td>
+               <td><strong>Ukupan iznos mjesečne naknade:</strong></td>
+               <td style="text-align: right; font-weight: bold;">[TOTAL_PROMO_PRICE]</td>
+               <td style="text-align: right; font-weight: bold;">[TOTAL_REGULAR_PRICE] EUR</td>
            </tr>
        </table>
-       <p style="font-size: 10px; font-style: italic; margin-bottom: 6px;">*Napomena: promotivna mjesečna naknada vrijedi za cijelo vrijeme do raskida ugovora ili ugovaranja novog paketa.</p>
-       <p style="font-size: 10px; margin-bottom: 3px;"><strong>Naknade koje se naplaćuju nakon prekoračenja količine uključene u periodičnu cijenu</strong><br>Naknade koje će Vam biti naplaćene nakon prekoračenja količine minuta unutar ugovorene telefonske tarife, nalaze se u našem Cjeniku...</p>
-       <hr style="border: none; border-top: 1px solid #ddd; margin: 15px 0;">
-       <p style="font-size: 10px; font-style: italic; margin-bottom: 3px;">²Cijena usluge vanjskog priključenja na svjetlovodnu mrežu može se razlikovati od navedenog iznosa, a prema određenom ITM-u.</p>
+       <p style="font-size: 8px; font-style: italic; margin-bottom: 3px;">*Napomena: promotivna mjesečna naknada vrijedi za cijelo vrijeme do raskida ugovora ili ugovaranja novog paketa.</p>
+       <p style="font-size: 8px; margin-bottom: 2px;"><strong>Naknade koje se naplaćuju nakon prekoračenja količine uključene u periodičnu cijenu</strong><br>Naknade koje će Vam biti naplaćene nakon prekoračenja količine minuta unutar ugovorene telefonske tarife, nalaze se u našem Cjeniku...</p>
+       <hr style="border: none; border-top: 1px solid #ddd; margin: 8px 0;">
+       <p style="font-size: 8px; font-style: italic; margin-bottom: 2px;">²Cijena usluge vanjskog priključenja na svjetlovodnu mrežu može se razlikovati od navedenog iznosa, a prema određenom ITM-u.</p>
 
    </div>
-  
    <!-- PAGE BREAK PLACEHOLDER -->
 
-   <div style="margin-bottom: 15px;">
-    <h2 style="font-size: 14px; font-weight: bold; margin-bottom: 6px;">Cijena opreme dane na korištenje (Terminalna oprema)</h2>
+   <div style="margin-bottom: 8px;">
+    <h2 style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Cijena opreme dane na korištenje (Terminalna oprema)</h2>
     <table>
      <tr style="background-color: #f2f2f2;">
           <th>Redni broj</th><th>Naziv Terminalne opreme</th><th>Količina</th><th>Jedinična cijena po komadu Terminalne opreme</th>
@@ -263,56 +356,56 @@
     </tr>
      
      </table>
-     <p style="margin-top: 10px; margin-bottom: 6px; font-size: 10px;"><strong>Napomena: ako bilo kada odlučite isključiti uslugu, dužni ste nam vratiti Terminalnu opremu koju smo Vam dali na korištenje. Krajnji rok za povrat Terminalne opreme je 15 dana od dana zaprimanja računa na kojem će Vam biti naplaćena naknada za istu, a koji ćemo stornirati u slučaju povrata Terminalne opreme.</strong></p>
+     <p style="margin-top: 4px; margin-bottom: 3px; font-size: 8px;"><strong>Napomena: ako bilo kada odlučite isključiti uslugu, dužni ste nam vratiti Terminalnu opremu koju smo Vam dali na korištenje. Krajnji rok za povrat Terminalne opreme je 15 dana od dana zaprimanja računa na kojem će Vam biti naplaćena naknada za istu, a koji ćemo stornirati u slučaju povrata Terminalne opreme.</strong></p>
  </div>
 
  <div class="page-break"></div>
 
   
-       <div style="margin-bottom: 15px;">
-       <h2 style="font-size: 14px; font-weight: bold; margin-bottom: 6px;">Trajanje, obnova i raskid</h2>
-       <hr style="border: none; border-top: 1px solid #ddd; margin-bottom: 6px;">
-       <p style="margin-bottom: 6px;">Trajanje ugovora za 1 GIGA + Tel + PROŠIRENI TV : Neodređeno, s obveznim trajanjem - 1 mjesec.</p>
+       <div style="margin-bottom: 8px;">
+       <h2 style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Trajanje, obnova i raskid</h2>
+       <hr style="border: none; border-top: 1px solid #ddd; margin-bottom: 3px;">
+       <p style="margin-bottom: 3px; font-size: 9px;">Trajanje ugovora za [PACKAGE_NAME] : [CONTRACT_DURATION].</p>
        <!-- POSLOVNI_PROSTOR_NAPOMENA _1 -->
-       <p style="margin-bottom: 6px;">U slučaju sklapanja ugovora putem sredstava daljinske komunikacije ili izvan naših poslovnih prostora, prema odredbama Zakona o zaštiti potrošača imate pravo na jednostrani raskid ugovora u roku od 14 dana od dana sklapanja ugovora.</p>
-       <p style="margin-bottom: 6px;">Ugovor sklopljen na daljinu smatra se sklopljenim kada nam nakon primitka dokumentacije o sklapanju dostavite potvrdu svoje suglasnosti o sklapanju ugovora, na jedan od sljedećih načina:</p>
-       <ul style="list-style-type: disc; padding-left: 20px; margin-bottom: 6px;">
+       <p style="margin-bottom: 3px; font-size: 9px;">U slučaju sklapanja ugovora putem sredstava daljinske komunikacije ili izvan naših poslovnih prostora, prema odredbama Zakona o zaštiti potrošača imate pravo na jednostrani raskid ugovora u roku od 14 dana od dana sklapanja ugovora.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">Ugovor sklopljen na daljinu smatra se sklopljenim kada nam nakon primitka dokumentacije o sklapanju dostavite potvrdu svoje suglasnosti o sklapanju ugovora, na jedan od sljedećih načina:</p>
+       <ul style="list-style-type: disc; padding-left: 15px; margin-bottom: 3px; font-size: 9px;">
        <li>potpisom ove obavijesti koju trebate uručiti našem dostavljaču/predstavniku MAGIC NET – d.o.o.,</li>
        <li>potpisom ove obavijesti i slanjem poštom na adresu: MAGIC NET- d.o.o., Kratka 2, 42000 Varaždin, Hrvatska,</li>
        <li>odgovorom kako dajete suglasnost na sklapanje ugovora na ovu adresu elektroničke pošte, ili</li>
        <li>plaćanjem prvog mjesečnog računa.</li>
        </ul>
-       <p style="margin-bottom: 6px;">Zahtjev za raskid ugovora nam možete dostaviti poštom, na adresu MAGIC NET – d.o.o., Kratka 2, 42000 Varaždin, elektroničkim putem na adresu info@mtnet.hr ili pozivom na broj 042/420-420. U zahtjevu ste obvezni navesti Vaše podatke, uslugu koju raskidate i dan kad je usluga ugovorena. Ako podnosite zahtjev u pisanom obliku obvezni ste isti potpisati. Ugovor će se smatrati raskinutim u trenutku kada zaprimimo Vaš zahtjev za raskid.</p>
-       <p style="margin-bottom: 6px;">Za detalje o podnošenju zahtjeva za raskid ili dodatna pitanja u vezi s ugovorenom uslugom možete nam se obratiti na e-mail adresu: info@mtnet.hr ili pozivom na broj 042/420-420.</p>
-       <p style="margin-bottom: 6px;">Ako raskinete ugovor prije aktivacije usluge, a nakon odrađenih radova vanjskog priključenja na svjetlovodnu mrežu, obvezni ste nadoknaditi troškove za odrađene radove prema Cjeniku.</p>
-       <p style="margin-bottom: 6px;">Ako raskidate ugovor koji je sklopljen uz obvezno trajanje ugovora, te isti raskinete tijekom razdoblja obveznog trajanja, obvezni ste platiti mjesečnu naknadu za ostatak razdoblja obveznog trajanja ugovora ili drugu naknadu u visini popusta na proizvode i usluge koje ste ostvarili, ovisno koja naknada će za Vas biti povoljnija.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">Zahtjev za raskid ugovora nam možete dostaviti poštom, na adresu MAGIC NET – d.o.o., Kratka 2, 42000 Varaždin, elektroničkim putem na adresu info@mtnet.hr ili pozivom na broj 042/420-420. U zahtjevu ste obvezni navesti Vaše podatke, uslugu koju raskidate i dan kad je usluga ugovorena. Ako podnosite zahtjev u pisanom obliku obvezni ste isti potpisati. Ugovor će se smatrati raskinutim u trenutku kada zaprimimo Vaš zahtjev za raskid.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">Za detalje o podnošenju zahtjeva za raskid ili dodatna pitanja u vezi s ugovorenom uslugom možete nam se obratiti na e-mail adresu: info@mtnet.hr ili pozivom na broj 042/420-420.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">Ako raskinete ugovor prije aktivacije usluge, a nakon odrađenih radova vanjskog priključenja na svjetlovodnu mrežu, obvezni ste nadoknaditi troškove za odrađene radove prema Cjeniku.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">Ako raskidate ugovor koji je sklopljen uz obvezno trajanje ugovora, te isti raskinete tijekom razdoblja obveznog trajanja, obvezni ste platiti mjesečnu naknadu za ostatak razdoblja obveznog trajanja ugovora ili drugu naknadu u visini popusta na proizvode i usluge koje ste ostvarili, ovisno koja naknada će za Vas biti povoljnija.</p>
        <!-- POSLOVNI_PROSTOR_NAPOMENA _2 -->
-       <p style="margin-bottom: 6px;">U slučaju da ste ugovorili i kupnju uređaja te preuzeli uređaj, a u roku od 14 dana od dana sklapanja ugovora zatražite raskid ugovora, u skladu s odredbama Zakona o zaštiti potrošača, možete vratiti preuzeti uređaj neoštećen i kompletan u originalnom pakiranju sa svom pripadajućom dokumentacijom. U protivnom Vam imamo pravo naplatiti maloprodajnu cijenu uređaja, umanjenu za inicijalno uplaćeni iznos. Ako vraćate kupljeni uređaj i želite povrat uplaćenog iznosa za uređaj, molimo Vas da nam uz Zahtjev za raskid ugovora pošaljete i podatke za povrat: Naziv banke i IBAN te ime i prezime vlasnika računa na koji ćemo izvršiti povrat novca.</p>
-       <p style="margin-bottom: 6px;">U slučaju trajnog isključenja Usluge pružane preko infrastrukture drugog operatora i raskida Ugovora, bit će Vam naplaćena naknada za deaktivaciju usluge pružane preko infrastrukture drugog operatora u iznosu od 30,00 EUR. U navedenom slučaju, naknada za deaktivaciju usluge pružane preko infrastrukture drugog operatora naplaćuje se neovisno o tome postoji li ugovorna obveza ili ne. Naplata naknade za deaktivaciju usluge pružane preko infrastrukture drugog operatora ne isključuje naplatu naknade za prijevremeni raskid ugovora ukoliko postoji ugovorna obveza koja nije istekla. Također, u slučaju da odustanete od zatražene usluge prije uključenja usluge pružane preko infrastrukture drugog operatora, zadržavamo pravo naplatiti Vam naknadu u istom iznosu kao i deaktivaciju iz ovog stavka.</p>
-       <p style="margin-bottom: 6px;">Nakon raskida Ugovora dužni ste vratiti Terminalnu opremu koja je u našem vlasništvu. U suprotnom, zadržavamo pravo naplatiti Vam iznos naknade za nevraćenu Terminalnu opremu prema našem Cjeniku. Iznos naknade za nevraćenu Terminalnu opremu ne smije prijeći njezinu vrijednost u trenutku sklapanja Ugovora, a dodatno se umanjuje za amortizaciju kroz period korištenja, sukladno našem Cjeniku.</p>
-       <p style="margin-bottom: 6px;">Ako za vrijeme obveznog trajanja Ugovora aktivirate dodatnu Uslugu čije je korištenje uvjetovano pružanjem neke druge Usluge, ista prati pravnu sudbinu Usluge koja joj je preduvjet, što znači da u slučaju raskida osnovnog Ugovora nećete moći koristiti ni dodatnu Uslugu.</p>
-       <p style="margin-bottom: 6px;">Podnošenje Zahtjeva za promjenu operatora istovremeno se smatra zahtjevom za raskid ugovora s Vašim postojećim operatorom. U tom slučaju bit ćete pravovremeno obaviješteni o svim daljnjim koracima oko postupka promjene operatora. Ako u postupku promjene operatora dođe do nepravovremene promjene operatora, imate pravo na naknadu u skladu s propisima iz područja elektroničkih komunikacija.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">U slučaju da ste ugovorili i kupnju uređaja te preuzeli uređaj, a u roku od 14 dana od dana sklapanja ugovora zatražite raskid ugovora, u skladu s odredbama Zakona o zaštiti potrošača, možete vratiti preuzeti uređaj neoštećen i kompletan u originalnom pakiranju sa svom pripadajućom dokumentacijom. U protivnom Vam imamo pravo naplatiti maloprodajnu cijenu uređaja, umanjenu za inicijalno uplaćeni iznos. Ako vraćate kupljeni uređaj i želite povrat uplaćenog iznosa za uređaj, molimo Vas da nam uz Zahtjev za raskid ugovora pošaljete i podatke za povrat: Naziv banke i IBAN te ime i prezime vlasnika računa na koji ćemo izvršiti povrat novca.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">U slučaju trajnog isključenja Usluge pružane preko infrastrukture drugog operatora i raskida Ugovora, bit će Vam naplaćena naknada za deaktivaciju usluge pružane preko infrastrukture drugog operatora u iznosu od 30,00 EUR. U navedenom slučaju, naknada za deaktivaciju usluge pružane preko infrastrukture drugog operatora naplaćuje se neovisno o tome postoji li ugovorna obveza ili ne. Naplata naknade za deaktivaciju usluge pružane preko infrastrukture drugog operatora ne isključuje naplatu naknade za prijevremeni raskid ugovora ukoliko postoji ugovorna obveza koja nije istekla. Također, u slučaju da odustanete od zatražene usluge prije uključenja usluge pružane preko infrastrukture drugog operatora, zadržavamo pravo naplatiti Vam naknadu u istom iznosu kao i deaktivaciju iz ovog stavka.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">Nakon raskida Ugovora dužni ste vratiti Terminalnu opremu koja je u našem vlasništvu. U suprotnom, zadržavamo pravo naplatiti Vam iznos naknade za nevraćenu Terminalnu opremu prema našem Cjeniku. Iznos naknade za nevraćenu Terminalnu opremu ne smije prijeći njezinu vrijednost u trenutku sklapanja Ugovora, a dodatno se umanjuje za amortizaciju kroz period korištenja, sukladno našem Cjeniku.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">Ako za vrijeme obveznog trajanja Ugovora aktivirate dodatnu Uslugu čije je korištenje uvjetovano pružanjem neke druge Usluge, ista prati pravnu sudbinu Usluge koja joj je preduvjet, što znači da u slučaju raskida osnovnog Ugovora nećete moći koristiti ni dodatnu Uslugu.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">Podnošenje Zahtjeva za promjenu operatora istovremeno se smatra zahtjevom za raskid ugovora s Vašim postojećim operatorom. U tom slučaju bit ćete pravovremeno obaviješteni o svim daljnjim koracima oko postupka promjene operatora. Ako u postupku promjene operatora dođe do nepravovremene promjene operatora, imate pravo na naknadu u skladu s propisima iz područja elektroničkih komunikacija.</p>
   
-       <h2 style="font-size: 14px; font-weight: bold; margin: 15px 0 6px 0;">Mogućnost za korisnike s invaliditetom</h2>
-       <hr style="border: none; border-top: 1px solid #ddd; margin-bottom: 6px;">
-       <p style="margin-bottom: 6px;">Na svim prodajnim mjestima kao i sredstvima daljinske komunikacije, omogućili smo Vam dvosmjernu tekstualnu komunikaciju s djelatnicima. Sva prodajna mjesta imaju pristup za invalidska kolica te su neka od njih dodatno prilagođena slijepim i slabovidnim osobama.</p>
+       <h2 style="font-size: 12px; font-weight: bold; margin: 8px 0 4px 0;">Mogućnost za korisnike s invaliditetom</h2>
+       <hr style="border: none; border-top: 1px solid #ddd; margin-bottom: 3px;">
+       <p style="margin-bottom: 3px; font-size: 9px;">Na svim prodajnim mjestima kao i sredstvima daljinske komunikacije, omogućili smo Vam dvosmjernu tekstualnu komunikaciju s djelatnicima. Sva prodajna mjesta imaju pristup za invalidska kolica te su neka od njih dodatno prilagođena slijepim i slabovidnim osobama.</p>
   
-       <h2 style="font-size: 14px; font-weight: bold; margin: 15px 0 6px 0;">Druge važne informacije</h2>
-       <hr style="border: none; border-top: 1px solid #ddd; margin-bottom: 6px;">
-       <p style="margin-bottom: 6px;">Sastavni dio ugovora čine Sažetak ugovora, Obavijest o sklopljenom ugovoru, Opći uvjeti poslovanja MAGIC NET - d.o.o., posebni uvjeti pružanja usluga i Cjenik usluga za koje se ugovor sklapa, a koji su dostupni na internetskoj stranici https://mtnet.hr/opci-dokumeti/.</p>
-       <p style="margin-bottom: 6px;">Ugovor se smatra sklopljenim u trenutku kada potvrdite svoju suglasnost za sklapanje Ugovora davanjem suglasnosti na ovaj Sažetak ugovora te davanjem suglasnosti na Obavijest o sklopljenom ugovoru broj 2025-04-09-001 koja je prilog ovom Sažetku ugovora i čini njegov sastavni dio.</p>
-       <p style="margin-bottom: 6px;">Prikazane cijene su s uključenim PDV-om.</p>
-       <p style="margin-bottom: 6px;">I na kraju, ako imate bilo kakvo pitanje ili nedoumice uz sadržaj ovog Sažetka ugovora, Usluga koje ugovarate ili samog ugovaranja, dostupni smo za Vas na broj <strong>042/420-420</strong>.</p>
-       <p style="margin-bottom: 6px;">Datum: [CURRENT_DATE]</p>
+       <h2 style="font-size: 12px; font-weight: bold; margin: 8px 0 4px 0;">Druge važne informacije</h2>
+       <hr style="border: none; border-top: 1px solid #ddd; margin-bottom: 3px;">
+       <p style="margin-bottom: 3px; font-size: 9px;">Sastavni dio ugovora čine Sažetak ugovora, Obavijest o sklopljenom ugovoru, Opći uvjeti poslovanja MAGIC NET - d.o.o., posebni uvjeti pružanja usluga i Cjenik usluga za koje se ugovor sklapa, a koji su dostupni na internetskoj stranici https://mtnet.hr/opci-dokumeti/.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">Ugovor se smatra sklopljenim u trenutku kada potvrdite svoju suglasnost za sklapanje Ugovora davanjem suglasnosti na ovaj Sažetak ugovora te davanjem suglasnosti na Obavijest o sklopljenom ugovoru broj 2025-04-09-001 koja je prilog ovom Sažetku ugovora i čini njegov sastavni dio.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">Prikazane cijene su s uključenim PDV-om.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">I na kraju, ako imate bilo kakvo pitanje ili nedoumice uz sadržaj ovog Sažetka ugovora, Usluga koje ugovarate ili samog ugovaranja, dostupni smo za Vas na broj <strong>042/420-420</strong>.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">Datum: [CURRENT_DATE]</p>
    </div>
   
        <!-- PAGE BREAK PLACEHOLDER -->
    <div class="page-break"></div>
   
-   <div style="margin-bottom: 15px;">
-       <h2 style="font-size: 14px; font-weight: bold; text-align: center; margin-bottom: 10px;">OBAVIJEST O SKLOPLJENOM UGOVORU</h2>
+   <div style="margin-bottom: 8px;">
+       <h2 style="font-size: 12px; font-weight: bold; text-align: center; margin-bottom: 6px;">OBAVIJEST O SKLOPLJENOM UGOVORU</h2>
   
-       <h3 style="font-size: 13px; font-weight: bold; margin-top: 15px; margin-bottom: 10px;">PODACI O KORISNIKU</h3>
+       <h3 style="font-size: 11px; font-weight: bold; margin-top: 8px; margin-bottom: 6px;">PODACI O KORISNIKU</h3>
        <table>
        <tr><td style="width: 40%;">ID Korisnika:</td><td>[USER_ID]</td></tr>
        <tr><td>Ime i prezime Korisnika:</td><td>[USER_NAME]</td></tr>
@@ -325,14 +418,14 @@
        <tr><td>E-mail adresa:</td><td>[EMAIL]</td></tr>
        </table>
   
-       <h3 style="font-size: 13px; font-weight: bold; margin-top: 15px; margin-bottom: 10px;">PODACI O KONTAKT OSOBI</h3>
+       <h3 style="font-size: 11px; font-weight: bold; margin-top: 8px; margin-bottom: 6px;">PODACI O KONTAKT OSOBI</h3>
        <table>
        <tr><td style="width: 40%;">Ime i prezime kontakt osobe:</td><td>[CONTACT_PERSON_NAME]</td></tr>
        <tr><td>Kontakt telefon/mobitel:</td><td>[CONTACT_PERSON_PHONE]</td></tr>
        <tr><td>E-mail adresa za kontakt:</td><td>[CONTACT_PERSON_EMAIL]</td></tr>
        </table>
   
-       <h3 style="font-size: 13px; font-weight: bold; margin-top: 15px; margin-bottom: 10px;">PODACI O NAČINU PLAĆANJA I DOSTAVE RAČUNA</h3>
+       <h3 style="font-size: 11px; font-weight: bold; margin-top: 8px; margin-bottom: 6px;">PODACI O NAČINU PLAĆANJA I DOSTAVE RAČUNA</h3>
        <table>
        <tr><td style="width: 50%;">Uplata (opća uplatnica):</td><td style="width: 50%; text-align: center;">[INVOICE_DELIVERY_METHOD_MAIL]</td></tr>
        <tr><td>e-račun bez papirnate verzije:</td><td style="text-align: center;">[INVOICE_DELIVERY_METHOD_EINVOICE]</td></tr>
@@ -340,25 +433,25 @@
        <tr><td>e-mailom na drugu adresu:</td><td style="text-align: center;">[INVOICE_DELIVERY_METHOD_CONTACT_EMAIL]</td></tr>
        </table>
   
-       <h3 style="font-size: 13px; font-weight: bold; margin-top: 15px; margin-bottom: 10px;">SUGLASNOST ZA OBRADU OSOBNIH PODATAKA I KONTAKTIRANJE ZA SVE KORISNIKOVE USLUGE KOD MAGIC NET - d.o.o.</h3>
-       <p style="margin-bottom: 5px;"><strong>1. PRIVOLE ZA MARKINŠKO KONTAKTIRANJE</strong></p>
-       <p style="margin-bottom: 10px;">Želja nam je kontaktirati Vas na način na koji želite.</p>
+       <h3 style="font-size: 11px; font-weight: bold; margin-top: 8px; margin-bottom: 6px;">SUGLASNOST ZA OBRADU OSOBNIH PODATAKA I KONTAKTIRANJE ZA SVE KORISNIKOVE USLUGE KOD MAGIC NET - d.o.o.</h3>
+       <p style="margin-bottom: 3px; font-size: 10px;"><strong>1. PRIVOLE ZA MARKINŠKO KONTAKTIRANJE</strong></p>
+       <p style="margin-bottom: 6px; font-size: 9px;">Želja nam je kontaktirati Vas na način na koji želite.</p>
        <table>
        <tr><td style="width: 33%;">pozivom</td><td style="text-align: center;">[MARKETING_CONTACT_PHONE]</td></tr>
        <tr><td>SMS-om</td><td style="text-align: center;">[MARKETING_CONTACT_SMS]</td></tr>
        <tr><td>e-mailom</td><td style="text-align: center;">[MARKETING_CONTACT_EMAIL]</td></tr>
        </table>
   
-       <p style="margin-bottom: 6px;">Vaše je pravo da u svakom trenutku povučete dane privole. Više o obradi osobnih podataka možete pronaći na https://mtnet.hr/politika-privatnosti/.</p>
-       <p style="margin-bottom: 6px;">Davanjem suglasnosti na ovu Obavijest o sklopljenom ugovoru (dalje u tekstu: Obavijest) i Sažetak ugovora prihvaćate našu ponudu za sklapanje ugovora na daljinu ili izvan naših poslovnih prostora, pod uvjetima koji su navedeni u ovoj Obavijesti i Sažetku ugovora.</p>
-       <p style="margin-bottom: 6px;">Davanjem suglasnosti na ovu Obavijest i Sažetak ugovora potvrđujete da su isti ispunjeni u skladu s Vašim željama i da se o svakoj odredbi pregovaralo.</p>
-       <p style="margin-bottom: 6px;">Po isteku razdoblja obveznog trajanja Ugovora, pretplatnički odnos se nastavlja na neodređeno vrijeme do raskida s Vaše ili naše strane.</p>
-       <p style="margin-bottom: 15px;">U slučaju da pretplatnički odnos bude raskinut iz bilo kojeg razloga prije otplate uređaja, preostale neplaćene rate obračunat ćemo Vam na prvom sljedećem računu.</p>
-       <p style="margin-bottom: 3px;">Ovime potvrđujemo da je Vaš zahtjev za sklapanje ugovora prihvaćen. Obavijestit ćemo Vas u slučaju eventualnih promjena okolnosti koje su nastale nakon prihvata zahtjeva, a koje se nisu mogle predvidjeti u vrijeme prihvata zahtjeva.</p>
-       <p style="margin-bottom: 3px;">Usluge u paketima nije moguće mijenjati. Uz usluge sadržane u paketu, moguće je uzeti dodatne opcije usluga koje se naplaćuju prema Cjeniku. Detaljan opis usluga i opcija nalaze se u Cjeniku.</p>
-       <p style="margin-bottom: 3px;">Prihvaćanjem ove Obavijesti potvrđujete da Vam je uručen Sažetak ugovora i da ste suglasni sa svim uvjetima koji su navedeni u Sažetku ugovora i ovoj Obavijesti.</p>
-       <p style="margin-bottom: 3px;">☒Potvrđujem da su mi uručeni Opći uvjeti poslovanja MAGIC NET – d.o.o., posebni uvjeti pružanja usluga i Cjenik istih.</p>
-       <p style="margin-bottom: 3px;">☐Potvrđujem da ću Opće uvjete poslovanja MAGIC NET – d.o.o., posebne uvjete pružanja usluga i Cjenik istihpreuzeti na https://mtnet.hr/opci-dokumeti/ odnosno na drugi odgovarajući način.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">Vaše je pravo da u svakom trenutku povučete dane privole. Više o obradi osobnih podataka možete pronaći na https://mtnet.hr/politika-privatnosti/.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">Davanjem suglasnosti na ovu Obavijest o sklopljenom ugovoru (dalje u tekstu: Obavijest) i Sažetak ugovora prihvaćate našu ponudu za sklapanje ugovora na daljinu ili izvan naših poslovnih prostora, pod uvjetima koji su navedeni u ovoj Obavijesti i Sažetku ugovora.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">Davanjem suglasnosti na ovu Obavijest i Sažetak ugovora potvrđujete da su isti ispunjeni u skladu s Vašim željama i da se o svakoj odredbi pregovaralo.</p>
+       <p style="margin-bottom: 3px; font-size: 9px;">Po isteku razdoblja obveznog trajanja Ugovora, pretplatnički odnos se nastavlja na neodređeno vrijeme do raskida s Vaše ili naše strane.</p>
+       <p style="margin-bottom: 8px; font-size: 9px;">U slučaju da pretplatnički odnos bude raskinut iz bilo kojeg razloga prije otplate uređaja, preostale neplaćene rate obračunat ćemo Vam na prvom sljedećem računu.</p>
+       <p style="margin-bottom: 2px; font-size: 9px;">Ovime potvrđujemo da je Vaš zahtjev za sklapanje ugovora prihvaćen. Obavijestit ćemo Vas u slučaju eventualnih promjena okolnosti koje su nastale nakon prihvata zahtjeva, a koje se nisu mogle predvidjeti u vrijeme prihvata zahtjeva.</p>
+       <p style="margin-bottom: 2px; font-size: 9px;">Usluge u paketima nije moguće mijenjati. Uz usluge sadržane u paketu, moguće je uzeti dodatne opcije usluga koje se naplaćuju prema Cjeniku. Detaljan opis usluga i opcija nalaze se u Cjeniku.</p>
+       <p style="margin-bottom: 2px; font-size: 9px;">Prihvaćanjem ove Obavijesti potvrđujete da Vam je uručen Sažetak ugovora i da ste suglasni sa svim uvjetima koji su navedeni u Sažetku ugovora i ovoj Obavijesti.</p>
+       <p style="margin-bottom: 2px; font-size: 9px;">☒Potvrđujem da su mi uručeni Opći uvjeti poslovanja MAGIC NET – d.o.o., posebni uvjeti pružanja usluga i Cjenik istih.</p>
+       <p style="margin-bottom: 2px; font-size: 9px;">☐Potvrđujem da ću Opće uvjete poslovanja MAGIC NET – d.o.o., posebne uvjete pružanja usluga i Cjenik istihpreuzeti na https://mtnet.hr/opci-dokumeti/ odnosno na drugi odgovarajući način.</p>
    </div>
   
    <!-- PAGE BREAK PLACEHOLDER -->
@@ -378,7 +471,7 @@
           <tr><td>Način otplate:</td><td>[PAYMENT_METHOD_FORMATTED]</td></tr>
       </table>
    -->
-      <h2 style="font-size: 14px; font-weight: bold; border-bottom: 1px solid #1a3c5e; padding-bottom: 5px; margin-top: 20px;">PODACI O PRODAJNOM MJESTU I PRODAVATELJU</h2>
+      <h2 style="font-size: 12px; font-weight: bold; border-bottom: 1px solid #1a3c5e; padding-bottom: 2px; margin-top: 8px;">PODACI O PRODAJNOM MJESTU I PRODAVATELJU</h2>
       <table>
           <tr>
             <td style="width: 30%;">Kod prodavatelja:</td>
@@ -396,7 +489,7 @@
           </tr>
       </table>
   
-      <h2 style="font-size: 14px; font-weight: bold; border-bottom: 1px solid #1a3c5e; padding-bottom: 5px; margin-top: 20px;">POTPIS KORISNIKA</h2>
+      <h2 style="font-size: 12px; font-weight: bold; border-bottom: 1px solid #1a3c5e; padding-bottom: 2px; margin-top: 8px;">POTPIS KORISNIKA</h2>
       <table>
           <tr>
             <td style="width: 40%;">Ime i prezime (ovlaštena osoba):</td>
@@ -411,9 +504,9 @@
       </table>
       </div>
   
-      <div style="margin-top: 20px; margin-bottom: 15px; font-size: 10px;">
-          <p style="margin-bottom: 6px;">Svojim potpisom potvrđujem točnost i potpunost podataka navedenih na Sažetku ugovora i Obavijesti o sklopljenom ugovoru broj [AGREEMENT_NUMBER].</p>
-          <p style="margin-bottom: 6px;">U skladu s Uredbom (EU) 2016/679 Europskog parlamenta i Vijeća od 27. travnja 2016. o zaštiti pojedinaca u vezi s obradom osobnih podataka i o slobodnom kretanju takvih podataka te o stavljanju izvan snage Direktive 95/46/EZ (Opća uredba o zaštiti podataka, GDPR), MAGIC NET - d.o.o. obrađuje vaše osobne podatke navedene u ovom Ugovoru, u svrhu identifikacije, administracije obračuna i izdavanja računa za ugovorene usluge. Davanje traženih osobnih podataka je ugovorna obveza, i isti su neophodni za sklapanje i izvršavanje Ugovora. Svi detalji u vezi osiguranja vaše privatnosti, obrade, korištenja i zaštite vaših osobnih podataka, kao i vaših prava, dostupni su u dokumentu "Politike privatnosti" MAGIC NET - d.o.o., te vas molimo da ga proučite prije samog sklapanja ovog Ugovora. Cjelovitu "Politiku privatnosti" možete pregledati i na našoj internet stranici</p>
+      <div style="margin-top: 8px; margin-bottom: 8px; font-size: 8px;">
+          <p style="margin-bottom: 3px;">Svojim potpisom potvrđujem točnost i potpunost podataka navedenih na Sažetku ugovora i Obavijesti o sklopljenom ugovoru broj [AGREEMENT_NUMBER].</p>
+          <p style="margin-bottom: 3px;">U skladu s Uredbom (EU) 2016/679 Europskog parlamenta i Vijeća od 27. travnja 2016. o zaštiti pojedinaca u vezi s obradom osobnih podataka i o slobodnom kretanju takvih podataka te o stavljanju izvan snage Direktive 95/46/EZ (Opća uredba o zaštiti podataka, GDPR), MAGIC NET - d.o.o. obrađuje vaše osobne podatke navedene u ovom Ugovoru, u svrhu identifikacije, administracije obračuna i izdavanja računa za ugovorene usluge. Davanje traženih osobnih podataka je ugovorna obveza, i isti su neophodni za sklapanje i izvršavanje Ugovora. Svi detalji u vezi osiguranja vaše privatnosti, obrade, korištenja i zaštite vaših osobnih podataka, kao i vaših prava, dostupni su u dokumentu "Politike privatnosti" MAGIC NET - d.o.o., te vas molimo da ga proučite prije samog sklapanja ovog Ugovora. Cjelovitu "Politiku privatnosti" možete pregledati i na našoj internet stranici</p>
       </div>
   
       <!-- page break -->
