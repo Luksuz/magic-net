@@ -48,14 +48,44 @@ export default function ContractForm({
     // Clean contract number by removing UG prefix if it exists
     const cleanContractNumber = contractNumber ? contractNumber.replace(/^UG\s*/, '') : '';
     
-    // If we have both user name and contract number, format as "userName-contractNumber"
+    // If we have both user name and contract number, format with seller code before last segment
     let finalContractNumber = '';
-    if (cleanContractNumber && userInfoInitial?.userName) {
-      // Replace spaces with hyphens in user name and combine with contract number
-      const formattedUserName = userInfoInitial.userName.trim().replace(/\s+/g, '-');
-      finalContractNumber = `${formattedUserName}-${cleanContractNumber}`;
-    } else if (cleanContractNumber) {
-      finalContractNumber = cleanContractNumber;
+    if (cleanContractNumber) {
+      if (userInfoInitial?.userName) {
+        // Replace spaces with hyphens in user name
+        const formattedUserName = userInfoInitial.userName.trim().replace(/\s+/g, '-');
+        
+        // Format seller code (pad with zeros if needed)  
+        const sellerCode = userInfoInitial.sellerCode ? String(userInfoInitial.sellerCode).padStart(2, '0') : '00';
+        
+        // Split contract number to insert seller code before last segment
+        const parts = cleanContractNumber.split('-');
+        if (parts.length > 1) {
+          // Insert seller code before the last part
+          const lastPart = parts.pop(); // Remove and get last part
+          const baseParts = parts.join('-'); // Rejoin remaining parts
+          finalContractNumber = `${formattedUserName}-${baseParts}-${sellerCode}-${lastPart}`;
+        } else {
+          // Simple number, just add seller code before it
+          finalContractNumber = `${formattedUserName}-${sellerCode}-${cleanContractNumber}`;
+        }
+      } else if (userInfoInitial?.sellerCode) {
+        // If no userName but we have sellerCode, still insert seller code
+        const sellerCode = String(userInfoInitial.sellerCode).padStart(2, '0');
+        const parts = cleanContractNumber.split('-');
+        if (parts.length > 1) {
+          // Insert seller code before the last part
+          const lastPart = parts.pop(); // Remove and get last part
+          const baseParts = parts.join('-'); // Rejoin remaining parts
+          finalContractNumber = `${baseParts}-${sellerCode}-${lastPart}`;
+        } else {
+          // Simple number, just add seller code before it
+          finalContractNumber = `${sellerCode}-${cleanContractNumber}`;
+        }
+      } else {
+        // No userName and no sellerCode, use clean contract number as-is
+        finalContractNumber = cleanContractNumber;
+      }
     }
     
     return {
@@ -130,7 +160,19 @@ export default function ContractForm({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value }
+      
+      // Auto-sync fiksni_paket and fiksni_naziv_ugovorene_usluge for consistency
+      if (name === 'fiksni_paket' && value) {
+        newData.fiksni_naziv_ugovorene_usluge = value
+      } else if (name === 'fiksni_naziv_ugovorene_usluge' && value) {
+        newData.fiksni_paket = value
+      }
+      
+      return newData
+    })
   }
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -667,16 +709,49 @@ export default function ContractForm({
 
   // Update contract number when user name changes
   useEffect(() => {
-    if (contractNumber && userInfo?.userName) {
+    if (contractNumber) {
       const cleanContractNumber = contractNumber.replace(/^UG\s*/, '');
-      const formattedUserName = userInfo.userName.trim().replace(/\s+/g, '-');
-      const finalContractNumber = `${formattedUserName}-${cleanContractNumber}`;
+      
+      let finalContractNumber = '';
+      if (userInfo?.userName) {
+        // Format with userName and sellerCode
+        const formattedUserName = userInfo.userName.trim().replace(/\s+/g, '-');
+        const sellerCode = userInfo.sellerCode ? String(userInfo.sellerCode).padStart(2, '0') : '00';
+        
+        // Split contract number to insert seller code before last segment
+        const parts = cleanContractNumber.split('-');
+        if (parts.length > 1) {
+          // Insert seller code before the last part
+          const lastPart = parts.pop(); // Remove and get last part
+          const baseParts = parts.join('-'); // Rejoin remaining parts
+          finalContractNumber = `${formattedUserName}-${baseParts}-${sellerCode}-${lastPart}`;
+        } else {
+          // Simple number, just add seller code before it
+          finalContractNumber = `${formattedUserName}-${sellerCode}-${cleanContractNumber}`;
+        }
+      } else if (userInfo?.sellerCode) {
+        // No userName but we have sellerCode, still insert seller code
+        const sellerCode = String(userInfo.sellerCode).padStart(2, '0');
+        const parts = cleanContractNumber.split('-');
+        if (parts.length > 1) {
+          // Insert seller code before the last part
+          const lastPart = parts.pop(); // Remove and get last part
+          const baseParts = parts.join('-'); // Rejoin remaining parts
+          finalContractNumber = `${baseParts}-${sellerCode}-${lastPart}`;
+        } else {
+          // Simple number, just add seller code before it
+          finalContractNumber = `${sellerCode}-${cleanContractNumber}`;
+        }
+      } else {
+        // No userName and no sellerCode, use clean contract number as-is
+        finalContractNumber = cleanContractNumber;
+      }
       
       // Only update if the current contract number is empty or matches our expected format
       const currentNumber = formData.broj_ugovora || '';
       const shouldUpdate = !currentNumber || 
                           currentNumber === cleanContractNumber || 
-                          currentNumber.endsWith(`-${cleanContractNumber}`);
+                          currentNumber !== finalContractNumber;
       
       if (shouldUpdate) {
         setFormData(prev => ({
@@ -685,7 +760,7 @@ export default function ContractForm({
         }));
       }
     }
-  }, [userInfo?.userName, contractNumber]);
+  }, [userInfo?.userName, userInfo?.sellerCode, contractNumber]);
 
   return (
     <div className="space-y-6">
@@ -707,76 +782,15 @@ export default function ContractForm({
           <TabsContent value="basic" className="space-y-4 mt-4">
             <Card>
               <CardContent className="pt-6">
+                <h3 className="text-xl font-semibold mb-4">Osnovni podaci</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="usluga">Usluga</Label>
                     <Input id="usluga" name="usluga" value={formData.usluga || ""} onChange={handleChange} />
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="broj_ugovora">Broj ugovora</Label>
-                    <Input
-                      id="broj_ugovora"
-                      name="broj_ugovora"
-                      value={formData.broj_ugovora || ""}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="contract_duration">Trajanje ugovora</Label>
-                    <Input
-                      id="contract_duration"
-                      name="contract_duration"
-                      value={formData.contract_duration || ""}
-                      onChange={handleChange}
-                      placeholder="npr. 24 mjeseca, neodređeno"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-8 border-t pt-6">
-                  <h3 className="text-lg font-medium mb-4">Podaci o prodajnom mjestu</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="sellerCode">Kod prodavatelja</Label>
-                      <Input
-                        id="sellerCode"
-                        type="number"
-                        value={userInfo.sellerCode || ''}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          const numericValue = value === '' ? 0 : parseInt(value, 10);
-                          handleUserInfoChange({ ...userInfo, sellerCode: numericValue });
-                        }}
-                        placeholder="npr. 09"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="sellerPlace">Mjesto</Label>
-                      <select
-                        id="sellerPlace"
-                        value={userInfo.sellerPlace}
-                        onChange={(e) => handleUserInfoChange({ ...userInfo, sellerPlace: e.target.value })}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <option value="">Odaberite mjesto</option>
-                        <option value="Ludbreg">Ludbreg</option>
-                        <option value="Varaždin">Varaždin</option>
-                        <option value="Trnovec">Trnovec</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="sellerDate">Datum</Label>
-                      <Input
-                        id="sellerDate"
-                        type="date"
-                        value={userInfo.sellerDate}
-                        onChange={(e) => handleUserInfoChange({ ...userInfo, sellerDate: e.target.value })}
-                      />
-                    </div>
+                    <Input id="broj_ugovora" name="broj_ugovora" value={formData.broj_ugovora || ""} onChange={handleChange} />
                   </div>
                 </div>
               </CardContent>

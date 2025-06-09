@@ -52,14 +52,45 @@ export default function ContractTableEditor({
     // Clean contract number by removing UG prefix if it exists
     const cleanContractNumber = contractNumber ? contractNumber.replace(/^UG\s*/, '') : '';
     
-    // If we have both user name and contract number, format as "userName-contractNumber"
+    // Generate contract number with format: userName-sellerCode-contractNumber
+    // But insert seller code before the last number segment
     let finalContractNumber = '';
-    if (cleanContractNumber && userInfo?.userName) {
-      // Replace spaces with hyphens in user name and combine with contract number
-      const formattedUserName = userInfo.userName.trim().replace(/\s+/g, '-');
-      finalContractNumber = `${formattedUserName}-${cleanContractNumber}`;
-    } else if (cleanContractNumber) {
-      finalContractNumber = cleanContractNumber;
+    if (cleanContractNumber) {
+      if (userInfo?.userName) {
+        // Replace spaces with hyphens in user name
+        const formattedUserName = userInfo.userName.trim().replace(/\s+/g, '-');
+        
+        // Format seller code (pad with zeros if needed)
+        const sellerCode = userInfo.sellerCode ? String(userInfo.sellerCode).padStart(2, '0') : '00';
+        
+        // Split contract number to insert seller code before last segment
+        const parts = cleanContractNumber.split('-');
+        if (parts.length > 1) {
+          // Insert seller code before the last part
+          const lastPart = parts.pop(); // Remove and get last part
+          const baseParts = parts.join('-'); // Rejoin remaining parts
+          finalContractNumber = `${formattedUserName}-${baseParts}-${sellerCode}-${lastPart}`;
+        } else {
+          // Simple number, just add seller code before it
+          finalContractNumber = `${formattedUserName}-${sellerCode}-${cleanContractNumber}`;
+        }
+      } else if (userInfo?.sellerCode) {
+        // If no userName but we have sellerCode, still insert seller code
+        const sellerCode = String(userInfo.sellerCode).padStart(2, '0');
+        const parts = cleanContractNumber.split('-');
+        if (parts.length > 1) {
+          // Insert seller code before the last part
+          const lastPart = parts.pop(); // Remove and get last part
+          const baseParts = parts.join('-'); // Rejoin remaining parts
+          finalContractNumber = `${baseParts}-${sellerCode}-${lastPart}`;
+        } else {
+          // Simple number, just add seller code before it
+          finalContractNumber = `${sellerCode}-${cleanContractNumber}`;
+        }
+      } else {
+        // No userName and no sellerCode, use clean contract number as-is
+        finalContractNumber = cleanContractNumber;
+      }
     }
     
     return {
@@ -81,18 +112,51 @@ export default function ContractTableEditor({
     }
   }, [formData.uredaj_otplata_na_rate, formData.uredaj_za_placanje, formData.uredaj_inicijalna_uplata, formData.uredaj_broj_obroka]);
   
-  // Update contract number when user name changes
+  // Update contract number when user name or seller code changes
   useEffect(() => {
-    if (contractNumber && userInfo?.userName) {
+    if (contractNumber) {
       const cleanContractNumber = contractNumber.replace(/^UG\s*/, '');
-      const formattedUserName = userInfo.userName.trim().replace(/\s+/g, '-');
-      const finalContractNumber = `${formattedUserName}-${cleanContractNumber}`;
       
-      // Only update if the current contract number is empty or matches our expected format
+      let finalContractNumber = '';
+      if (userInfo?.userName) {
+        // Format with userName and sellerCode
+        const formattedUserName = userInfo.userName.trim().replace(/\s+/g, '-');
+        const sellerCode = userInfo.sellerCode ? String(userInfo.sellerCode).padStart(2, '0') : '00';
+        
+        // Split contract number to insert seller code before last segment
+        const parts = cleanContractNumber.split('-');
+        if (parts.length > 1) {
+          // Insert seller code before the last part
+          const lastPart = parts.pop(); // Remove and get last part
+          const baseParts = parts.join('-'); // Rejoin remaining parts
+          finalContractNumber = `${formattedUserName}-${baseParts}-${sellerCode}-${lastPart}`;
+        } else {
+          // Simple number, just add seller code before it
+          finalContractNumber = `${formattedUserName}-${sellerCode}-${cleanContractNumber}`;
+        }
+      } else if (userInfo?.sellerCode) {
+        // No userName but we have sellerCode, still insert seller code
+        const sellerCode = String(userInfo.sellerCode).padStart(2, '0');
+        const parts = cleanContractNumber.split('-');
+        if (parts.length > 1) {
+          // Insert seller code before the last part
+          const lastPart = parts.pop(); // Remove and get last part
+          const baseParts = parts.join('-'); // Rejoin remaining parts
+          finalContractNumber = `${baseParts}-${sellerCode}-${lastPart}`;
+        } else {
+          // Simple number, just add seller code before it
+          finalContractNumber = `${sellerCode}-${cleanContractNumber}`;
+        }
+      } else {
+        // No userName and no sellerCode, use clean contract number as-is
+        finalContractNumber = cleanContractNumber;
+      }
+      
+      // Only update if the current contract number doesn't match our expected format
       const currentNumber = formData.broj_ugovora || '';
       const shouldUpdate = !currentNumber || 
                           currentNumber === cleanContractNumber || 
-                          currentNumber.endsWith(`-${cleanContractNumber}`);
+                          currentNumber !== finalContractNumber;
       
       if (shouldUpdate) {
         setFormData(prev => ({
@@ -101,7 +165,7 @@ export default function ContractTableEditor({
         }));
       }
     }
-  }, [userInfo?.userName, contractNumber]);
+  }, [userInfo?.userName, userInfo?.sellerCode, contractNumber]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target

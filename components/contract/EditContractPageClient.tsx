@@ -23,7 +23,7 @@ const generateId = () => {
 
 interface Props {
   contract: ContractData; // contract.terminalna_oprema will be the new array structure or old object
-  profile: { agreement_number: number };
+  profile: { agreement_number: number; user_number: number };
 }
 
 export default function EditContractPageClient({ contract, profile }: Props) {
@@ -52,7 +52,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
     marketingContact: [],
     generalTermsDelivery: "provided",
     paymentMethod: "oneTime",
-    sellerCode: 0,
+    sellerCode: profile?.user_number || 0,
     sellerPlace: "",
     sellerDate: "",
     changeOperator: false,

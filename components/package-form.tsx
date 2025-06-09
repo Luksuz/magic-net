@@ -310,11 +310,10 @@ export default function PackageForm({ initialData, isEditing = false }: PackageF
                     </Label>
                     <Input id="usluga" name="usluga" value={formState.usluga || ""} onChange={handleInputChange} required />
                   </div>
-
-                  {/* <div className="space-y-2">
+                  <div className="space-y-2">
                     <Label htmlFor="broj_ugovora">Broj ugovora</Label>
                     <Input id="broj_ugovora" name="broj_ugovora" value={formState.broj_ugovora || ""} onChange={handleInputChange} />
-                  </div> */}
+                  </div>
                 </div>
               </CardContent>
             </Card>

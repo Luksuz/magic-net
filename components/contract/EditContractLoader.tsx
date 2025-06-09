@@ -18,7 +18,7 @@ export default async function EditContractLoader({ contractId }: Props) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("agreement_number")
+    .select("agreement_number, user_number")
     .eq("user_id", user.id)
     .single();
 
