@@ -72,6 +72,13 @@ export type MagicMeshDevice = {
   regular_price: number | null
 }
 
+export type MagicAdditionalTvDevice = {
+  id: number
+  created_at: string
+  name: string | null
+  price: number | null
+}
+
 export type OperatorChangeData = {
   // Add any necessary properties for OperatorChangeData
 }
@@ -650,5 +657,85 @@ export async function deleteExtraTelefonPackage(id: number): Promise<{ success: 
   } catch (error) {
     console.error('Error in deleteExtraTelefonPackage:', error)
     return { success: false, error: 'Failed to delete extra telefon package' }
+  }
+}
+
+// Additional TV devices management functions
+export async function getAdditionalTvDevices(): Promise<{ success: boolean; data: MagicAdditionalTvDevice[]; error?: string }> {
+  try {
+    const { data, error } = await supabase
+      .from('magic_additional_tv_devices')
+      .select('*')
+      .order('name')
+
+    if (error) {
+      console.error('Error fetching additional TV devices:', error)
+      return { success: false, data: [], error: error.message }
+    }
+
+    return { success: true, data: data || [] }
+  } catch (error) {
+    console.error('Error in getAdditionalTvDevices:', error)
+    return { success: false, data: [], error: 'Failed to fetch additional TV devices' }
+  }
+}
+
+export async function createAdditionalTvDevice(deviceData: Omit<MagicAdditionalTvDevice, 'id' | 'created_at'>): Promise<{ success: boolean; data?: MagicAdditionalTvDevice; error?: string }> {
+  try {
+    const { data, error } = await supabase
+      .from('magic_additional_tv_devices')
+      .insert([deviceData])
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error creating additional TV device:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error in createAdditionalTvDevice:', error)
+    return { success: false, error: 'Failed to create additional TV device' }
+  }
+}
+
+export async function updateAdditionalTvDevice(id: number, deviceData: Partial<Omit<MagicAdditionalTvDevice, 'id' | 'created_at'>>): Promise<{ success: boolean; data?: MagicAdditionalTvDevice; error?: string }> {
+  try {
+    const { data, error } = await supabase
+      .from('magic_additional_tv_devices')
+      .update(deviceData)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating additional TV device:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error in updateAdditionalTvDevice:', error)
+    return { success: false, error: 'Failed to update additional TV device' }
+  }
+}
+
+export async function deleteAdditionalTvDevice(id: number): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase
+      .from('magic_additional_tv_devices')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('Error deleting additional TV device:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error in deleteAdditionalTvDevice:', error)
+    return { success: false, error: 'Failed to delete additional TV device' }
   }
 }

@@ -144,6 +144,25 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </Link>
+
+          <Link href="/admin/manage-additional-tv" className="block h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Edit3Icon className="mr-2 h-5 w-5 text-primary" />
+                  Upravljaj TV Paketima
+                </CardTitle>
+                <CardDescription>
+                  Upravljajte dodatnim TV paketima i cijenama.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground">
+                  Dodajte, uredite ili obrišite dodatne TV pakete kao što su FILMSKI, ODRASLI, itd.
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       </section>
     </div>

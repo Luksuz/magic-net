@@ -3,8 +3,8 @@
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
-import type { ContractData, MagicNetDevice, MagicMeshDevice } from "@/lib/supabase"
-import { getDevices, getMeshDevices, getExtraTelefonPackages, type MagicExtraTelefon } from "@/lib/supabase"
+import type { ContractData, MagicNetDevice, MagicMeshDevice, MagicAdditionalTvDevice } from "@/lib/supabase"
+import { getDevices, getMeshDevices, getExtraTelefonPackages, getAdditionalTvDevices, type MagicExtraTelefon } from "@/lib/supabase"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -148,6 +148,9 @@ export default function ContractForm({
   const [meshDevicesLoading, setMeshDevicesLoading] = useState(true)
   const [extraTelefonPackages, setExtraTelefonPackages] = useState<MagicExtraTelefon[]>([])
   const [extraTelefonLoading, setExtraTelefonLoading] = useState(true)
+  const [additionalTvDevices, setAdditionalTvDevices] = useState<MagicAdditionalTvDevice[]>([])
+  const [additionalTvLoading, setAdditionalTvLoading] = useState(true)
+  const [selectedTvPackages, setSelectedTvPackages] = useState<{ [key: number]: boolean }>({})
   const [operatorChangeData, setOperatorChangeData] = useState<OperatorChangeData>(operatorChangeDataInitial || {
     existingOperatorName: "",
     contractOnDistance: true,
@@ -325,6 +328,14 @@ export default function ContractForm({
     setRentalMeshCount(count)
   }
 
+  // Handler for dynamic TV package selection
+  const handleTvPackageChange = (deviceId: number, checked: boolean) => {
+    setSelectedTvPackages(prev => ({
+      ...prev,
+      [deviceId]: checked
+    }))
+  }
+
   // Effect to update MESH in equipment and services when MESH states change
   useEffect(() => {
     console.log('MESH useEffect triggered with states:', { 
@@ -414,25 +425,18 @@ export default function ContractForm({
 
   // Calculate current TV services and price (no state updates)
   const getCurrentTvData = () => {
-    const selectedPackages = []
-    const selectedPackageNames = []
+    const selectedPackages: string[] = []
+    const selectedPackageNames: string[] = []
     let additionalPrice = 0
 
-    if (filmskiPackageEnabled) {
-      selectedPackages.push("FILMSKI")
-      selectedPackageNames.push("FILMSKI")
-      additionalPrice += 5
-    }
-    if (odrasliPackageEnabled) {
-      selectedPackages.push("ODRASLI")
-      selectedPackageNames.push("ODRASLI")
-      additionalPrice += 5
-    }
-    if (additionalTvCardEnabled) {
-      selectedPackages.push("Dodatna TV kartica")
-      selectedPackageNames.push("Dodatna TV kartica")
-      additionalPrice += 3.98
-    }
+    // Use dynamic packages from database instead of hardcoded values
+    additionalTvDevices.forEach(device => {
+      if (selectedTvPackages[device.id]) {
+        selectedPackages.push(device.name || "")
+        selectedPackageNames.push(device.name || "")
+        additionalPrice += device.price || 0
+      }
+    })
 
     const basePrice = baseTvPrice || 0
     
@@ -631,15 +635,23 @@ export default function ContractForm({
   // Initialize TV package states based on existing data
   useEffect(() => {
     const tvServices = formData.tv_dodatne_usluge || ""
-    setFilmskiPackageEnabled(tvServices.toLowerCase().includes("filmski"))
-    setOdrasliPackageEnabled(tvServices.toLowerCase().includes("odrasli"))
-    setAdditionalTvCardEnabled(tvServices.toLowerCase().includes("dodatna tv kartica"))
+    
+    // Initialize dynamic TV packages based on existing service data
+    if (additionalTvDevices.length > 0) {
+      const newSelectedPackages: { [key: number]: boolean } = {}
+      additionalTvDevices.forEach(device => {
+        if (device.name && tvServices.toLowerCase().includes(device.name.toLowerCase())) {
+          newSelectedPackages[device.id] = true
+        }
+      })
+      setSelectedTvPackages(newSelectedPackages)
+    }
     
     // Initialize base TV price
     if (formData.promo_price_tv && baseTvPrice === 0) {
       setBaseTvPrice(formData.promo_price_tv)
     }
-  }, [formData.tv_dodatne_usluge, formData.promo_price_tv, baseTvPrice])
+  }, [formData.tv_dodatne_usluge, formData.promo_price_tv, baseTvPrice, additionalTvDevices])
 
   // Initialize telephone service states based on existing data
   useEffect(() => {
@@ -718,6 +730,27 @@ export default function ContractForm({
     }
 
     fetchExtraTelefonPackages()
+  }, [])
+
+  // Fetch additional TV devices on component mount
+  useEffect(() => {
+    const fetchAdditionalTvDevices = async () => {
+      setAdditionalTvLoading(true)
+      try {
+        const result = await getAdditionalTvDevices()
+        if (result.success) {
+          setAdditionalTvDevices(result.data)
+        } else {
+          console.error("Error fetching additional TV devices:", result.error)
+        }
+      } catch (error) {
+        console.error("Error fetching additional TV devices:", error)
+      } finally {
+        setAdditionalTvLoading(false)
+      }
+    }
+
+    fetchAdditionalTvDevices()
   }, [])
 
   // Handler for device selection
@@ -1083,40 +1116,29 @@ export default function ContractForm({
                   
                   <div className="space-y-4 md:col-span-2">
                     <h4 className="text-md font-medium">Dodatni ONE TV paketi</h4>
-                    <div className="flex flex-col space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="filmskiPackage"
-                          checked={filmskiPackageEnabled}
-                          onCheckedChange={(checked) => handleFilmskiPackageChange(checked as boolean)}
-                        />
-                        <Label htmlFor="filmskiPackage" className="font-normal">
-                          FILMSKI (5,00 EUR)
-                        </Label>
+                    {additionalTvLoading ? (
+                      <div className="text-center py-4">Učitavanje TV paketa...</div>
+                    ) : (
+                      <div className="flex flex-col space-y-2">
+                        {additionalTvDevices.map((device) => (
+                          <div key={device.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`tvPackage-${device.id}`}
+                              checked={selectedTvPackages[device.id] || false}
+                              onCheckedChange={(checked) => handleTvPackageChange(device.id, checked as boolean)}
+                            />
+                            <Label htmlFor={`tvPackage-${device.id}`} className="font-normal">
+                              {device.name} ({device.price?.toFixed(2)} EUR)
+                            </Label>
+                          </div>
+                        ))}
+                        {additionalTvDevices.length === 0 && (
+                          <div className="text-center py-4 text-gray-500">
+                            Nema dostupnih TV paketa. Kontaktirajte administratora.
+                          </div>
+                        )}
                       </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="odrasliPackage"
-                          checked={odrasliPackageEnabled}
-                          onCheckedChange={(checked) => handleOdrasliPackageChange(checked as boolean)}
-                        />
-                        <Label htmlFor="odrasliPackage" className="font-normal">
-                          ODRASLI (5,00 EUR)
-                        </Label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="additionalTvCard"
-                          checked={additionalTvCardEnabled}
-                          onCheckedChange={(checked) => handleAdditionalTvCardChange(checked as boolean)}
-                        />
-                        <Label htmlFor="additionalTvCard" className="font-normal">
-                          Dodatna TV kartica (3,98 EUR)
-                        </Label>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
                 
