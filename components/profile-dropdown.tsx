@@ -76,7 +76,7 @@ export async function ProfileDropdown() {
 
   const { data: profile } = await (await supabase)
     .from("profiles")
-    .select("is_admin")
+    .select("is_admin, seller_location")
     .eq("user_id", user.id)
     .single();
   const isAdmin = profile?.is_admin === true;

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import type { ContractData } from "@/lib/supabase"
+import type { ContractData, MagicMeshDevice } from "@/lib/supabase"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -10,8 +10,10 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { FileText } from "lucide-react"
-import type { UserInformation } from "@/components/user-information-form"
+import type { UserInformation, OperatorChangeData } from "@/components/user-information-form"
 import type { TerminalEquipment } from "@/lib/pdf-generator"
+import { getMeshDevices } from "@/lib/supabase"
+import { useAuth } from "@/app/contexts/authContext"
 
 // Define types for field configuration
 type FieldItem = {
@@ -36,17 +38,21 @@ export default function ContractTableEditor({
   onGeneratePdf,
   contractConcludedOnPremises,
   onContractConcludedOnPremisesChange,
-  contractNumber
+  contractNumber,
+  operatorChangeDataInitial,
+  onOperatorChangeDataChange
 }: { 
   initialData: ContractData
   userInfo: UserInformation
   onUserInfoChange: (data: UserInformation) => void
   terminalEquipment: TerminalEquipment[]
   onTerminalEquipmentChange: (data: TerminalEquipment[]) => void
-  onGeneratePdf: (data: ContractData, equipmentData: TerminalEquipment[]) => void
+  onGeneratePdf: (data: ContractData, equipmentData: TerminalEquipment[], operatorChangeData?: OperatorChangeData) => void
   contractConcludedOnPremises?: boolean
   onContractConcludedOnPremisesChange?: (value: boolean) => void
   contractNumber?: string | null
+  operatorChangeDataInitial?: OperatorChangeData
+  onOperatorChangeDataChange?: (data: OperatorChangeData) => void
 }) {
   const [formData, setFormData] = useState<ContractData>(() => {
     // Clean contract number by removing UG prefix if it exists
@@ -100,8 +106,33 @@ export default function ContractTableEditor({
   })
   const [terminalEquipment, setTerminalEquipment] = useState<TerminalEquipment[]>(initialTerminalEquipment)
   const [freeMeshEnabled, setFreeMeshEnabled] = useState(false)
-  const [rentalMeshEnabled, setRentalMeshEnabled] = useState(false)
-  const [extraRentalMeshCount, setExtraRentalMeshCount] = useState(0)
+  const [rentalMeshCount, setRentalMeshCount] = useState(0)
+  const [meshDevices, setMeshDevices] = useState<MagicMeshDevice[]>([])
+  const [meshDevicesLoading, setMeshDevicesLoading] = useState(true)
+  const { profile } = useAuth()
+  
+  // Operator change data state
+  const [operatorChangeData, setOperatorChangeData] = useState<OperatorChangeData>(operatorChangeDataInitial || {
+    existingOperatorName: "",
+    contractOnDistance: false,
+    agreeToPayDebts: false,
+    numberTransfer: false,
+    notificationAgreement: false,
+    vpnSeries: false,
+    servicesToCancel: [],
+    servicesToKeep: [],
+    userAccountsToKeep: [],
+    wholesaleService: false,
+    // Initialize with user data but allow independent editing
+    userName: userInfo?.userName || "",
+    legalEntity: userInfo?.legalEntity || "",
+    oib: userInfo?.oib || "",
+    phoneNumber: initialData.pretplatnicki_broj || "",
+    contactPhone: userInfo?.contactPhone || "",
+    email: userInfo?.email || "",
+    connectionAddress: userInfo?.connectionAddress || "",
+    sellerPlace: userInfo?.sellerPlace || "",
+  })
   
   // Calculate monthly payment when component mounts or relevant values change
   useEffect(() => {
@@ -290,26 +321,9 @@ export default function ContractTableEditor({
     updateMeshInEquipmentAndServices()
   }
 
-  // Handler for RENTAL MESH checkbox
-  const handleRentalMeshChange = (checked: boolean) => {
-    setRentalMeshEnabled(checked)
-    if (!checked) {
-      setExtraRentalMeshCount(0) // Reset extra rental mesh count when main rental is disabled
-    }
-    updateMeshInEquipmentAndServices()
-  }
-
-  // Handler for extra rental MESH checkboxes
-  const handleExtraRentalMeshChange = (index: number, checked: boolean) => {
-    if (checked) {
-      setExtraRentalMeshCount(prev => Math.max(prev, index + 1))
-    } else {
-      // Remove this specific extra mesh
-      if (index === extraRentalMeshCount - 1) {
-        // If removing the last one, decrease count
-        setExtraRentalMeshCount(prev => prev - 1)
-      }
-    }
+  // Handler for RENTAL MESH count selector
+  const handleRentalMeshCountChange = (count: number) => {
+    setRentalMeshCount(count)
     updateMeshInEquipmentAndServices()
   }
 
@@ -324,10 +338,9 @@ export default function ContractTableEditor({
       meshServices.push("BESPLATAN MESH")
     }
     
-    if (rentalMeshEnabled) {
-      totalMeshQuantity += 1 + extraRentalMeshCount
-      const rentalCount = 1 + extraRentalMeshCount
-      meshServices.push(`EXTRA MESH U NAJAM (${rentalCount})`)
+    if (rentalMeshCount > 0) {
+      totalMeshQuantity += rentalMeshCount
+      meshServices.push(`EXTRA MESH U NAJAM (${rentalMeshCount})`)
     }
 
     // Update MESH equipment quantity (assuming MESH has id 5)
@@ -357,7 +370,7 @@ export default function ContractTableEditor({
   }
   
   const handleGeneratePdf = () => {
-    onGeneratePdf(formData, terminalEquipment)
+    onGeneratePdf(formData, terminalEquipment, operatorChangeData)
   }
 
   // Group fields by category for better organization
@@ -466,34 +479,105 @@ export default function ContractTableEditor({
         { key: "contactPersonEmail", label: "Email kontakt osobe", type: "text" }
       ]
     },
-    {
-      name: "Dodatne usluge i troškovi",
-      fields: [
-        { key: "additionalServices", label: "Dodatne usluge", type: "text" },
-        { key: "activationCost", label: "Trošak aktivacije", type: "text" },
-        { key: "externalWorksCost", label: "Trošak vanjskih radova", type: "text" }
-      ]
-    },
+    // {
+    //   name: "Dodatne usluge i troškovi",
+    //   fields: [
+    //     { key: "additionalServices", label: "Dodatne usluge", type: "text" },
+    //     { key: "activationCost", label: "Trošak aktivacije", type: "text" },
+    //     { key: "externalWorksCost", label: "Trošak vanjskih radova", type: "text" }
+    //   ]
+    // },
     {
       name: "Podaci o prodajnom mjestu",
       fields: [
         { key: "sellerCode", label: "Kod prodavatelja", type: "text" },
         { key: "sellerPlace", label: "Mjesto", type: "text" },
-        { key: "sellerDate", label: "Datum", type: "date" }
+        ...(contractConcludedOnPremises ? [{ key: "sellerDate", label: "Datum ugovora", type: "date" }] : [])
       ]
     }
   ]
 
   const handleUserInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    onUserInfoChange({ ...userInfo, [name]: value })
+    const updatedUserInfo = { ...userInfo, [name]: value }
+    onUserInfoChange(updatedUserInfo)
   }
+
+  const handleOperatorChangeDataChange = (data: OperatorChangeData) => {
+    setOperatorChangeData(data)
+    if (onOperatorChangeDataChange) {
+      onOperatorChangeDataChange(data)
+    }
+  }
+
+  // Initialize MESH states based on existing services
+  useEffect(() => {
+    const fiksneServices = formData.fiksne_dodatne_usluge || ""
+    
+    // Check for free MESH
+    setFreeMeshEnabled(fiksneServices.toLowerCase().includes("besplatan mesh"))
+    
+    // Check for rental MESH
+    const rentalMeshMatch = fiksneServices.match(/extra mesh u najam \((\d+)\)/i)
+    if (rentalMeshMatch) {
+      const totalRentalCount = parseInt(rentalMeshMatch[1], 10)
+      setRentalMeshCount(totalRentalCount)
+    } else {
+      setRentalMeshCount(0)
+    }
+  }, [formData.fiksne_dodatne_usluge])
+
+  // Fetch MESH devices on component mount
+  useEffect(() => {
+    const fetchMeshDevices = async () => {
+      setMeshDevicesLoading(true)
+      try {
+        const result = await getMeshDevices()
+        if (result.success) {
+          setMeshDevices(result.data)
+        } else {
+          console.error("Error fetching MESH devices:", result.error)
+        }
+      } catch (error) {
+        console.error("Error fetching MESH devices:", error)
+      } finally {
+        setMeshDevicesLoading(false)
+      }
+    }
+
+    fetchMeshDevices()
+  }, [])
 
   const handleCheckboxToggle = () => {
     if (onContractConcludedOnPremisesChange) {
       onContractConcludedOnPremisesChange(!contractConcludedOnPremises);
     }
   };
+
+  // Set today's date if contract is on premises and no date is set
+  useEffect(() => {
+    if (contractConcludedOnPremises && !userInfo.sellerDate) {
+      onUserInfoChange({
+        ...userInfo,
+        sellerDate: new Date().toISOString().split('T')[0]
+      });
+    } else if (!contractConcludedOnPremises && userInfo.sellerDate) {
+      onUserInfoChange({
+        ...userInfo,
+        sellerDate: ""
+      });
+    }
+  }, [contractConcludedOnPremises, userInfo.sellerDate, onUserInfoChange]);
+
+  // Set seller location from profile
+  useEffect(() => {
+    if (profile && profile.seller_location && userInfo.sellerPlace !== profile.seller_location) {
+      onUserInfoChange({
+        ...userInfo,
+        sellerPlace: profile.seller_location
+      });
+    }
+  }, [profile, userInfo.sellerPlace, onUserInfoChange]);
 
   return (
     <div className="space-y-6">
@@ -614,6 +698,55 @@ export default function ContractTableEditor({
               Krajnji rok za povrat Terminalne opreme je 15 dana od dana zaprimanja računa na kojem će Vam biti naplaćena naknada za istu, 
               a koji ćemo stornirati u slučaju povrata Terminalne opreme.
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="pt-6">
+          <h2 className="text-xl font-bold mb-4">MESH uređaji konfiguracija</h2>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="freeMesh"
+                checked={freeMeshEnabled}
+                onCheckedChange={(checked) => handleFreeMeshChange(checked as boolean)}
+              />
+              <Label htmlFor="freeMesh" className="font-normal">
+                {meshDevicesLoading ? (
+                  "Učitavanje MESH opcija..."
+                ) : meshDevices.length > 0 ? (
+                  `Dodaj BESPLATAN MESH uređaj (${meshDevices[0]?.price?.toFixed(2) || '65,00'} EUR) - Promotivna naknada: ${meshDevices[0]?.promo_price?.toFixed(2) || '0,00'} EUR/mj, Redovna naknada: ${meshDevices[0]?.regular_price?.toFixed(2) || '3,00'} EUR/mj`
+                ) : (
+                  "Dodaj BESPLATAN MESH uređaj (65,00 EUR) - Promotivna naknada: 0,00 EUR/mj, Redovna naknada: 3,00 EUR/mj"
+                )}
+              </Label>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <Label htmlFor="rentalMeshCount" className="font-normal whitespace-nowrap">
+                {meshDevicesLoading ? (
+                  "Učitavanje MESH opcija..."
+                ) : meshDevices.length > 0 ? (
+                  `Broj EXTRA MESH U NAJAM uređaja (${meshDevices[0]?.price?.toFixed(2) || '65,00'} EUR) - Naknada: ${meshDevices[0]?.regular_price?.toFixed(2) || '3,00'} EUR/mj:`
+                ) : (
+                  "Broj EXTRA MESH U NAJAM uređaja (65,00 EUR) - Naknada: 3,00 EUR/mj:"
+                )}
+              </Label>
+              <select
+                id="rentalMeshCount"
+                value={rentalMeshCount}
+                onChange={(e) => handleRentalMeshCountChange(parseInt(e.target.value, 10))}
+                className="flex h-10 w-20 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                disabled={meshDevicesLoading}
+              >
+                {Array.from({ length: 11 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {i}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </CardContent>
       </Card>

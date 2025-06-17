@@ -3,8 +3,8 @@
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
-import type { ContractData, MagicNetDevice } from "@/lib/supabase"
-import { getDevices } from "@/lib/supabase"
+import type { ContractData, MagicNetDevice, MagicMeshDevice } from "@/lib/supabase"
+import { getDevices, getMeshDevices, getExtraTelefonPackages, type MagicExtraTelefon } from "@/lib/supabase"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -128,8 +128,7 @@ export default function ContractForm({
   const [isGenerating, setIsGenerating] = useState(false)
   const [activeTab, setActiveTab] = useState("basic")
   const [freeMeshEnabled, setFreeMeshEnabled] = useState(false)
-  const [rentalMeshEnabled, setRentalMeshEnabled] = useState(false)
-  const [extraRentalMeshCount, setExtraRentalMeshCount] = useState(0)
+  const [rentalMeshCount, setRentalMeshCount] = useState(0) // Changed from rentalMeshEnabled and extraRentalMeshCount
   const [filmskiPackageEnabled, setFilmskiPackageEnabled] = useState(false)
   const [odrasliPackageEnabled, setOdrasliPackageEnabled] = useState(false)
   const [additionalTvCardEnabled, setAdditionalTvCardEnabled] = useState(false)
@@ -145,17 +144,30 @@ export default function ContractForm({
   const [isEquipmentEditorOpen, setIsEquipmentEditorOpen] = useState(false)
   const [devices, setDevices] = useState<MagicNetDevice[]>([])
   const [devicesLoading, setDevicesLoading] = useState(true)
+  const [meshDevices, setMeshDevices] = useState<MagicMeshDevice[]>([])
+  const [meshDevicesLoading, setMeshDevicesLoading] = useState(true)
+  const [extraTelefonPackages, setExtraTelefonPackages] = useState<MagicExtraTelefon[]>([])
+  const [extraTelefonLoading, setExtraTelefonLoading] = useState(true)
   const [operatorChangeData, setOperatorChangeData] = useState<OperatorChangeData>(operatorChangeDataInitial || {
     existingOperatorName: "",
-    contractOnDistance: false,
-    agreeToPayDebts: false,
-    numberTransfer: false,
-    notificationAgreement: false,
+    contractOnDistance: true,
+    agreeToPayDebts: true,
+    numberTransfer: true,
+    notificationAgreement: true,
     vpnSeries: false,
     servicesToCancel: [],
     servicesToKeep: [],
-    userAccountsToKeep: [],
+    userAccountsToKeep: ["e-mail"],
     wholesaleService: false,
+    // Initialize with user data but allow independent editing
+    userName: "", //userInfoInitial?.userName || "",
+    legalEntity: "", //userInfoInitial?.legalEntity || "",
+    oib: "", //userInfoInitial?.oib || "",
+    phoneNumber: "", //initialData.pretplatnicki_broj || "",
+    contactPhone: "", //userInfoInitial?.contactPhone || "",
+    email: "", //userInfoInitial?.email || "",
+    connectionAddress: "", //userInfoInitial?.connectionAddress || "",
+    sellerPlace: "", //userInfoInitial?.sellerPlace || "",
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -308,33 +320,16 @@ export default function ContractForm({
     setFreeMeshEnabled(checked)
   }
 
-  // Handler for RENTAL MESH checkbox
-  const handleRentalMeshChange = (checked: boolean) => {
-    setRentalMeshEnabled(checked)
-    if (!checked) {
-      setExtraRentalMeshCount(0) // Reset extra rental mesh count when main rental is disabled
-    }
-  }
-
-  // Handler for extra rental MESH checkboxes
-  const handleExtraRentalMeshChange = (index: number, checked: boolean) => {
-    if (checked) {
-      setExtraRentalMeshCount(prev => Math.max(prev, index + 1))
-    } else {
-      // Remove this specific extra mesh
-      if (index === extraRentalMeshCount - 1) {
-        // If removing the last one, decrease count
-        setExtraRentalMeshCount(prev => prev - 1)
-      }
-    }
+  // Handler for RENTAL MESH count selector
+  const handleRentalMeshCountChange = (count: number) => {
+    setRentalMeshCount(count)
   }
 
   // Effect to update MESH in equipment and services when MESH states change
   useEffect(() => {
     console.log('MESH useEffect triggered with states:', { 
       freeMeshEnabled, 
-      rentalMeshEnabled, 
-      extraRentalMeshCount
+      rentalMeshCount
     })
     
     // Calculate total MESH quantity
@@ -346,10 +341,9 @@ export default function ContractForm({
       meshServices.push("BESPLATAN MESH")
     }
     
-    if (rentalMeshEnabled) {
-      totalMeshQuantity += 1 + extraRentalMeshCount
-      const rentalCount = 1 + extraRentalMeshCount
-      meshServices.push(`EXTRA MESH U NAJAM (${rentalCount})`)
+    if (rentalMeshCount > 0) {
+      totalMeshQuantity += rentalMeshCount
+      meshServices.push(`EXTRA MESH U NAJAM (${rentalMeshCount})`)
     }
 
     console.log('Calculated MESH data:', { totalMeshQuantity, meshServices })
@@ -376,7 +370,7 @@ export default function ContractForm({
     if (onTerminalEquipmentChange) {
       onTerminalEquipmentChange(updatedEquipment)
     }
-  }, [freeMeshEnabled, rentalMeshEnabled, extraRentalMeshCount])
+  }, [freeMeshEnabled, rentalMeshCount])
 
   // Handler for FILMSKI package checkbox
   const handleFilmskiPackageChange = (checked: boolean) => {
@@ -459,35 +453,55 @@ export default function ContractForm({
     const selectedServiceNames = []
     let additionalPrice = 0
 
+    // Helper function to get package price by name
+    const getPackagePrice = (packageName: string): number => {
+      const pkg = extraTelefonPackages.find(p => 
+        p.name.toLowerCase().includes(packageName.toLowerCase())
+      )
+      return pkg ? pkg.price : 0
+    }
+
     if (telMix1Enabled) {
-      selectedServices.push("Telefonski MIX 1 - 300 minuta pozivi prema nacionalnim mobilnim mrežama, 500 minuta telefonskih poziva prema nacionalnim fiksnim mrežama, Neograničeni fiksni pozivi unutar MagicNet mreže")
+      const pkg = extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefonski mix 1'))
+      const description = pkg?.description || "300 minuta pozivi prema nacionalnim mobilnim mrežama, 500 minuta telefonskih poziva prema nacionalnim fiksnim mrežama, Neograničeni fiksni pozivi unutar MagicNet mreže"
+      selectedServices.push(`Telefonski MIX 1 - ${description}`)
       selectedServiceNames.push("Telefonski MIX 1")
-      additionalPrice += 2.65
+      additionalPrice += getPackagePrice("telefonski mix 1")
     }
     if (telMix2Enabled) {
-      selectedServices.push("Telefonski MIX 2 - 500 minuta pozivi prema nacionalnim mobilnim mrežama, 1000 minuta telefonskih poziva prema nacionalnim fiksnim mrežama, Neograničeni fiksni pozivi unutar MagicNet mreže")
+      const pkg = extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefonski mix 2'))
+      const description = pkg?.description || "500 minuta pozivi prema nacionalnim mobilnim mrežama, 1000 minuta telefonskih poziva prema nacionalnim fiksnim mrežama, Neograničeni fiksni pozivi unutar MagicNet mreže"
+      selectedServices.push(`Telefonski MIX 2 - ${description}`)
       selectedServiceNames.push("Telefonski MIX 2")
-      additionalPrice += 4.65
+      additionalPrice += getPackagePrice("telefonski mix 2")
     }
     if (telEuropa1_100Enabled) {
-      selectedServices.push("Telefon Europa 1 / 100 FIX - 100 minuta telefonskih poziva prema fiksnim međunarodnim Europa 1 destinacijama")
+      const pkg = extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 1') && p.name.toLowerCase().includes('100'))
+      const description = pkg?.description || "100 minuta telefonskih poziva prema fiksnim međunarodnim Europa 1 destinacijama"
+      selectedServices.push(`Telefon Europa 1 / 100 FIX - ${description}`)
       selectedServiceNames.push("Telefon Europa 1 / 100 FIX")
-      additionalPrice += 5.18
+      additionalPrice += getPackagePrice("telefon europa 1") || getPackagePrice("europa 1 100")
     }
     if (telEuropa1_200Enabled) {
-      selectedServices.push("Telefon Europa 1 / 200 FIX - 200 minuta telefonskih poziva prema fiksnim međunarodnim Europa 1 destinacijama")
+      const pkg = extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 1') && p.name.toLowerCase().includes('200'))
+      const description = pkg?.description || "200 minuta telefonskih poziva prema fiksnim međunarodnim Europa 1 destinacijama"
+      selectedServices.push(`Telefon Europa 1 / 200 FIX - ${description}`)
       selectedServiceNames.push("Telefon Europa 1 / 200 FIX")
-      additionalPrice += 9.95
+      additionalPrice += getPackagePrice("telefon europa 1") || getPackagePrice("europa 1 200")
     }
     if (telEuropa2_100Enabled) {
-      selectedServices.push("Telefon Europa 2 / 100 FIX - 100 minuta telefonskih poziva prema fiksnim međunarodnim Europa 2 destinacijama")
+      const pkg = extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 2') && p.name.toLowerCase().includes('100'))
+      const description = pkg?.description || "100 minuta telefonskih poziva prema fiksnim međunarodnim Europa 2 destinacijama"
+      selectedServices.push(`Telefon Europa 2 / 100 FIX - ${description}`)
       selectedServiceNames.push("Telefon Europa 2 / 100 FIX")
-      additionalPrice += 7.30
+      additionalPrice += getPackagePrice("telefon europa 2") || getPackagePrice("europa 2 100")
     }
     if (telEuropa2_200Enabled) {
-      selectedServices.push("Telefon Europa 2 / 200 FIX - 200 minuta telefonskih poziva prema fiksnim međunarodnim Europa 2 destinacijama")
+      const pkg = extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 2') && p.name.toLowerCase().includes('200'))
+      const description = pkg?.description || "200 minuta telefonskih poziva prema fiksnim međunarodnim Europa 2 destinacijama"
+      selectedServices.push(`Telefon Europa 2 / 200 FIX - ${description}`)
       selectedServiceNames.push("Telefon Europa 2 / 200 FIX")
-      additionalPrice += 13.14
+      additionalPrice += getPackagePrice("telefon europa 2") || getPackagePrice("europa 2 200")
     }
 
     const basePrice = basePhonePrice || 0
@@ -528,21 +542,27 @@ export default function ContractForm({
     let totalPromoPrice = 0
     let totalRegularPrice = 0
     
-    console.log('getMeshServiceData called:', { freeMeshEnabled, rentalMeshEnabled, extraRentalMeshCount })
+    console.log('getMeshServiceData called:', { freeMeshEnabled, rentalMeshCount })
+    
+    // Get prices from first MESH device or use defaults
+    const meshPricing = meshDevices.length > 0 ? meshDevices[0] : {
+      price: 65.00,
+      promo_price: 0.00,
+      regular_price: 3.00
+    }
     
     if (freeMeshEnabled) {
       meshServices.push("BESPLATAN MESH")
-      totalPromoPrice += 0 // Free
-      totalRegularPrice += 3.00 // 3 EUR regular
+      totalPromoPrice += meshPricing.promo_price || 0 // Free promo price
+      totalRegularPrice += meshPricing.regular_price || 3.00 // Regular price for free MESH
       console.log('Added BESPLATAN MESH to services')
     }
     
-    if (rentalMeshEnabled) {
-      const rentalCount = 1 + extraRentalMeshCount
-      meshServices.push(`EXTRA MESH U NAJAM (${rentalCount})`)
-      totalPromoPrice += rentalCount * 3.00 // 3 EUR per unit
-      totalRegularPrice += rentalCount * 3.00 // 3 EUR per unit
-      console.log(`Added EXTRA MESH U NAJAM (${rentalCount}) to services`)
+    if (rentalMeshCount > 0) {
+      meshServices.push(`EXTRA MESH U NAJAM (${rentalMeshCount})`)
+      totalPromoPrice += rentalMeshCount * (meshPricing.regular_price || 3.00) // Rental uses regular price for both promo and regular
+      totalRegularPrice += rentalMeshCount * (meshPricing.regular_price || 3.00)
+      console.log(`Added EXTRA MESH U NAJAM (${rentalMeshCount}) to services`)
     }
     
     const result = {
@@ -601,11 +621,10 @@ export default function ContractForm({
     // Check for rental MESH
     const rentalMeshMatch = fiksneServices.match(/extra mesh u najam \((\d+)\)/i)
     if (rentalMeshMatch) {
-      setRentalMeshEnabled(true)
       const totalRentalCount = parseInt(rentalMeshMatch[1], 10)
-      setExtraRentalMeshCount(Math.max(0, totalRentalCount - 1)) // Subtract 1 for the main rental mesh
+      setRentalMeshCount(totalRentalCount)
     } else {
-      setRentalMeshEnabled(fiksneServices.toLowerCase().includes("extra mesh u najam"))
+      setRentalMeshCount(0)
     }
   }, [formData.fiksne_dodatne_usluge])
 
@@ -657,6 +676,48 @@ export default function ContractForm({
     }
 
     fetchDevices()
+  }, [])
+
+  // Fetch MESH devices on component mount
+  useEffect(() => {
+    const fetchMeshDevices = async () => {
+      setMeshDevicesLoading(true)
+      try {
+        const result = await getMeshDevices()
+        if (result.success) {
+          setMeshDevices(result.data)
+        } else {
+          console.error("Error fetching MESH devices:", result.error)
+        }
+      } catch (error) {
+        console.error("Error fetching MESH devices:", error)
+      } finally {
+        setMeshDevicesLoading(false)
+      }
+    }
+
+    fetchMeshDevices()
+  }, [])
+
+  // Fetch extra telefon packages on component mount
+  useEffect(() => {
+    const fetchExtraTelefonPackages = async () => {
+      setExtraTelefonLoading(true)
+      try {
+        const result = await getExtraTelefonPackages()
+        if (result.success) {
+          setExtraTelefonPackages(result.data)
+        } else {
+          console.error("Error fetching extra telefon packages:", result.error)
+        }
+      } catch (error) {
+        console.error("Error fetching extra telefon packages:", error)
+      } finally {
+        setExtraTelefonLoading(false)
+      }
+    }
+
+    fetchExtraTelefonPackages()
   }, [])
 
   // Handler for device selection
@@ -762,6 +823,24 @@ export default function ContractForm({
     }
   }, [userInfo?.userName, userInfo?.sellerCode, contractNumber]);
 
+  // Sync operator change data with user data changes (only if not manually modified)
+  useEffect(() => {
+    if (userInfo.changeOperator) {
+      setOperatorChangeData(prev => ({
+        ...prev,
+        // Only update if the field is empty (hasn't been manually modified)
+        userName: prev.userName || userInfo.userName || "",
+        legalEntity: prev.legalEntity || userInfo.legalEntity || "",
+        oib: prev.oib || userInfo.oib || "",
+        phoneNumber: prev.phoneNumber || formData.pretplatnicki_broj || "",
+        contactPhone: prev.contactPhone || userInfo.contactPhone || "",
+        email: prev.email || userInfo.email || "",
+        connectionAddress: prev.connectionAddress || userInfo.connectionAddress || "",
+        sellerPlace: prev.sellerPlace || userInfo.sellerPlace || "",
+      }));
+    }
+  }, [userInfo, formData.pretplatnicki_broj]);
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="basic" className="w-full tabs-container" onValueChange={setActiveTab} value={activeTab}>
@@ -791,6 +870,11 @@ export default function ContractForm({
                   <div className="space-y-2">
                     <Label htmlFor="broj_ugovora">Broj ugovora</Label>
                     <Input id="broj_ugovora" name="broj_ugovora" value={formData.broj_ugovora || ""} onChange={handleChange} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="contract_duration">Trajanje ugovora</Label>
+                    <Input id="contract_duration" name="contract_duration" value={formData.contract_duration || ""} onChange={handleChange} />
                   </div>
                 </div>
               </CardContent>
@@ -840,21 +924,40 @@ export default function ContractForm({
                           onCheckedChange={(checked) => handleFreeMeshChange(checked as boolean)}
                         />
                         <Label htmlFor="freeMesh" className="font-normal">
-                          Dodaj BESPLATAN MESH uređaj (65,00 EUR) - Promotivna naknada: 0,00 EUR/mj, Redovna naknada: 3,00 EUR/mj
+                          {meshDevicesLoading ? (
+                            "Učitavanje MESH opcija..."
+                          ) : meshDevices.length > 0 ? (
+                            `Dodaj BESPLATAN MESH uređaj (${meshDevices[0]?.price?.toFixed(2) || '65,00'} EUR) - Promotivna naknada: ${meshDevices[0]?.promo_price?.toFixed(2) || '0,00'} EUR/mj, Redovna naknada: ${meshDevices[0]?.regular_price?.toFixed(2) || '3,00'} EUR/mj`
+                          ) : (
+                            "Dodaj BESPLATAN MESH uređaj (65,00 EUR) - Promotivna naknada: 0,00 EUR/mj, Redovna naknada: 3,00 EUR/mj"
+                          )}
                         </Label>
                       </div>
                       
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="rentalMesh"
-                          checked={rentalMeshEnabled}
-                          onCheckedChange={(checked) => handleRentalMeshChange(checked as boolean)}
-                        />
-                        <Label htmlFor="rentalMesh" className="font-normal">
-                          Dodaj EXTRA MESH U NAJAM uređaj (65,00 EUR) - Naknada: 3,00 EUR/mj
+                      <div className="flex items-center space-x-3">
+                        <Label htmlFor="rentalMeshCount" className="font-normal whitespace-nowrap">
+                          {meshDevicesLoading ? (
+                            "Učitavanje MESH opcija..."
+                          ) : meshDevices.length > 0 ? (
+                            `Broj EXTRA MESH U NAJAM uređaja (${meshDevices[0]?.price?.toFixed(2) || '65,00'} EUR) - Naknada: ${meshDevices[0]?.regular_price?.toFixed(2) || '3,00'} EUR/mj:`
+                          ) : (
+                            "Broj EXTRA MESH U NAJAM uređaja (65,00 EUR) - Naknada: 3,00 EUR/mj:"
+                          )}
                         </Label>
+                        <select
+                          id="rentalMeshCount"
+                          value={rentalMeshCount}
+                          onChange={(e) => handleRentalMeshCountChange(parseInt(e.target.value, 10))}
+                          className="flex h-10 w-20 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          disabled={meshDevicesLoading}
+                        >
+                          {Array.from({ length: 11 }, (_, i) => (
+                            <option key={i} value={i}>
+                              {i}
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                      
                     </div>
                   </div>
                 </div>
@@ -1082,117 +1185,123 @@ export default function ContractForm({
                   
                   <div className="space-y-4 md:col-span-2">
                     <h4 className="text-md font-medium">Dodatne telefonske usluge</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-3">
-                        <div className="flex items-start space-x-2">
-                          <Checkbox
-                            id="telMix1"
-                            checked={telMix1Enabled}
-                            onCheckedChange={(checked) => handleTelMix1Change(checked as boolean)}
-                            className="mt-1"
-                          />
-                          <div className="flex-1">
-                            <Label htmlFor="telMix1" className="font-normal text-sm leading-tight">
-                              <span className="font-medium">Telefonski MIX 1</span> (2,65 EUR/mj.)<br />
-                              <span className="text-xs text-gray-600">
-                                300 minuta pozivi prema nacionalnim mobilnim mrežama.<br />
-                                500 minuta telefonskih poziva prema nacionalnim fiksnim mrežama.<br />
-                                Neograničeni fiksni pozivi unutar MagicNet mreže.
-                              </span>
-                            </Label>
+                    {extraTelefonLoading ? (
+                      <div className="text-center py-4">Učitavanje telefonskih paketa...</div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <div className="flex items-start space-x-2">
+                            <Checkbox
+                              id="telMix1"
+                              checked={telMix1Enabled}
+                              onCheckedChange={(checked) => handleTelMix1Change(checked as boolean)}
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <Label htmlFor="telMix1" className="font-normal text-sm leading-tight">
+                                <span className="font-medium">Telefonski MIX 1</span> ({extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefonski mix 1'))?.price?.toFixed(2) || '2,65'} EUR/mj.)<br />
+                                <span className="text-xs text-gray-600">
+                                  {extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefonski mix 1'))?.description || 
+                                   "300 minuta pozivi prema nacionalnim mobilnim mrežama. 500 minuta telefonskih poziva prema nacionalnim fiksnim mrežama. Neograničeni fiksni pozivi unutar MagicNet mreže."}
+                                </span>
+                              </Label>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-start space-x-2">
+                            <Checkbox
+                              id="telMix2"
+                              checked={telMix2Enabled}
+                              onCheckedChange={(checked) => handleTelMix2Change(checked as boolean)}
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <Label htmlFor="telMix2" className="font-normal text-sm leading-tight">
+                                <span className="font-medium">Telefonski MIX 2</span> ({extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefonski mix 2'))?.price?.toFixed(2) || '4,65'} EUR/mj.)<br />
+                                <span className="text-xs text-gray-600">
+                                  {extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefonski mix 2'))?.description || 
+                                   "500 minuta pozivi prema nacionalnim mobilnim mrežama. 1000 minuta telefonskih poziva prema nacionalnim fiksnim mrežama. Neograničeni fiksni pozivi unutar MagicNet mreže."}
+                                </span>
+                              </Label>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-start space-x-2">
+                            <Checkbox
+                              id="telEuropa1_100"
+                              checked={telEuropa1_100Enabled}
+                              onCheckedChange={(checked) => handleTelEuropa1_100Change(checked as boolean)}
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <Label htmlFor="telEuropa1_100" className="font-normal text-sm leading-tight">
+                                <span className="font-medium">Telefon Europa 1 / 100 FIX</span> ({extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 1') && p.name.toLowerCase().includes('100'))?.price?.toFixed(2) || '5,18'} EUR/mj.)<br />
+                                <span className="text-xs text-gray-600">
+                                  {extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 1') && p.name.toLowerCase().includes('100'))?.description || 
+                                   "100 minuta telefonskih poziva prema fiksnim međunarodnim Europa 1 destinacijama."}
+                                </span>
+                              </Label>
+                            </div>
                           </div>
                         </div>
                         
-                        <div className="flex items-start space-x-2">
-                          <Checkbox
-                            id="telMix2"
-                            checked={telMix2Enabled}
-                            onCheckedChange={(checked) => handleTelMix2Change(checked as boolean)}
-                            className="mt-1"
-                          />
-                          <div className="flex-1">
-                            <Label htmlFor="telMix2" className="font-normal text-sm leading-tight">
-                              <span className="font-medium">Telefonski MIX 2</span> (4,65 EUR/mj.)<br />
-                              <span className="text-xs text-gray-600">
-                                500 minuta pozivi prema nacionalnim mobilnim mrežama.<br />
-                                1000 minuta telefonskih poziva prema nacionalnim fiksnim mrežama.<br />
-                                Neograničeni fiksni pozivi unutar MagicNet mreže.
-                              </span>
-                            </Label>
+                        <div className="space-y-3">
+                          <div className="flex items-start space-x-2">
+                            <Checkbox
+                              id="telEuropa1_200"
+                              checked={telEuropa1_200Enabled}
+                              onCheckedChange={(checked) => handleTelEuropa1_200Change(checked as boolean)}
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <Label htmlFor="telEuropa1_200" className="font-normal text-sm leading-tight">
+                                <span className="font-medium">Telefon Europa 1 / 200 FIX</span> ({extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 1') && p.name.toLowerCase().includes('200'))?.price?.toFixed(2) || '9,95'} EUR/mj.)<br />
+                                <span className="text-xs text-gray-600">
+                                  {extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 1') && p.name.toLowerCase().includes('200'))?.description || 
+                                   "200 minuta telefonskih poziva prema fiksnim međunarodnim Europa 1 destinacijama."}
+                                </span>
+                              </Label>
+                            </div>
                           </div>
-                        </div>
-                        
-                        <div className="flex items-start space-x-2">
-                          <Checkbox
-                            id="telEuropa1_100"
-                            checked={telEuropa1_100Enabled}
-                            onCheckedChange={(checked) => handleTelEuropa1_100Change(checked as boolean)}
-                            className="mt-1"
-                          />
-                          <div className="flex-1">
-                            <Label htmlFor="telEuropa1_100" className="font-normal text-sm leading-tight">
-                              <span className="font-medium">Telefon Europa 1 / 100 FIX</span> (5,18 EUR/mj.)<br />
-                              <span className="text-xs text-gray-600">
-                                100 minuta telefonskih poziva prema fiksnim međunarodnim Europa 1 destinacijama.
-                              </span>
-                            </Label>
+                          
+                          <div className="flex items-start space-x-2">
+                            <Checkbox
+                              id="telEuropa2_100"
+                              checked={telEuropa2_100Enabled}
+                              onCheckedChange={(checked) => handleTelEuropa2_100Change(checked as boolean)}
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <Label htmlFor="telEuropa2_100" className="font-normal text-sm leading-tight">
+                                <span className="font-medium">Telefon Europa 2 / 100 FIX</span> ({extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 2') && p.name.toLowerCase().includes('100'))?.price?.toFixed(2) || '7,30'} EUR/mj.)<br />
+                                <span className="text-xs text-gray-600">
+                                  {extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 2') && p.name.toLowerCase().includes('100'))?.description || 
+                                   "100 minuta telefonskih poziva prema fiksnim međunarodnim Europa 2 destinacijama."}
+                                </span>
+                              </Label>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-start space-x-2">
+                            <Checkbox
+                              id="telEuropa2_200"
+                              checked={telEuropa2_200Enabled}
+                              onCheckedChange={(checked) => handleTelEuropa2_200Change(checked as boolean)}
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <Label htmlFor="telEuropa2_200" className="font-normal text-sm leading-tight">
+                                <span className="font-medium">Telefon Europa 2 / 200 FIX</span> ({extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 2') && p.name.toLowerCase().includes('200'))?.price?.toFixed(2) || '13,14'} EUR/mj.)<br />
+                                <span className="text-xs text-gray-600">
+                                  {extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 2') && p.name.toLowerCase().includes('200'))?.description || 
+                                   "200 minuta telefonskih poziva prema fiksnim međunarodnim Europa 2 destinacijama."}
+                                </span>
+                              </Label>
+                            </div>
                           </div>
                         </div>
                       </div>
-                      
-                      <div className="space-y-3">
-                        <div className="flex items-start space-x-2">
-                          <Checkbox
-                            id="telEuropa1_200"
-                            checked={telEuropa1_200Enabled}
-                            onCheckedChange={(checked) => handleTelEuropa1_200Change(checked as boolean)}
-                            className="mt-1"
-                          />
-                          <div className="flex-1">
-                            <Label htmlFor="telEuropa1_200" className="font-normal text-sm leading-tight">
-                              <span className="font-medium">Telefon Europa 1 / 200 FIX</span> (9,95 EUR/mj.)<br />
-                              <span className="text-xs text-gray-600">
-                                200 minuta telefonskih poziva prema fiksnim međunarodnim Europa 1 destinacijama.
-                              </span>
-                            </Label>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-start space-x-2">
-                          <Checkbox
-                            id="telEuropa2_100"
-                            checked={telEuropa2_100Enabled}
-                            onCheckedChange={(checked) => handleTelEuropa2_100Change(checked as boolean)}
-                            className="mt-1"
-                          />
-                          <div className="flex-1">
-                            <Label htmlFor="telEuropa2_100" className="font-normal text-sm leading-tight">
-                              <span className="font-medium">Telefon Europa 2 / 100 FIX</span> (7,30 EUR/mj.)<br />
-                              <span className="text-xs text-gray-600">
-                                100 minuta telefonskih poziva prema fiksnim međunarodnim Europa 2 destinacijama.
-                              </span>
-                            </Label>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-start space-x-2">
-                          <Checkbox
-                            id="telEuropa2_200"
-                            checked={telEuropa2_200Enabled}
-                            onCheckedChange={(checked) => handleTelEuropa2_200Change(checked as boolean)}
-                            className="mt-1"
-                          />
-                          <div className="flex-1">
-                            <Label htmlFor="telEuropa2_200" className="font-normal text-sm leading-tight">
-                              <span className="font-medium">Telefon Europa 2 / 200 FIX</span> (13,14 EUR/mj.)<br />
-                              <span className="text-xs text-gray-600">
-                                200 minuta telefonskih poziva prema fiksnim međunarodnim Europa 2 destinacijama.
-                              </span>
-                            </Label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
                 
@@ -1493,9 +1602,99 @@ export default function ContractForm({
                 <CardContent className="pt-6">
                   <h3 className="text-xl font-semibold mb-4">Zahtjev za promjenu operatera</h3>
                   
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                    <h4 className="text-md font-medium mb-2 text-blue-800">Podaci za zahtjev za promjenu operatera:</h4>
+                    <p className="text-xs text-blue-600 mb-4">
+                      Ova polja možete prilagoditi specifično za zahtjev za promjenu operatera. Inicijalno su popunjena podacima iz glavnog ugovora.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="operatorUserName">Ime i prezime</Label>
+                        <Input
+                          id="operatorUserName"
+                          value={operatorChangeData.userName}
+                          onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, userName: e.target.value })}
+                          placeholder="Ime i prezime korisnika"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="operatorLegalEntity">Pravna osoba</Label>
+                        <Input
+                          id="operatorLegalEntity"
+                          value={operatorChangeData.legalEntity}
+                          onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, legalEntity: e.target.value })}
+                          placeholder="Naziv pravne osobe"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="operatorOib">OIB</Label>
+                        <Input
+                          id="operatorOib"
+                          value={operatorChangeData.oib}
+                          onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, oib: e.target.value })}
+                          placeholder="OIB korisnika"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="operatorPhoneNumber">Pretplatnički broj</Label>
+                        <Input
+                          id="operatorPhoneNumber"
+                          value={operatorChangeData.phoneNumber}
+                          onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, phoneNumber: e.target.value })}
+                          placeholder="Pretplatnički broj"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="operatorContactPhone">Kontakt telefon</Label>
+                        <Input
+                          id="operatorContactPhone"
+                          value={operatorChangeData.contactPhone}
+                          onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, contactPhone: e.target.value })}
+                          placeholder="Kontakt telefon"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="operatorEmail">Email</Label>
+                        <Input
+                          id="operatorEmail"
+                          type="email"
+                          value={operatorChangeData.email}
+                          onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, email: e.target.value })}
+                          placeholder="Email adresa"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="operatorConnectionAddress">Adresa priključka</Label>
+                        <Input
+                          id="operatorConnectionAddress"
+                          value={operatorChangeData.connectionAddress}
+                          onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, connectionAddress: e.target.value })}
+                          placeholder="Adresa priključka"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="operatorSellerPlace">Mjesto</Label>
+                        <Input
+                          id="operatorSellerPlace"
+                          value={operatorChangeData.sellerPlace}
+                          onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, sellerPlace: e.target.value })}
+                          placeholder="Mjesto"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="existingOperatorName">Naziv davatelja broja/postojećeg operatora</Label>
+                      <Label htmlFor="existingOperatorName">Naziv davatelja broja/postojećeg operatera</Label>
                       <Input
                         id="existingOperatorName"
                         value={operatorChangeData.existingOperatorName}
@@ -1660,6 +1859,7 @@ export default function ContractForm({
               onChange={handleUserInfoChange}
               packageName={formData.fiksni_paket || formData.tv_paket || formData.tarifa || ""}
               subscriptionNumber={formData.pretplatnicki_broj || ""}
+              contractConcludedOnPremises={contractConcludedOnPremises}
             />
           </TabsContent>
         </div>

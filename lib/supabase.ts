@@ -64,6 +64,18 @@ export type MagicNetDevice = {
   device_discount: number | null
 }
 
+export type MagicMeshDevice = {
+  id: number
+  created_at: string
+  price: number | null
+  promo_price: number | null
+  regular_price: number | null
+}
+
+export type OperatorChangeData = {
+  // Add any necessary properties for OperatorChangeData
+}
+
 export async function getPackages() {
   const { data, error } = await supabase
     .from("magic_net_ugovori")
@@ -488,4 +500,155 @@ export async function downloadDocument(fileName: string) {
   }
   
   return { success: true, error: null, data }
+}
+
+// MESH device management functions
+export async function getMeshDevices() {
+  const { data, error } = await supabase
+    .from("magic_mesh_devices")
+    .select("*")
+    .order("id", { ascending: true })
+  
+  if (error) {
+    console.error("Error fetching mesh devices:", error)
+    return { success: false, error: error.message, data: [] }
+  }
+  
+  return { success: true, error: null, data: data || [] }
+}
+
+export async function createMeshDevice(meshDevice: Omit<MagicMeshDevice, 'id' | 'created_at'>) {
+  const { data, error } = await supabase
+    .from("magic_mesh_devices")
+    .insert([meshDevice])
+    .select()
+    .single()
+  
+  if (error) {
+    console.error("Error creating mesh device:", error)
+    return { success: false, error: error.message, data: null }
+  }
+  
+  return { success: true, error: null, data }
+}
+
+export async function updateMeshDevice(id: number, meshDevice: Partial<Omit<MagicMeshDevice, 'id' | 'created_at'>>) {
+  const { data, error } = await supabase
+    .from("magic_mesh_devices")
+    .update(meshDevice)
+    .eq("id", id)
+    .select()
+    .single()
+  
+  if (error) {
+    console.error("Error updating mesh device:", error)
+    return { success: false, error: error.message, data: null }
+  }
+  
+  return { success: true, error: null, data }
+}
+
+export async function deleteMeshDevice(id: number) {
+  const { error } = await supabase
+    .from("magic_mesh_devices")
+    .delete()
+    .eq("id", id)
+  
+  if (error) {
+    console.error("Error deleting mesh device:", error)
+    return { success: false, error: error.message }
+  }
+  
+  return { success: true, error: null }
+}
+
+// User management functions
+
+// Magic Extra Telefon functions
+export interface MagicExtraTelefon {
+  id: number
+  name: string
+  description: string | null
+  price: number
+  created_at?: string
+  updated_at?: string
+}
+
+export async function getExtraTelefonPackages(): Promise<{ success: boolean; data: MagicExtraTelefon[]; error?: string }> {
+  try {
+    const { data, error } = await supabase
+      .from('magic_extra_telefon')
+      .select('*')
+      .order('name')
+
+    if (error) {
+      console.error('Error fetching extra telefon packages:', error)
+      return { success: false, data: [], error: error.message }
+    }
+
+    return { success: true, data: data || [] }
+  } catch (error) {
+    console.error('Error in getExtraTelefonPackages:', error)
+    return { success: false, data: [], error: 'Failed to fetch extra telefon packages' }
+  }
+}
+
+export async function createExtraTelefonPackage(packageData: Omit<MagicExtraTelefon, 'id' | 'created_at' | 'updated_at'>): Promise<{ success: boolean; data?: MagicExtraTelefon; error?: string }> {
+  try {
+    const { data, error } = await supabase
+      .from('magic_extra_telefon')
+      .insert([packageData])
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error creating extra telefon package:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error in createExtraTelefonPackage:', error)
+    return { success: false, error: 'Failed to create extra telefon package' }
+  }
+}
+
+export async function updateExtraTelefonPackage(id: number, packageData: Partial<Omit<MagicExtraTelefon, 'id' | 'created_at' | 'updated_at'>>): Promise<{ success: boolean; data?: MagicExtraTelefon; error?: string }> {
+  try {
+    const { data, error } = await supabase
+      .from('magic_extra_telefon')
+      .update(packageData)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating extra telefon package:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error in updateExtraTelefonPackage:', error)
+    return { success: false, error: 'Failed to update extra telefon package' }
+  }
+}
+
+export async function deleteExtraTelefonPackage(id: number): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase
+      .from('magic_extra_telefon')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('Error deleting extra telefon package:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error in deleteExtraTelefonPackage:', error)
+    return { success: false, error: 'Failed to delete extra telefon package' }
+  }
 }

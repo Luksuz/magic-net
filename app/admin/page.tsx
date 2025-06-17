@@ -106,6 +106,44 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </Link>
+
+          <Link href="/admin/manage-mesh" className="block h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Settings className="mr-2 h-5 w-5 text-primary" />
+                  Upravljaj MESH Uređajima
+                </CardTitle>
+                <CardDescription>
+                  Upravljajte cijenama MESH uređaja.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground">
+                  Postavite cijene za besplatne i najamne MESH uređaje.
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/admin/manage-telefon" className="block h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <PackagePlus className="mr-2 h-5 w-5 text-primary" />
+                  Upravljaj Telefonskim Paketima
+                </CardTitle>
+                <CardDescription>
+                  Upravljajte dodatnim telefonskim paketima i cijenama.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground">
+                  Dodajte, uredite ili obrišite dodatne telefonske pakete i postavite njihove cijene.
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       </section>
     </div>

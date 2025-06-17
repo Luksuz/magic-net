@@ -29,6 +29,9 @@ export function ProfileEditor({ profile }: { profile: ProfileData | null }) {
   const [userNumber, setUserNumber] = useState<number | null>(
     profile?.user_number || null
   );
+  const [sellerLocation, setSellerLocation] = useState<string>(
+    profile?.seller_location || ""
+  );
 
   // Update state when profile changes
   useEffect(() => {
@@ -36,6 +39,7 @@ export function ProfileEditor({ profile }: { profile: ProfileData | null }) {
       setAgreementNumber(profile.agreement_number);
       setActivationFees(profile.activation_fees || []);
       setUserNumber(profile.user_number);
+      setSellerLocation(profile.seller_location || "");
     }
   }, [profile]);
 
@@ -57,6 +61,7 @@ export function ProfileEditor({ profile }: { profile: ProfileData | null }) {
         agreement_number: agreementNumber,
         activation_fees: activationFees,
         user_number: userNumber,
+        seller_location: sellerLocation,
       });
       toast({
         title: "Profil ažuriran",
@@ -145,6 +150,26 @@ export function ProfileEditor({ profile }: { profile: ProfileData | null }) {
             <p className="text-sm text-muted-foreground mt-1">
               Ovaj broj će se koristiti kao zadnji broj u nazivu i naslovu
               ugovora.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="seller-location">Mjesto prodavatelja</Label>
+            {isEditing ? (
+              <Input
+                id="seller-location"
+                type="text"
+                value={sellerLocation}
+                onChange={(e) => setSellerLocation(e.target.value)}
+                placeholder="Unesite mjesto prodavatelja"
+              />
+            ) : (
+              <div className="p-2 border rounded">
+                {profile.seller_location || "Nije postavljen"}
+              </div>
+            )}
+            <p className="text-sm text-muted-foreground mt-1">
+              Ovo mjesto će se koristiti u dokumentima kao lokacija prodavatelja.
             </p>
           </div>
 

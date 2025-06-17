@@ -10,7 +10,7 @@ import ContractTableEditor from "@/components/contract-table-editor";
 import SendEmailPage from "@/components/email-component";
 import type { ContractData } from "@/lib/supabase";
 import type { TerminalEquipment } from "@/lib/pdf-generator";
-import type { UserInformation } from "@/components/user-information-form";
+import type { UserInformation, OperatorChangeData } from "@/components/user-information-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileText } from "lucide-react";
 
@@ -48,7 +48,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
     additionalServices: "",
     activationCost: "",
     externalWorksCost: "",
-    invoiceDeliveryMethod: ["mail"],
+    invoiceDeliveryMethod: [],
     marketingContact: [],
     generalTermsDelivery: "provided",
     paymentMethod: "oneTime",
@@ -56,6 +56,28 @@ export default function EditContractPageClient({ contract, profile }: Props) {
     sellerPlace: "",
     sellerDate: "",
     changeOperator: false,
+  });
+
+  // Operator change data state
+  const [operatorChangeData, setOperatorChangeData] = useState<OperatorChangeData>({
+    existingOperatorName: "",
+    contractOnDistance: false,
+    agreeToPayDebts: false,
+    numberTransfer: false,
+    notificationAgreement: false,
+    vpnSeries: false,
+    servicesToCancel: [],
+    servicesToKeep: [],
+    userAccountsToKeep: [],
+    wholesaleService: false,
+    userName: "",
+    legalEntity: "",
+    oib: "",
+    phoneNumber: "",
+    contactPhone: "",
+    email: "",
+    connectionAddress: "",
+    sellerPlace: "",
   });
 
   // Default terminal equipment if none is loaded from contract (e.g., new contract from basic template)
@@ -120,10 +142,16 @@ export default function EditContractPageClient({ contract, profile }: Props) {
 
   const handlePdfFromTableView = (
     data: ContractData,
-    equipmentData: TerminalEquipment[]
+    equipmentData: TerminalEquipment[],
+    operatorChangeDataFromTable?: OperatorChangeData
   ) => {
     formDataRef.current = data;
     formTerminalEquipmentRef.current = equipmentData;
+    
+    // Update operator change data if provided
+    if (operatorChangeDataFromTable) {
+      setOperatorChangeData(operatorChangeDataFromTable);
+    }
     
     // Show PDF generation message
     setPdfGenerationMessage(true);
@@ -137,6 +165,10 @@ export default function EditContractPageClient({ contract, profile }: Props) {
 
   const handleUserInfoChange = (data: UserInformation) => {
     setUserInfo(data);
+  };
+
+  const handleOperatorChangeDataChange = (data: OperatorChangeData) => {
+    setOperatorChangeData(data);
   };
 
   const handleTerminalEquipmentChange = (updatedEquipment: TerminalEquipment[]) => {
@@ -226,6 +258,8 @@ export default function EditContractPageClient({ contract, profile }: Props) {
             contractConcludedOnPremises={contractConcludedOnPremises}
             onContractConcludedOnPremisesChange={setContractConcludedOnPremises}
             contractNumber={contractData?.broj_ugovora}
+            operatorChangeDataInitial={operatorChangeData}
+            onOperatorChangeDataChange={handleOperatorChangeDataChange}
           />
         ) : (
           <ContractForm
@@ -238,6 +272,8 @@ export default function EditContractPageClient({ contract, profile }: Props) {
             contractConcludedOnPremises={contractConcludedOnPremises}
             onContractConcludedOnPremisesChange={setContractConcludedOnPremises}
             contractNumber={contractData?.broj_ugovora}
+            operatorChangeDataInitial={operatorChangeData}
+            onOperatorChangeDataChange={handleOperatorChangeDataChange}
           />
         )}
       </div>

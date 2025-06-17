@@ -28,6 +28,7 @@ export function ProfileEditorClient({ profile }: Props) {
     agreement_number: profile.agreement_number ?? null,
     activation_fees: profile.activation_fees ?? [],
     user_number: profile.user_number ?? null,
+    seller_location: profile.seller_location ?? "",
   });
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export function ProfileEditorClient({ profile }: Props) {
       agreement_number: profile.agreement_number ?? null,
       activation_fees: profile.activation_fees ?? [],
       user_number: profile.user_number ?? null,
+      seller_location: profile.seller_location ?? "",
     });
   }, [profile]);
 
@@ -65,11 +67,13 @@ export function ProfileEditorClient({ profile }: Props) {
 
   const handleInput = (
     field: keyof typeof form,
-    value: number | null | number[]
+    value: number | null | number[] | string
   ) => {
     if (field === "activation_fees" && Array.isArray(value)) {
       setForm((prev) => ({ ...prev, activation_fees: value }));
     } else if (typeof value === "number" || value === null) {
+      setForm((prev) => ({ ...prev, [field]: value }));
+    } else if (typeof value === "string") {
       setForm((prev) => ({ ...prev, [field]: value }));
     }
   };
@@ -97,6 +101,23 @@ export function ProfileEditorClient({ profile }: Props) {
           ) : (
             <div className="p-2 border rounded">
               {form.user_number ?? "Nije postavljen"}
+            </div>
+          )}
+        </div>
+
+        {/* Seller Location */}
+        <div className="space-y-2">
+          <Label>Mjesto prodavatelja</Label>
+          {isEditing ? (
+            <Input
+              type="text"
+              value={form.seller_location}
+              onChange={(e) => handleInput("seller_location", e.target.value)}
+              placeholder="Unesite mjesto prodavatelja"
+            />
+          ) : (
+            <div className="p-2 border rounded">
+              {form.seller_location || "Nije postavljen"}
             </div>
           )}
         </div>

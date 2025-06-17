@@ -30,7 +30,7 @@ export interface UserInformation {
   invoiceDeliveryMethod: string[]
   marketingContact: string[]
   generalTermsDelivery: "provided" | "selfDownload"
-  paymentMethod: "oneTime" | "installments"
+  paymentMethod: "oneTime" | "installments" | "noDevice"
   sellerCode: number
   sellerPlace: string
   sellerDate: string
@@ -48,6 +48,14 @@ export interface OperatorChangeData {
   servicesToKeep: string[]
   userAccountsToKeep: string[]
   wholesaleService: boolean
+  userName: string
+  legalEntity: string
+  oib: string
+  phoneNumber: string
+  contactPhone: string
+  email: string
+  connectionAddress: string
+  sellerPlace: string
 }
 
 const defaultUserInfo: UserInformation = {
@@ -66,8 +74,8 @@ const defaultUserInfo: UserInformation = {
   additionalServices: "",
   activationCost: "",
   externalWorksCost: "",
-  invoiceDeliveryMethod: [],
-  marketingContact: [],
+  invoiceDeliveryMethod: ["mail"],
+  marketingContact: ["email", "sms", "phone"],
   generalTermsDelivery: "provided",
   paymentMethod: "oneTime",
   sellerCode: 0,
@@ -81,6 +89,7 @@ interface UserInformationFormProps {
   onChange: (data: UserInformation) => void
   packageName?: string
   subscriptionNumber?: string
+  contractConcludedOnPremises?: boolean
 }
 
 export default function UserInformationForm({
@@ -88,6 +97,7 @@ export default function UserInformationForm({
   onChange,
   packageName,
   subscriptionNumber,
+  contractConcludedOnPremises = true,
 }: UserInformationFormProps) {
   const { profile } = useAuth()
   const [oibError, setOibError] = useState<string>("")
@@ -102,8 +112,42 @@ export default function UserInformationForm({
     if (profile && profile.user_number !== null) {
       baseInfo.sellerCode = profile.user_number;
     }
+    
+    // Set seller location from profile if available
+    if (profile && profile.seller_location) {
+      baseInfo.sellerPlace = profile.seller_location;
+    }
+    
+    // Set today's date if contract is concluded on premises and no date is provided
+    if (contractConcludedOnPremises && !baseInfo.sellerDate) {
+      baseInfo.sellerDate = new Date().toISOString().split('T')[0];
+    }
+    
     return baseInfo;
   });
+
+  // Handle contractConcludedOnPremises changes
+  useEffect(() => {
+    if (contractConcludedOnPremises) {
+      // If contract is on premises and no date is set, set today's date
+      if (!userInfo.sellerDate) {
+        const updatedInfo = {
+          ...userInfo,
+          sellerDate: new Date().toISOString().split('T')[0]
+        };
+        setUserInfo(updatedInfo);
+      }
+    } else {
+      // If contract is off premises, clear the date
+      if (userInfo.sellerDate) {
+        const updatedInfo = {
+          ...userInfo,
+          sellerDate: ""
+        };
+        setUserInfo(updatedInfo);
+      }
+    }
+  }, [contractConcludedOnPremises]);
 
   useEffect(() => {
     // This effect now only syncs sellerCode if profile changes *after* initial mount
@@ -118,7 +162,16 @@ export default function UserInformationForm({
         setUserInfo(updatedInfo);
         // onChange will be called by the next effect if updatedInfo is different
     }
-  }, [profile, userInfo.sellerCode]); // Added userInfo.sellerCode to dependencies
+    
+    // Sync seller location from profile
+    if (profile && profile.seller_location && userInfo.sellerPlace !== profile.seller_location) {
+        const updatedInfo = {
+          ...userInfo,
+          sellerPlace: profile.seller_location
+        };
+        setUserInfo(updatedInfo);
+    }
+  }, [profile, userInfo.sellerCode, userInfo.sellerPlace]); // Added userInfo.sellerPlace to dependencies
 
   const validateOib = (oib: string) => {
     if (oib.length === 0) {
@@ -350,63 +403,6 @@ export default function UserInformationForm({
         </div>
 
         <div className="border-t pt-4">
-          <h3 className="text-lg font-medium mb-4">Podaci o paketu i uslugama</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Paket</Label>
-              <div className="p-2 border rounded-md bg-muted/20">{packageName || "Nije odabran"}</div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="additionalServices">Dodatne usluge</Label>
-              <Textarea
-                id="additionalServices"
-                value={userInfo.additionalServices}
-                onChange={(e) => handleChange("additionalServices", e.target.value)}
-                placeholder="npr. 1 MESH (na prodaju ili u najam), 2 MIX1, 3. MIX2, 4 EUROPA 1"
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Pretplatnički broj</Label>
-              <div className="p-2 border rounded-md bg-muted/20">{subscriptionNumber || "Nije definiran"}</div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="activationCost">Trošak aktivacije usluge</Label>
-              <Select
-                value={userInfo.activationCost}
-                onValueChange={(value) => handleChange("activationCost", value)}
-              >
-                <SelectTrigger id="activationCost" className="w-full">
-                  <SelectValue placeholder="Odaberite trošak aktivacije" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {getActivationFeeOptions().map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="externalWorksCost">Trošak Vanjskih radova</Label>
-              <Input
-                id="externalWorksCost"
-                value={userInfo.externalWorksCost}
-                onChange={(e) => handleChange("externalWorksCost", e.target.value)}
-                placeholder="npr. 1)0,00 EUR, 2)40,00 EUR, 3)100,00 EUR"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t pt-4">
           <h3 className="text-lg font-medium mb-4">Način dostave i privole</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-3">
@@ -551,6 +547,12 @@ export default function UserInformationForm({
                     Na rate
                   </Label>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="noDevice" id="noDevice" />
+                  <Label htmlFor="noDevice" className="font-normal">
+                    Nema uređaja
+                  </Label>
+                </div>
               </RadioGroup>
             </div>
           </div>
@@ -558,7 +560,7 @@ export default function UserInformationForm({
 
         <div className="border-t pt-4">
           <h3 className="text-lg font-medium mb-4">Podaci o prodajnom mjestu</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className={`grid grid-cols-1 gap-4 ${contractConcludedOnPremises ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
             <div className="space-y-2">
               <Label htmlFor="sellerCode">Kod prodavatelja</Label>
               <Input
@@ -577,33 +579,25 @@ export default function UserInformationForm({
 
             <div className="space-y-2">
               <Label htmlFor="sellerPlace">Mjesto</Label>
-              <Select
-                value={userInfo.sellerPlace}
-                onValueChange={(value) => handleChange("sellerPlace", value)}
-              >
-                <SelectTrigger id="sellerPlace" className="w-full">
-                  <SelectValue placeholder="Odaberite mjesto" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Mjesto</SelectLabel>
-                    <SelectItem value="Ludbreg">Ludbreg</SelectItem>
-                    <SelectItem value="Varaždin">Varaždin</SelectItem>
-                    <SelectItem value="Trnovec">Trnovec</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="sellerDate">Datum</Label>
               <Input
-                id="sellerDate"
-                type="date"
-                value={userInfo.sellerDate}
-                onChange={(e) => handleChange("sellerDate", e.target.value)}
+                id="sellerPlace"
+                value={userInfo.sellerPlace}
+                onChange={(e) => handleChange("sellerPlace", e.target.value)}
+                placeholder="Mjesto"
               />
             </div>
+
+            {contractConcludedOnPremises && (
+              <div className="space-y-2">
+                <Label htmlFor="sellerDate">Datum ugovora</Label>
+                <Input
+                  id="sellerDate"
+                  type="date"
+                  value={userInfo.sellerDate}
+                  onChange={(e) => handleChange("sellerDate", e.target.value)}
+                />
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

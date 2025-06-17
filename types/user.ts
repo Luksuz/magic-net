@@ -4,5 +4,6 @@ export type ProfileData = {
     activation_fees: number[] | null
     user_number: number | null
     user_id: string | null
+    seller_location: string | null
   }
 
