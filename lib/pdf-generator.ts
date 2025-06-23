@@ -224,6 +224,63 @@ export async function generatePDF(
     finalTerminalEquipmentList = [];
   }
 
+  // Auto-add MESH devices to terminal equipment based on selected services
+  const meshServices = calculatedData?.meshServices || data.fiksne_dodatne_usluge || '';
+  console.log('PDF Generator - checking MESH services for terminal equipment:', meshServices);
+  
+  // Check for BESPLATAN MESH
+  const hasFreeMesh = meshServices.toLowerCase().includes('besplatan mesh');
+  if (hasFreeMesh) {
+    // Check if MESH is already in terminal equipment
+    const existingMeshIndex = finalTerminalEquipmentList.findIndex(item => 
+      item.name.toLowerCase().includes('mesh')
+    );
+    
+    if (existingMeshIndex >= 0) {
+      // Update existing MESH entry
+      const currentQuantity = parseInt(finalTerminalEquipmentList[existingMeshIndex].quantity) || 0;
+      finalTerminalEquipmentList[existingMeshIndex].quantity = String(currentQuantity + 1);
+      console.log('Updated existing MESH quantity in terminal equipment');
+    } else {
+      // Add new MESH entry
+      finalTerminalEquipmentList.push({
+        id: finalTerminalEquipmentList.length + 1,
+        name: "MESH",
+        quantity: "1",
+        price: "65,00"
+      });
+      console.log('Added BESPLATAN MESH to terminal equipment');
+    }
+  }
+  
+  // Check for EXTRA MESH U NAJAM
+  const rentalMeshMatch = meshServices.match(/extra mesh u najam \((\d+)\)/i);
+  const rentalMeshCount = rentalMeshMatch ? parseInt(rentalMeshMatch[1], 10) : 
+    (meshServices.toLowerCase().includes('extra mesh u najam') ? 1 : 0);
+  
+  if (rentalMeshCount > 0) {
+    // Find existing MESH entry or create new one
+    const existingMeshIndex = finalTerminalEquipmentList.findIndex(item => 
+      item.name.toLowerCase().includes('mesh')
+    );
+    
+    if (existingMeshIndex >= 0) {
+      // Update existing MESH entry
+      const currentQuantity = parseInt(finalTerminalEquipmentList[existingMeshIndex].quantity) || 0;
+      finalTerminalEquipmentList[existingMeshIndex].quantity = String(currentQuantity + rentalMeshCount);
+      console.log(`Updated existing MESH quantity (+${rentalMeshCount}) in terminal equipment`);
+    } else {
+      // Add new MESH entry
+      finalTerminalEquipmentList.push({
+        id: finalTerminalEquipmentList.length + 1,
+        name: "MESH",
+        quantity: String(rentalMeshCount),
+        price: "65,00"
+      });
+      console.log(`Added ${rentalMeshCount} RENTAL MESH to terminal equipment`);
+    }
+  }
+
   // Create a container reference that will be accessible in finally block
   let container: HTMLDivElement | null = null;
   let originalStyles: Map<HTMLElement, string> | null = null;
@@ -469,9 +526,33 @@ export async function generatePDF(
     // Generate PDF with proper contract numbering
     const ownerPassword = process.env.NEXT_PUBLIC_PDF_OWNER_PASSWORD
     
+    // Create filename in new format: BROJ_UGOVORA - IME_PREZIME - NAČIN_PRISTUPA
+    let filename = 'contract.pdf'; // fallback
+    
+    if (data.broj_ugovora) {
+      let filenameParts = [data.broj_ugovora];
+      
+      // Add user name if available
+      if (userInfo?.userName) {
+        // Replace spaces with underscores and remove special characters
+        const cleanUserName = userInfo.userName.trim().replace(/\s+/g, '_').replace(/[^\w\-_.]/g, '');
+        filenameParts.push(cleanUserName);
+      }
+      
+      // Add access method if available
+      if (data.access_method) {
+        filenameParts.push(data.access_method);
+      }
+      
+      filename = filenameParts.join(' - ') + '.pdf';
+    } else if (contractNumber) {
+      // Fallback to contract number if broj_ugovora is not available
+      filename = contractNumber + '.pdf';
+    }
+    
     // Use the contract number if available
     const pdfOptions = {
-      filename: `contract-${contractNumber || agreementNumber}.pdf`,
+      filename: filename,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: {
         scale: 2,
@@ -609,7 +690,7 @@ function formatHtml(
     html = html.replace('<!-- ZAHTJEV_ZA_PROMJENU_OPERATERA -->', '');
 
   // If we have a contractNumber from tracking, use it; otherwise use fallback
-  const agreementNumber = contractNumber || data.broj_ugovora || `${data.id}`;
+  const agreementNumber = data.broj_ugovora || contractNumber || `${data.id}`;
   safeReplace('AGREEMENT_NUMBER', agreementNumber)
 
   // Contract duration
@@ -735,9 +816,15 @@ function formatHtml(
   
 
   // Terminal equipment
+  console.log('DEBUG: Terminal equipment received:', terminalEquipment);
+  console.log('DEBUG: Terminal equipment length:', terminalEquipment?.length);
+  
   if (terminalEquipment && terminalEquipment.length > 0) {
+    console.log('DEBUG: Processing terminal equipment:', terminalEquipment);
+    
     // Equipment 1
     if (terminalEquipment.length >= 1) {
+      console.log('DEBUG: Equipment 1:', terminalEquipment[0]);
       safeReplace('EQUIPMENT_NAME_1', terminalEquipment[0].name)
       safeReplace('EQUIPMENT_QUANTITY_1', terminalEquipment[0].quantity)
       safeReplace('EQUIPMENT_PRICE_1', formatCurrency(parseFloat(terminalEquipment[0].price)))
@@ -779,17 +866,42 @@ function formatHtml(
       safeReplace('EQUIPMENT_PRICE_4', "")
     }
     if (terminalEquipment.length >= 5) {
-      safeReplace('EQUIPMENT_NAME_5', terminalEquipment[3].name)
-      safeReplace('EQUIPMENT_QUANTITY_5', terminalEquipment[3].quantity)
-      safeReplace('EQUIPMENT_PRICE_5', formatCurrency(parseFloat(terminalEquipment[3].price)))
+      safeReplace('EQUIPMENT_NAME_5', terminalEquipment[4].name)
+      safeReplace('EQUIPMENT_QUANTITY_5', terminalEquipment[4].quantity)
+      safeReplace('EQUIPMENT_PRICE_5', formatCurrency(parseFloat(terminalEquipment[4].price)))
     } else {
       safeReplace('EQUIPMENT_NAME_5', "")
       safeReplace('EQUIPMENT_QUANTITY_5', "")
       safeReplace('EQUIPMENT_PRICE_5', "")
     }
+    
+    if (terminalEquipment.length >= 6) {
+      safeReplace('EQUIPMENT_NAME_6', terminalEquipment[5].name)
+      safeReplace('EQUIPMENT_QUANTITY_6', terminalEquipment[5].quantity)
+      safeReplace('EQUIPMENT_PRICE_6', formatCurrency(parseFloat(terminalEquipment[5].price)))
+    } else {
+      safeReplace('EQUIPMENT_NAME_6', "")
+      safeReplace('EQUIPMENT_QUANTITY_6', "")
+      safeReplace('EQUIPMENT_PRICE_6', "")
+    }
 
+    // Calculate total equipment price
+    let totalEquipmentPrice = 0;
+    console.log('DEBUG: Starting total price calculation');
+    terminalEquipment.forEach(item => {
+      const quantity = parseFloat(item.quantity) || 0;
+      const price = parseFloat(item.price.replace(',', '.')) || 0; // Handle comma decimal separator
+      const subtotal = quantity * price;
+      totalEquipmentPrice += subtotal;
+      console.log(`DEBUG Equipment: ${item.name}, Quantity: ${quantity}, Price: ${price}, Subtotal: ${subtotal}`);
+    });
+    
+    console.log(`DEBUG: Total equipment price calculated: ${totalEquipmentPrice}`);
+    console.log(`DEBUG: Formatted total price: ${formatCurrency(totalEquipmentPrice)}`);
+    safeReplace('EQUIPMENT_TOTAL_PRICE', formatCurrency(totalEquipmentPrice))
     
   } else {
+    console.log('DEBUG: No terminal equipment found, setting empty values');
     // Empty equipment
     safeReplace('EQUIPMENT_NAME_1', "")
     safeReplace('EQUIPMENT_QUANTITY_1', "")
@@ -806,6 +918,13 @@ function formatHtml(
     safeReplace('EQUIPMENT_NAME_5', "")
     safeReplace('EQUIPMENT_QUANTITY_5', "")
     safeReplace('EQUIPMENT_PRICE_5', "")
+    safeReplace('EQUIPMENT_NAME_6', "")
+    safeReplace('EQUIPMENT_QUANTITY_6', "")
+    safeReplace('EQUIPMENT_PRICE_6', "")
+    
+    // No equipment, total price is 0
+    console.log('DEBUG: Setting total equipment price to 0');
+    safeReplace('EQUIPMENT_TOTAL_PRICE', formatCurrency(0))
   }
 
   // Internet speeds
@@ -820,7 +939,7 @@ function formatHtml(
   const connectionFee = data.cijena_prikljucenja_naknada || 40.0
   const connectionDiscountPercent = data.cijena_prikljucenja_popust !== undefined && data.cijena_prikljucenja_popust !== null
     ? data.cijena_prikljucenja_popust
-    : 100
+    : 0
   const connectionDiscountAmount = (connectionFee * connectionDiscountPercent) / 100
   const connectionFeeTotal = data.cijena_prikljucenja_ukupno !== undefined && data.cijena_prikljucenja_ukupno !== null
     ? data.cijena_prikljucenja_ukupno
@@ -830,14 +949,14 @@ function formatHtml(
   const activationFee = data.cijena_aktivacije_naknada || 33.18
   const activationDiscountPercent = data.cijena_aktivacije_popust !== undefined && data.cijena_aktivacije_popust !== null
     ? data.cijena_aktivacije_popust
-    : 100
+    : 0
   const activationDiscountAmount = (activationFee * activationDiscountPercent) / 100
   const activationFeeTotal = data.cijena_aktivacije_ukupno !== undefined && data.cijena_aktivacije_ukupno !== null
     ? data.cijena_aktivacije_ukupno
     : activationFee - activationDiscountAmount
 
-  // Current date
-  safeReplace('CURRENT_DATE', new Date().toLocaleDateString())
+  // Current date - use contract_date from data or leave empty
+  safeReplace('CURRENT_DATE', data.contract_date || '')
 
   // --- Additional template variables ---
   
@@ -1369,9 +1488,36 @@ export async function generateOperatorChangePDF(
     // Generate PDF with proper contract numbering
     const ownerPassword = process.env.NEXT_PUBLIC_PDF_OWNER_PASSWORD
     
+    // Create filename in new format: BROJ_UGOVORA - IME_PREZIME - NAČIN_PRISTUPA
+    let filename = 'operator-change.pdf'; // fallback
+    
+    if (data.broj_ugovora) {
+      let filenameParts = [data.broj_ugovora];
+      
+      // Add user name if available
+      if (userInfo?.userName) {
+        // Replace spaces with underscores and remove special characters
+        const cleanUserName = userInfo.userName.trim().replace(/\s+/g, '_').replace(/[^\w\-_.]/g, '');
+        filenameParts.push(cleanUserName);
+      }
+      
+      // Add access method if available
+      if (data.access_method) {
+        filenameParts.push(data.access_method);
+      }
+      
+      // Add operator change prefix
+      filenameParts.push('operator-change');
+      
+      filename = filenameParts.join(' - ') + '.pdf';
+    } else if (contractNumber) {
+      // Fallback to contract number if broj_ugovora is not available
+      filename = 'operator-change-' + contractNumber + '.pdf';
+    }
+    
     // Use the contract number if available
     const pdfOptions = {
-      filename: `operator-change-${contractNumber || agreementNumber}.pdf`,
+      filename: filename,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: {
         scale: 2,
@@ -1436,8 +1582,8 @@ function formatOperatorChangeHtml(
   }
 
   // Replace basic placeholders
-  safeReplace('AGREEMENT_NUMBER', contractNumber || data.broj_ugovora || `${data.id}`)
-  safeReplace('CURRENT_DATE', new Date().toLocaleDateString())
+  safeReplace('AGREEMENT_NUMBER', data.broj_ugovora || contractNumber || `${data.id}`)
+  safeReplace('CURRENT_DATE', data.contract_date || '')
 
   // User information - use operatorChangeData fields if available, otherwise fall back to userInfo
   if (operatorChangeData) {

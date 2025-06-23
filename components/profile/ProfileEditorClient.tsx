@@ -12,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { MultiSelect } from "@/components/ui/multi-select";
 import { toast } from "@/components/ui/use-toast";
 import type { ProfileData } from "@/types/user";
 import { useAuth } from "@/app/contexts/authContext";
@@ -26,27 +25,19 @@ export function ProfileEditorClient({ profile }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState({
     agreement_number: profile.agreement_number ?? null,
-    activation_fees: profile.activation_fees ?? [],
-    user_number: profile.user_number ?? null,
+    contract_number: profile.contract_number ?? "",
+    user_number: profile.user_number ?? "",
     seller_location: profile.seller_location ?? "",
   });
 
   useEffect(() => {
     setForm({
       agreement_number: profile.agreement_number ?? null,
-      activation_fees: profile.activation_fees ?? [],
-      user_number: profile.user_number ?? null,
+      contract_number: profile.contract_number ?? "",
+      user_number: profile.user_number ?? "",
       seller_location: profile.seller_location ?? "",
     });
   }, [profile]);
-
-  const activationFeeOptions = [
-    { value: 0, label: "0,00 EUR" },
-    { value: 1659, label: "16,59 EUR" },
-    { value: 3300, label: "33,00 EUR" },
-    { value: 4000, label: "40,00 EUR" },
-    { value: 10000, label: "100,00 EUR" },
-  ];
 
   const handleSave = async () => {
     try {
@@ -67,11 +58,9 @@ export function ProfileEditorClient({ profile }: Props) {
 
   const handleInput = (
     field: keyof typeof form,
-    value: number | null | number[] | string
+    value: number | null | string
   ) => {
-    if (field === "activation_fees" && Array.isArray(value)) {
-      setForm((prev) => ({ ...prev, activation_fees: value }));
-    } else if (typeof value === "number" || value === null) {
+    if (typeof value === "number" || value === null) {
       setForm((prev) => ({ ...prev, [field]: value }));
     } else if (typeof value === "string") {
       setForm((prev) => ({ ...prev, [field]: value }));
@@ -89,20 +78,22 @@ export function ProfileEditorClient({ profile }: Props) {
       <CardContent className="space-y-4">
         {/* User Number */}
         <div className="space-y-2">
-          <Label>ID Korisnika</Label>
+          <Label>ID Prodavatelja</Label>
           {isEditing ? (
             <Input
-              type="number"
-              value={form.user_number ?? ""}
-              onChange={(e) =>
-                handleInput("user_number", parseInt(e.target.value) || null)
-              }
+              type="text"
+              value={form.user_number}
+              onChange={(e) => handleInput("user_number", e.target.value)}
+              placeholder="Unesite ID prodavatelja"
             />
           ) : (
             <div className="p-2 border rounded">
-              {form.user_number ?? "Nije postavljen"}
+              {form.user_number || "Nije postavljen"}
             </div>
           )}
+          <p className="text-sm text-muted-foreground">
+            Ovaj ID će se koristiti kao identifikator prodavatelja u dokumentima.
+          </p>
         </div>
 
         {/* Seller Location */}
@@ -143,36 +134,24 @@ export function ProfileEditorClient({ profile }: Props) {
           )}
         </div> */}
 
-        {/* Activation Fees */}
+        {/* Contract Number Template */}
         <div className="space-y-2">
-          <Label>Dostupne naknade</Label>
+          <Label>Broj ugovora (template)</Label>
           {isEditing ? (
-            <MultiSelect
-              options={activationFeeOptions}
-              selectedValues={form.activation_fees.map(
-                (fee) =>
-                  activationFeeOptions.find((opt) => opt.value === fee) || {
-                    value: fee,
-                    label: `${fee / 100} EUR`,
-                  }
-              )}
-              onChange={(selected) =>
-                handleInput(
-                  "activation_fees",
-                  selected.map((opt) => opt.value)
-                )
-              }
-              placeholder="Odaberite dostupne naknade"
+            <Input
+              type="text"
+              value={form.contract_number}
+              onChange={(e) => handleInput("contract_number", e.target.value)}
+              placeholder="npr. 2025-06-09-"
             />
           ) : (
             <div className="p-2 border rounded">
-              {form.activation_fees.length > 0
-                ? form.activation_fees
-                    .map((f) => `${(f / 100).toFixed(2)} EUR`)
-                    .join(", ")
-                : "Nije postavljeno"}
+              {form.contract_number || "Nije postavljen"}
             </div>
           )}
+          <p className="text-sm text-muted-foreground">
+            Ovaj template će se automatski upisati u polje broja ugovora. Prodavatelj će trebati samo dodati zadnje znamenke.
+          </p>
         </div>
       </CardContent>
       <CardFooter>

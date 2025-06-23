@@ -16,6 +16,7 @@ import UserInformationForm, { type UserInformation, type OperatorChangeData } fr
 import type { TerminalEquipment } from "@/lib/pdf-generator"
 import { Button } from "@/components/ui/button"
 import TerminalEquipmentEditor from "@/components/terminal-equipment-editor"
+import { useAuth } from "@/app/contexts/authContext"
 
 interface ContractFormProps {
   initialData: ContractData
@@ -44,13 +45,16 @@ export default function ContractForm({
   onOperatorChangeDataChange,
   contractNumber
 }: ContractFormProps) {
+  const { profile } = useAuth()
+  
   const [formData, setFormData] = useState<ContractData>(() => {
     // Clean contract number by removing UG prefix if it exists
     const cleanContractNumber = contractNumber ? contractNumber.replace(/^UG\s*/, '') : '';
     
-    // If we have both user name and contract number, format with seller code before last segment
+    // Use contract_number from profile if available and no contract number provided
     let finalContractNumber = '';
     if (cleanContractNumber) {
+      // If contract number is provided, use the existing logic
       if (userInfoInitial?.userName) {
         // Replace spaces with hyphens in user name
         const formattedUserName = userInfoInitial.userName.trim().replace(/\s+/g, '-');
@@ -86,6 +90,9 @@ export default function ContractForm({
         // No userName and no sellerCode, use clean contract number as-is
         finalContractNumber = cleanContractNumber;
       }
+    } else if (profile?.contract_number) {
+      // If no contract number but we have a template, use it
+      finalContractNumber = profile.contract_number;
     }
     
     return {
@@ -173,7 +180,7 @@ export default function ContractForm({
     sellerPlace: "", //userInfoInitial?.sellerPlace || "",
   })
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     
     setFormData((prev) => {
@@ -907,7 +914,74 @@ export default function ContractForm({
 
                   <div className="space-y-2">
                     <Label htmlFor="contract_duration">Trajanje ugovora</Label>
-                    <Input id="contract_duration" name="contract_duration" value={formData.contract_duration || ""} onChange={handleChange} />
+                    <select
+                      id="contract_duration"
+                      name="contract_duration"
+                      value={formData.contract_duration || ""}
+                      onChange={handleChange}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="">Odaberite trajanje</option>
+                      <option value="Neodređeno">Neodređeno</option>
+                      <option value="s obveznim trajanjem - 1 mjesec/24 mjeseca">s obveznim trajanjem - 1 mjesec/24 mjeseca</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="contract_date">Datum ugovora (opcionalno)</Label>
+                    <Input
+                      type="date"
+                      id="contract_date"
+                      name="contract_date"
+                      value={formData.contract_date || ""}
+                      onChange={handleChange}
+                      placeholder="Ostavite prazno za automatski datum"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Ako se ostavi prazno, datum neće biti prikazan u ugovoru. U većini slučajeva se ostavlja prazno.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Način pristupa</Label>
+                    <div className="flex flex-col space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="access_method_bs"
+                          checked={formData.access_method === "BS"}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData(prev => ({ ...prev, access_method: "BS" }))
+                            }
+                          }}
+                        />
+                        <Label htmlFor="access_method_bs" className="font-normal">BS</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="access_method_fa"
+                          checked={formData.access_method === "FA"}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData(prev => ({ ...prev, access_method: "FA" }))
+                            }
+                          }}
+                        />
+                        <Label htmlFor="access_method_fa" className="font-normal">FA</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="access_method_infra"
+                          checked={formData.access_method === "INFRA"}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData(prev => ({ ...prev, access_method: "INFRA" }))
+                            }
+                          }}
+                        />
+                        <Label htmlFor="access_method_infra" className="font-normal">INFRA</Label>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -1546,7 +1620,7 @@ export default function ContractForm({
                       id="cijena_prikljucenja_popust"
                       name="cijena_prikljucenja_popust"
                       type="number"
-                      step="0.01"
+                      step="1"
                       value={formData.cijena_prikljucenja_popust || ""}
                       onChange={handleNumberChange}
                     />

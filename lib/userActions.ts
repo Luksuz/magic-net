@@ -10,7 +10,7 @@ export const fetchProfileServer = async (
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("profiles")
-      .select("is_admin, agreement_number, activation_fees, user_number, seller_location")
+      .select("is_admin, agreement_number, contract_number, user_number, seller_location")
       .eq("user_id", userId)
       .single();
 

@@ -58,10 +58,10 @@ export default function ContractTableEditor({
     // Clean contract number by removing UG prefix if it exists
     const cleanContractNumber = contractNumber ? contractNumber.replace(/^UG\s*/, '') : '';
     
-    // Generate contract number with format: userName-sellerCode-contractNumber
-    // But insert seller code before the last number segment
+    // Use contract_number from profile if available and no contract number provided
     let finalContractNumber = '';
     if (cleanContractNumber) {
+      // If contract number is provided, use the existing logic
       if (userInfo?.userName) {
         // Replace spaces with hyphens in user name
         const formattedUserName = userInfo.userName.trim().replace(/\s+/g, '-');
@@ -97,6 +97,9 @@ export default function ContractTableEditor({
         // No userName and no sellerCode, use clean contract number as-is
         finalContractNumber = cleanContractNumber;
       }
+    } else if (profile?.contract_number) {
+      // If no contract number but we have a template, use it
+      finalContractNumber = profile.contract_number;
     }
     
     return {
@@ -198,7 +201,7 @@ export default function ContractTableEditor({
     }
   }, [userInfo?.userName, userInfo?.sellerCode, contractNumber]);
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     
     setFormData((prev) => {
@@ -380,7 +383,9 @@ export default function ContractTableEditor({
       fields: [
         { key: "usluga", label: "Usluga", type: "text" },
         { key: "broj_ugovora", label: "Broj ugovora", type: "text" },
-        { key: "contract_duration", label: "Trajanje ugovora", type: "text" }
+        { key: "contract_duration", label: "Trajanje ugovora", type: "select" },
+        { key: "contract_date", label: "Datum ugovora (opcionalno)", type: "date" },
+        { key: "access_method", label: "Način pristupa", type: "access_method" }
       ]
     },
     {
@@ -628,6 +633,66 @@ export default function ContractTableEditor({
                               className={`w-full ${field.readOnly ? "bg-gray-50" : ""}`}
                               readOnly={field.readOnly}
                             />
+                          ) : field.type === "select" && field.key === "contract_duration" ? (
+                            <select
+                              id={field.key}
+                              name={field.key}
+                              value={(formData as any)[field.key] || ""}
+                              onChange={handleChange}
+                              className="w-full p-2 border rounded"
+                            >
+                              <option value="">Odaberite trajanje</option>
+                              <option value="Neodređeno">Neodređeno</option>
+                              <option value="s obveznim trajanjem - 1 mjesec/24 mjeseca">s obveznim trajanjem - 1 mjesec/24 mjeseca</option>
+                            </select>
+                          ) : field.type === "date" ? (
+                            <Input
+                              id={field.key}
+                              name={field.key}
+                              type="date"
+                              value={(formData as any)[field.key] || ""}
+                              onChange={handleChange}
+                              className="w-full"
+                            />
+                          ) : field.type === "access_method" ? (
+                            <div className="flex flex-col space-y-2">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id="access_method_bs"
+                                  checked={(formData as any)[field.key] === "BS"}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      handleChange({ target: { name: field.key, value: "BS" } } as any)
+                                    }
+                                  }}
+                                />
+                                <Label htmlFor="access_method_bs" className="font-normal">BS</Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id="access_method_fa"
+                                  checked={(formData as any)[field.key] === "FA"}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      handleChange({ target: { name: field.key, value: "FA" } } as any)
+                                    }
+                                  }}
+                                />
+                                <Label htmlFor="access_method_fa" className="font-normal">FA</Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id="access_method_infra"
+                                  checked={(formData as any)[field.key] === "INFRA"}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      handleChange({ target: { name: field.key, value: "INFRA" } } as any)
+                                    }
+                                  }}
+                                />
+                                <Label htmlFor="access_method_infra" className="font-normal">INFRA</Label>
+                              </div>
+                            </div>
                           ) : field.type === "checkbox" ? (
                             <div className="flex items-center">
                               <Checkbox 

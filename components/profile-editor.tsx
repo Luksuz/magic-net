@@ -13,7 +13,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { MultiSelect } from "@/components/ui/multi-select";
 import { toast } from "@/components/ui/use-toast";
 import { ProfileData } from "@/types/user";
 
@@ -23,23 +22,23 @@ export function ProfileEditor({ profile }: { profile: ProfileData | null }) {
   const [agreementNumber, setAgreementNumber] = useState<number | null>(
     profile?.agreement_number || null
   );
-  const [activationFees, setActivationFees] = useState<number[]>(
-    profile?.activation_fees || []
-  );
-  const [userNumber, setUserNumber] = useState<number | null>(
-    profile?.user_number || null
+  const [userNumber, setUserNumber] = useState<string>(
+    String(profile?.user_number || "")
   );
   const [sellerLocation, setSellerLocation] = useState<string>(
     profile?.seller_location || ""
+  );
+  const [contractNumberTemplate, setContractNumberTemplate] = useState<string>(
+    profile?.contract_number || ""
   );
 
   // Update state when profile changes
   useEffect(() => {
     if (profile) {
       setAgreementNumber(profile.agreement_number);
-      setActivationFees(profile.activation_fees || []);
-      setUserNumber(profile.user_number);
+      setUserNumber(String(profile.user_number || ""));
       setSellerLocation(profile.seller_location || "");
+      setContractNumberTemplate(profile.contract_number || "");
     }
   }, [profile]);
 
@@ -47,21 +46,13 @@ export function ProfileEditor({ profile }: { profile: ProfileData | null }) {
     return <div>Loading...</div>;
   }
 
-  const activationFeeOptions = [
-    { value: 0, label: "0,00 EUR" },
-    { value: 1659, label: "16,59 EUR" },
-    { value: 3300, label: "33,00 EUR" },
-    { value: 4000, label: "40,00 EUR" },
-    { value: 10000, label: "100,00 EUR" },
-  ];
-
   const handleSave = async () => {
     try {
       await updateProfile({
         agreement_number: agreementNumber,
-        activation_fees: activationFees,
         user_number: userNumber,
         seller_location: sellerLocation,
+        contract_number: contractNumberTemplate,
       });
       toast({
         title: "Profil ažuriran",
@@ -75,17 +66,6 @@ export function ProfileEditor({ profile }: { profile: ProfileData | null }) {
         description: "Nije moguće ažurirati profil. Pokušajte ponovno.",
         variant: "destructive",
       });
-    }
-  };
-
-  // Handle user number input with validation
-  const handleUserNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.trim();
-    if (value === "") {
-      setUserNumber(null);
-    } else {
-      const parsed = parseInt(value, 10);
-      setUserNumber(isNaN(parsed) ? null : parsed);
     }
   };
 
@@ -113,22 +93,42 @@ export function ProfileEditor({ profile }: { profile: ProfileData | null }) {
       <CardContent>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="user-number">ID Korisnika</Label>
+            <Label htmlFor="user-number">ID Prodavatelja</Label>
             {isEditing ? (
               <Input
                 id="user-number"
-                type="number"
-                value={userNumber === null ? "" : userNumber}
-                onChange={handleUserNumberChange}
-                placeholder="Unesite ID korisnika"
+                type="text"
+                value={userNumber}
+                onChange={(e) => setUserNumber(e.target.value)}
+                placeholder="Unesite ID prodavatelja"
               />
             ) : (
               <div className="p-2 border rounded">
-                {profile.user_number ?? "Nije postavljen"}
+                {profile.user_number || "Nije postavljen"}
               </div>
             )}
             <p className="text-sm text-muted-foreground mt-1">
-              Ovaj ID će se koristiti kao korisnički broj u dokumentima.
+              Ovaj ID će se koristiti kao identifikator prodavatelja u dokumentima.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contract-number-template">Broj ugovora (template)</Label>
+            {isEditing ? (
+              <Input
+                id="contract-number-template"
+                type="text"
+                value={contractNumberTemplate}
+                onChange={(e) => setContractNumberTemplate(e.target.value)}
+                placeholder="npr. 2025-06-09-"
+              />
+            ) : (
+              <div className="p-2 border rounded">
+                {profile.contract_number || "Nije postavljen"}
+              </div>
+            )}
+            <p className="text-sm text-muted-foreground mt-1">
+              Ovaj template će se automatski upisati u polje broja ugovora. Prodavatelj će trebati samo dodati zadnje znamenke.
             </p>
           </div>
 
@@ -170,39 +170,6 @@ export function ProfileEditor({ profile }: { profile: ProfileData | null }) {
             )}
             <p className="text-sm text-muted-foreground mt-1">
               Ovo mjesto će se koristiti u dokumentima kao lokacija prodavatelja.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="activation-fees">
-              Dostupne naknade za aktivaciju
-            </Label>
-            {isEditing ? (
-              <MultiSelect
-                options={activationFeeOptions}
-                selectedValues={activationFees.map(
-                  (fee) =>
-                    activationFeeOptions.find(
-                      (option) => option.value === fee
-                    ) || { value: fee, label: `${fee / 100} EUR` }
-                )}
-                onChange={(selected) =>
-                  setActivationFees(selected.map((item) => item.value))
-                }
-                placeholder="Odaberite dostupne naknade"
-              />
-            ) : (
-              <div className="p-2 border rounded">
-                {profile.activation_fees?.length
-                  ? profile.activation_fees
-                      .map((fee) => `${(fee / 100).toFixed(2)} EUR`)
-                      .join(", ")
-                  : "Nije postavljeno"}
-              </div>
-            )}
-            <p className="text-sm text-muted-foreground mt-1">
-              Ove naknade će biti dostupne za odabir prilikom kreiranja novog
-              ugovora.
             </p>
           </div>
         </div>

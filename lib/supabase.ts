@@ -6,6 +6,8 @@ export type ContractData = {
   usluga: string | null
   broj_ugovora: string | null
   contract_duration: string | null
+  contract_date: string | null
+  access_method: string | null
   fiksni_paket: string | null
   fiksna_brzina: string | null
   fiksne_dodatne_usluge: string | null
