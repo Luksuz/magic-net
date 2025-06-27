@@ -49,55 +49,10 @@ export default function ContractForm({
   
   const [formData, setFormData] = useState<ContractData>(() => {
     // Clean contract number by removing UG prefix if it exists
-    const cleanContractNumber = contractNumber ? contractNumber.replace(/^UG\s*/, '') : '';
-    
-    // Use contract_number from profile if available and no contract number provided
-    let finalContractNumber = '';
-    if (cleanContractNumber) {
-      // If contract number is provided, use the existing logic
-      if (userInfoInitial?.userName) {
-        // Replace spaces with hyphens in user name
-        const formattedUserName = userInfoInitial.userName.trim().replace(/\s+/g, '-');
-        
-        // Format seller code (pad with zeros if needed)  
-        const sellerCode = userInfoInitial.sellerCode ? String(userInfoInitial.sellerCode).padStart(2, '0') : '00';
-        
-        // Split contract number to insert seller code before last segment
-        const parts = cleanContractNumber.split('-');
-        if (parts.length > 1) {
-          // Insert seller code before the last part
-          const lastPart = parts.pop(); // Remove and get last part
-          const baseParts = parts.join('-'); // Rejoin remaining parts
-          finalContractNumber = `${formattedUserName}-${baseParts}-${sellerCode}-${lastPart}`;
-        } else {
-          // Simple number, just add seller code before it
-          finalContractNumber = `${formattedUserName}-${sellerCode}-${cleanContractNumber}`;
-        }
-      } else if (userInfoInitial?.sellerCode) {
-        // If no userName but we have sellerCode, still insert seller code
-        const sellerCode = String(userInfoInitial.sellerCode).padStart(2, '0');
-        const parts = cleanContractNumber.split('-');
-        if (parts.length > 1) {
-          // Insert seller code before the last part
-          const lastPart = parts.pop(); // Remove and get last part
-          const baseParts = parts.join('-'); // Rejoin remaining parts
-          finalContractNumber = `${baseParts}-${sellerCode}-${lastPart}`;
-        } else {
-          // Simple number, just add seller code before it
-          finalContractNumber = `${sellerCode}-${cleanContractNumber}`;
-        }
-      } else {
-        // No userName and no sellerCode, use clean contract number as-is
-        finalContractNumber = cleanContractNumber;
-      }
-    } else if (profile?.contract_number) {
-      // If no contract number but we have a template, use it
-      finalContractNumber = profile.contract_number;
-    }
-    
+
     return {
       ...initialData,
-      broj_ugovora: finalContractNumber || initialData.broj_ugovora || ""
+      broj_ugovora: profile?.contract_number || ""
     };
   })
   const [userInfo, setUserInfo] = useState<UserInformation>(userInfoInitial || {
@@ -140,12 +95,8 @@ export default function ContractForm({
   const [odrasliPackageEnabled, setOdrasliPackageEnabled] = useState(false)
   const [additionalTvCardEnabled, setAdditionalTvCardEnabled] = useState(false)
   const [baseTvPrice, setBaseTvPrice] = useState(0)
-  const [telMix1Enabled, setTelMix1Enabled] = useState(false)
-  const [telMix2Enabled, setTelMix2Enabled] = useState(false)
-  const [telEuropa1_100Enabled, setTelEuropa1_100Enabled] = useState(false)
-  const [telEuropa1_200Enabled, setTelEuropa1_200Enabled] = useState(false)
-  const [telEuropa2_100Enabled, setTelEuropa2_100Enabled] = useState(false)
-  const [telEuropa2_200Enabled, setTelEuropa2_200Enabled] = useState(false)
+  // Replace individual telephone service states with dynamic selection
+  const [selectedTelefonPackages, setSelectedTelefonPackages] = useState<{ [key: number]: boolean }>({})
   const [basePhonePrice, setBasePhonePrice] = useState(0)
   const pdfButtonRef = useRef<HTMLButtonElement | null>(null)
   const [isEquipmentEditorOpen, setIsEquipmentEditorOpen] = useState(false)
@@ -161,14 +112,14 @@ export default function ContractForm({
   const [operatorChangeData, setOperatorChangeData] = useState<OperatorChangeData>(operatorChangeDataInitial || {
     existingOperatorName: "",
     contractOnDistance: true,
-    agreeToPayDebts: true,
-    numberTransfer: true,
+    agreeToPayDebts: false,
+    numberTransfer: false,
     notificationAgreement: true,
-    vpnSeries: false,
-    servicesToCancel: [],
-    servicesToKeep: [],
-    userAccountsToKeep: ["e-mail"],
-    wholesaleService: false,
+    vpnSeries: true,
+    servicesToCancel: ["Govorna usluga"],
+    servicesToKeep: ["Internet"],
+    userAccountsToKeep: ["adrese elektroničke pošte"],
+    wholesaleService: true,
     // Initialize with user data but allow independent editing
     userName: "", //userInfoInitial?.userName || "",
     legalEntity: "", //userInfoInitial?.legalEntity || "",
@@ -323,8 +274,6 @@ export default function ContractForm({
     }
   }
   
-  // Handler for extra MESH checkbox - REMOVED (now using new MESH system)
-
   // Handler for FREE MESH checkbox
   const handleFreeMeshChange = (checked: boolean) => {
     setFreeMeshEnabled(checked)
@@ -405,29 +354,12 @@ export default function ContractForm({
     setAdditionalTvCardEnabled(checked)
   }
 
-  // Handlers for telephone services
-  const handleTelMix1Change = (checked: boolean) => {
-    setTelMix1Enabled(checked)
-  }
-
-  const handleTelMix2Change = (checked: boolean) => {
-    setTelMix2Enabled(checked)
-  }
-
-  const handleTelEuropa1_100Change = (checked: boolean) => {
-    setTelEuropa1_100Enabled(checked)
-  }
-
-  const handleTelEuropa1_200Change = (checked: boolean) => {
-    setTelEuropa1_200Enabled(checked)
-  }
-
-  const handleTelEuropa2_100Change = (checked: boolean) => {
-    setTelEuropa2_100Enabled(checked)
-  }
-
-  const handleTelEuropa2_200Change = (checked: boolean) => {
-    setTelEuropa2_200Enabled(checked)
+  // Handler for dynamic telefon package selection
+  const handleTelefonPackageChange = (packageId: number, checked: boolean) => {
+    setSelectedTelefonPackages(prev => ({
+      ...prev,
+      [packageId]: checked
+    }))
   }
 
   // Calculate current TV services and price (no state updates)
@@ -460,72 +392,33 @@ export default function ContractForm({
 
   // Calculate current phone services and price (no state updates)
   const getCurrentPhoneData = () => {
-    const selectedServices = []
-    const selectedServiceNames = []
+    const selectedServices: string[] = []
+    const selectedServiceNames: string[] = []
     let additionalPrice = 0
 
-    // Helper function to get package price by name
-    const getPackagePrice = (packageName: string): number => {
-      const pkg = extraTelefonPackages.find(p => 
-        p.name.toLowerCase().includes(packageName.toLowerCase())
-      )
-      return pkg ? pkg.price : 0
-    }
-
-    if (telMix1Enabled) {
-      const pkg = extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefonski mix 1'))
-      const description = pkg?.description || "300 minuta pozivi prema nacionalnim mobilnim mrežama, 500 minuta telefonskih poziva prema nacionalnim fiksnim mrežama, Neograničeni fiksni pozivi unutar MagicNet mreže"
-      selectedServices.push(`Telefonski MIX 1 - ${description}`)
-      selectedServiceNames.push("Telefonski MIX 1")
-      additionalPrice += getPackagePrice("telefonski mix 1")
-    }
-    if (telMix2Enabled) {
-      const pkg = extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefonski mix 2'))
-      const description = pkg?.description || "500 minuta pozivi prema nacionalnim mobilnim mrežama, 1000 minuta telefonskih poziva prema nacionalnim fiksnim mrežama, Neograničeni fiksni pozivi unutar MagicNet mreže"
-      selectedServices.push(`Telefonski MIX 2 - ${description}`)
-      selectedServiceNames.push("Telefonski MIX 2")
-      additionalPrice += getPackagePrice("telefonski mix 2")
-    }
-    if (telEuropa1_100Enabled) {
-      const pkg = extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 1') && p.name.toLowerCase().includes('100'))
-      const description = pkg?.description || "100 minuta telefonskih poziva prema fiksnim međunarodnim Europa 1 destinacijama"
-      selectedServices.push(`Telefon Europa 1 / 100 FIX - ${description}`)
-      selectedServiceNames.push("Telefon Europa 1 / 100 FIX")
-      additionalPrice += getPackagePrice("telefon europa 1") || getPackagePrice("europa 1 100")
-    }
-    if (telEuropa1_200Enabled) {
-      const pkg = extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 1') && p.name.toLowerCase().includes('200'))
-      const description = pkg?.description || "200 minuta telefonskih poziva prema fiksnim međunarodnim Europa 1 destinacijama"
-      selectedServices.push(`Telefon Europa 1 / 200 FIX - ${description}`)
-      selectedServiceNames.push("Telefon Europa 1 / 200 FIX")
-      additionalPrice += getPackagePrice("telefon europa 1") || getPackagePrice("europa 1 200")
-    }
-    if (telEuropa2_100Enabled) {
-      const pkg = extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 2') && p.name.toLowerCase().includes('100'))
-      const description = pkg?.description || "100 minuta telefonskih poziva prema fiksnim međunarodnim Europa 2 destinacijama"
-      selectedServices.push(`Telefon Europa 2 / 100 FIX - ${description}`)
-      selectedServiceNames.push("Telefon Europa 2 / 100 FIX")
-      additionalPrice += getPackagePrice("telefon europa 2") || getPackagePrice("europa 2 100")
-    }
-    if (telEuropa2_200Enabled) {
-      const pkg = extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 2') && p.name.toLowerCase().includes('200'))
-      const description = pkg?.description || "200 minuta telefonskih poziva prema fiksnim međunarodnim Europa 2 destinacijama"
-      selectedServices.push(`Telefon Europa 2 / 200 FIX - ${description}`)
-      selectedServiceNames.push("Telefon Europa 2 / 200 FIX")
-      additionalPrice += getPackagePrice("telefon europa 2") || getPackagePrice("europa 2 200")
-    }
+    // Use dynamic packages from database
+    extraTelefonPackages.forEach(pkg => {
+      if (selectedTelefonPackages[pkg.id]) {
+        const description = pkg.description || ""
+        selectedServices.push(`${pkg.name} - ${description}`)
+        selectedServiceNames.push(pkg.name || "")
+        additionalPrice += pkg.price || 0
+      }
+    })
 
     const basePrice = basePhonePrice || 0
     
     // Create service name from base service only (additional services shown separately)
     let serviceName = formData.tarifa || "Telefonska usluga"
     
-    return {
+    const result = {
       services: selectedServices.join(', '),
       serviceName: serviceName, // Only base service name, not including additional services
-      promoPrice: basePrice, // Only base price, additional services shown separately
-      regularPrice: basePrice // Only base price, additional services shown separately
+      promoPrice: basePrice + additionalPrice, // Include additional telephone service prices
+      regularPrice: basePrice + additionalPrice // Include additional telephone service prices
     }
+        
+    return result
   }
 
   // Calculate current Internet services and price including MESH
@@ -553,7 +446,6 @@ export default function ContractForm({
     let totalPromoPrice = 0
     let totalRegularPrice = 0
     
-    console.log('getMeshServiceData called:', { freeMeshEnabled, rentalMeshCount })
     
     // Get prices from first MESH device or use defaults
     const meshPricing = meshDevices.length > 0 ? meshDevices[0] : {
@@ -584,7 +476,6 @@ export default function ContractForm({
       regularPrice: totalRegularPrice
     }
     
-    console.log('getMeshServiceData result:', result)
     return result
   }
 
@@ -663,18 +554,23 @@ export default function ContractForm({
   // Initialize telephone service states based on existing data
   useEffect(() => {
     const telServices = formData.tel_dodatne_usluge || ""
-    setTelMix1Enabled(telServices.toLowerCase().includes("telefonski mix 1"))
-    setTelMix2Enabled(telServices.toLowerCase().includes("telefonski mix 2"))
-    setTelEuropa1_100Enabled(telServices.toLowerCase().includes("telefon europa 1 / 100 fix"))
-    setTelEuropa1_200Enabled(telServices.toLowerCase().includes("telefon europa 1 / 200 fix"))
-    setTelEuropa2_100Enabled(telServices.toLowerCase().includes("telefon europa 2 / 100 fix"))
-    setTelEuropa2_200Enabled(telServices.toLowerCase().includes("telefon europa 2 / 200 fix"))
+    
+    // Initialize dynamic telefon packages based on existing service data
+    if (extraTelefonPackages.length > 0) {
+      const newSelectedPackages: { [key: number]: boolean } = {}
+      extraTelefonPackages.forEach(pkg => {
+        if (pkg.name && telServices.toLowerCase().includes(pkg.name.toLowerCase())) {
+          newSelectedPackages[pkg.id] = true
+        }
+      })
+      setSelectedTelefonPackages(newSelectedPackages)
+    }
     
     // Initialize base phone price
     if (formData.promo_price_phone && basePhonePrice === 0) {
       setBasePhonePrice(formData.promo_price_phone)
     }
-  }, [formData.tel_dodatne_usluge, formData.promo_price_phone, basePhonePrice])
+  }, [formData.tel_dodatne_usluge, formData.promo_price_phone, basePhonePrice, extraTelefonPackages])
 
   // Fetch devices on component mount
   useEffect(() => {
@@ -808,75 +704,55 @@ export default function ContractForm({
     pdfButtonRef.current = el
   }
 
-  // Update contract number when user name changes
+  // Update contract number when user name or access method changes
   useEffect(() => {
-    if (contractNumber) {
-      const cleanContractNumber = contractNumber.replace(/^UG\s*/, '');
+    if (profile?.contract_number) {
+      const baseContractNumber = profile.contract_number;
       
-      let finalContractNumber = '';
+      // Build the new format: BROJ ime prezime - način_pristupa
+      let finalContractNumber = baseContractNumber;
+      
       if (userInfo?.userName) {
-        // Format with userName and sellerCode
-        const formattedUserName = userInfo.userName.trim().replace(/\s+/g, '-');
-        const sellerCode = userInfo.sellerCode ? String(userInfo.sellerCode).padStart(2, '0') : '00';
-        
-        // Split contract number to insert seller code before last segment
-        const parts = cleanContractNumber.split('-');
-        if (parts.length > 1) {
-          // Insert seller code before the last part
-          const lastPart = parts.pop(); // Remove and get last part
-          const baseParts = parts.join('-'); // Rejoin remaining parts
-          finalContractNumber = `${formattedUserName}-${baseParts}-${sellerCode}-${lastPart}`;
-        } else {
-          // Simple number, just add seller code before it
-          finalContractNumber = `${formattedUserName}-${sellerCode}-${cleanContractNumber}`;
-        }
-      } else if (userInfo?.sellerCode) {
-        // No userName but we have sellerCode, still insert seller code
-        const sellerCode = String(userInfo.sellerCode).padStart(2, '0');
-        const parts = cleanContractNumber.split('-');
-        if (parts.length > 1) {
-          // Insert seller code before the last part
-          const lastPart = parts.pop(); // Remove and get last part
-          const baseParts = parts.join('-'); // Rejoin remaining parts
-          finalContractNumber = `${baseParts}-${sellerCode}-${lastPart}`;
-        } else {
-          // Simple number, just add seller code before it
-          finalContractNumber = `${sellerCode}-${cleanContractNumber}`;
-        }
-      } else {
-        // No userName and no sellerCode, use clean contract number as-is
-        finalContractNumber = cleanContractNumber;
+        // Add user name (keep spaces)
+        const cleanUserName = userInfo.userName.trim();
+        finalContractNumber = `${baseContractNumber} ${cleanUserName}`;
       }
       
-      // Only update if the current contract number is empty or matches our expected format
-      const currentNumber = formData.broj_ugovora || '';
-      const shouldUpdate = !currentNumber || 
-                          currentNumber === cleanContractNumber || 
-                          currentNumber !== finalContractNumber;
+      if (formData.access_method) {
+        // Add access method
+        finalContractNumber = `${finalContractNumber} - ${formData.access_method.toUpperCase()}`;
+      }
       
-      if (shouldUpdate) {
+      // Only update if the current contract number is different
+      const currentNumber = formData.broj_ugovora || '';
+      if (currentNumber !== finalContractNumber) {
         setFormData(prev => ({
           ...prev,
           broj_ugovora: finalContractNumber
         }));
       }
     }
-  }, [userInfo?.userName, userInfo?.sellerCode, contractNumber]);
+  }, [userInfo?.userName, formData.access_method, profile?.contract_number]);
+
+  // Debug operator change data
+  useEffect(() => {
+    console.log('DEBUG: operatorChangeData state:', operatorChangeData);
+  }, [operatorChangeData]);
 
   // Sync operator change data with user data changes (only if not manually modified)
   useEffect(() => {
     if (userInfo.changeOperator) {
       setOperatorChangeData(prev => ({
         ...prev,
-        // Only update if the field is empty (hasn't been manually modified)
-        userName: prev.userName || userInfo.userName || "",
-        legalEntity: prev.legalEntity || userInfo.legalEntity || "",
-        oib: prev.oib || userInfo.oib || "",
-        phoneNumber: prev.phoneNumber || formData.pretplatnicki_broj || "",
-        contactPhone: prev.contactPhone || userInfo.contactPhone || "",
-        email: prev.email || userInfo.email || "",
-        connectionAddress: prev.connectionAddress || userInfo.connectionAddress || "",
-        sellerPlace: prev.sellerPlace || userInfo.sellerPlace || "",
+        // Always update with current user info data (one-way sync from user info to operator change)
+        userName: userInfo.userName || "",
+        legalEntity: userInfo.legalEntity || "",
+        oib: userInfo.oib || "",
+        phoneNumber: formData.pretplatnicki_broj || "",
+        contactPhone: userInfo.contactPhone || "",
+        email: userInfo.email || "",
+        connectionAddress: userInfo.connectionAddress || "",
+        sellerPlace: userInfo.sellerPlace || "",
       }));
     }
   }, [userInfo, formData.pretplatnicki_broj]);
@@ -922,8 +798,8 @@ export default function ContractForm({
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <option value="">Odaberite trajanje</option>
-                      <option value="Neodređeno">Neodređeno</option>
-                      <option value="s obveznim trajanjem - 1 mjesec/24 mjeseca">s obveznim trajanjem - 1 mjesec/24 mjeseca</option>
+                      <option value="Neodređeno, s obveznim trajanjem - 1 mjesec">Neodređeno, s obveznim trajanjem - 1 mjesec</option>
+                      <option value="Neodređeno, s obveznim trajanjem - 24 mjeseca">Neodređeno, s obveznim trajanjem - 24 mjeseca</option>
                     </select>
                   </div>
 
@@ -1285,117 +1161,29 @@ export default function ContractForm({
                       <div className="text-center py-4">Učitavanje telefonskih paketa...</div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-3">
-                          <div className="flex items-start space-x-2">
+                        {extraTelefonPackages.map((pkg) => (
+                          <div key={pkg.id} className="flex items-start space-x-2">
                             <Checkbox
-                              id="telMix1"
-                              checked={telMix1Enabled}
-                              onCheckedChange={(checked) => handleTelMix1Change(checked as boolean)}
+                              id={`telefonPkg-${pkg.id}`}
+                              checked={selectedTelefonPackages[pkg.id] || false}
+                              onCheckedChange={(checked) => handleTelefonPackageChange(pkg.id, checked as boolean)}
                               className="mt-1"
                             />
                             <div className="flex-1">
-                              <Label htmlFor="telMix1" className="font-normal text-sm leading-tight">
-                                <span className="font-medium">Telefonski MIX 1</span> ({extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefonski mix 1'))?.price?.toFixed(2) || '2,65'} EUR/mj.)<br />
+                              <Label htmlFor={`telefonPkg-${pkg.id}`} className="font-normal text-sm leading-tight">
+                                <span className="font-medium">{pkg.name}</span> ({pkg.price?.toFixed(2) || '0,00'} EUR/mj.)<br />
                                 <span className="text-xs text-gray-600">
-                                  {extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefonski mix 1'))?.description || 
-                                   "300 minuta pozivi prema nacionalnim mobilnim mrežama. 500 minuta telefonskih poziva prema nacionalnim fiksnim mrežama. Neograničeni fiksni pozivi unutar MagicNet mreže."}
+                                  {pkg.description || "Nema opisa"}
                                 </span>
                               </Label>
                             </div>
                           </div>
-                          
-                          <div className="flex items-start space-x-2">
-                            <Checkbox
-                              id="telMix2"
-                              checked={telMix2Enabled}
-                              onCheckedChange={(checked) => handleTelMix2Change(checked as boolean)}
-                              className="mt-1"
-                            />
-                            <div className="flex-1">
-                              <Label htmlFor="telMix2" className="font-normal text-sm leading-tight">
-                                <span className="font-medium">Telefonski MIX 2</span> ({extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefonski mix 2'))?.price?.toFixed(2) || '4,65'} EUR/mj.)<br />
-                                <span className="text-xs text-gray-600">
-                                  {extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefonski mix 2'))?.description || 
-                                   "500 minuta pozivi prema nacionalnim mobilnim mrežama. 1000 minuta telefonskih poziva prema nacionalnim fiksnim mrežama. Neograničeni fiksni pozivi unutar MagicNet mreže."}
-                                </span>
-                              </Label>
-                            </div>
+                        ))}
+                        {extraTelefonPackages.length === 0 && (
+                          <div className="text-center py-4 text-gray-500">
+                            Nema dostupnih telefonskih paketa. Kontaktirajte administratora.
                           </div>
-                          
-                          <div className="flex items-start space-x-2">
-                            <Checkbox
-                              id="telEuropa1_100"
-                              checked={telEuropa1_100Enabled}
-                              onCheckedChange={(checked) => handleTelEuropa1_100Change(checked as boolean)}
-                              className="mt-1"
-                            />
-                            <div className="flex-1">
-                              <Label htmlFor="telEuropa1_100" className="font-normal text-sm leading-tight">
-                                <span className="font-medium">Telefon Europa 1 / 100 FIX</span> ({extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 1') && p.name.toLowerCase().includes('100'))?.price?.toFixed(2) || '5,18'} EUR/mj.)<br />
-                                <span className="text-xs text-gray-600">
-                                  {extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 1') && p.name.toLowerCase().includes('100'))?.description || 
-                                   "100 minuta telefonskih poziva prema fiksnim međunarodnim Europa 1 destinacijama."}
-                                </span>
-                              </Label>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-3">
-                          <div className="flex items-start space-x-2">
-                            <Checkbox
-                              id="telEuropa1_200"
-                              checked={telEuropa1_200Enabled}
-                              onCheckedChange={(checked) => handleTelEuropa1_200Change(checked as boolean)}
-                              className="mt-1"
-                            />
-                            <div className="flex-1">
-                              <Label htmlFor="telEuropa1_200" className="font-normal text-sm leading-tight">
-                                <span className="font-medium">Telefon Europa 1 / 200 FIX</span> ({extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 1') && p.name.toLowerCase().includes('200'))?.price?.toFixed(2) || '9,95'} EUR/mj.)<br />
-                                <span className="text-xs text-gray-600">
-                                  {extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 1') && p.name.toLowerCase().includes('200'))?.description || 
-                                   "200 minuta telefonskih poziva prema fiksnim međunarodnim Europa 1 destinacijama."}
-                                </span>
-                              </Label>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-start space-x-2">
-                            <Checkbox
-                              id="telEuropa2_100"
-                              checked={telEuropa2_100Enabled}
-                              onCheckedChange={(checked) => handleTelEuropa2_100Change(checked as boolean)}
-                              className="mt-1"
-                            />
-                            <div className="flex-1">
-                              <Label htmlFor="telEuropa2_100" className="font-normal text-sm leading-tight">
-                                <span className="font-medium">Telefon Europa 2 / 100 FIX</span> ({extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 2') && p.name.toLowerCase().includes('100'))?.price?.toFixed(2) || '7,30'} EUR/mj.)<br />
-                                <span className="text-xs text-gray-600">
-                                  {extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 2') && p.name.toLowerCase().includes('100'))?.description || 
-                                   "100 minuta telefonskih poziva prema fiksnim međunarodnim Europa 2 destinacijama."}
-                                </span>
-                              </Label>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-start space-x-2">
-                            <Checkbox
-                              id="telEuropa2_200"
-                              checked={telEuropa2_200Enabled}
-                              onCheckedChange={(checked) => handleTelEuropa2_200Change(checked as boolean)}
-                              className="mt-1"
-                            />
-                            <div className="flex-1">
-                              <Label htmlFor="telEuropa2_200" className="font-normal text-sm leading-tight">
-                                <span className="font-medium">Telefon Europa 2 / 200 FIX</span> ({extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 2') && p.name.toLowerCase().includes('200'))?.price?.toFixed(2) || '13,14'} EUR/mj.)<br />
-                                <span className="text-xs text-gray-600">
-                                  {extraTelefonPackages.find(p => p.name.toLowerCase().includes('telefon europa 2') && p.name.toLowerCase().includes('200'))?.description || 
-                                   "200 minuta telefonskih poziva prema fiksnim međunarodnim Europa 2 destinacijama."}
-                                </span>
-                              </Label>
-                            </div>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1719,7 +1507,7 @@ export default function ContractForm({
                         <Label htmlFor="operatorLegalEntity">Pravna osoba</Label>
                         <Input
                           id="operatorLegalEntity"
-                          value={operatorChangeData.legalEntity}
+                          value={operatorChangeData.legalEntity || operatorChangeData.userName}
                           onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, legalEntity: e.target.value })}
                           placeholder="Naziv pravne osobe"
                         />
@@ -1866,7 +1654,7 @@ export default function ContractForm({
                   <div className="mt-6 space-y-4">
                     <h4 className="text-lg font-medium">Usluge koje korisnik želi raskinuti s postojećim operatorom</h4>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                      {['Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija', 'Sve usluge'].map((service) => (
+                      {['Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija'].map((service) => (
                         <div key={service} className="flex items-center space-x-2">
                           <Checkbox
                             id={`cancel-${service}`}
@@ -1889,7 +1677,7 @@ export default function ContractForm({
                   <div className="mt-6 space-y-4">
                     <h4 className="text-lg font-medium">Usluge koje korisnik želi zadržati s postojećim operatorom</h4>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                      {['Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija', 'Sve usluge'].map((service) => (
+                      {['Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija'].map((service) => (
                         <div key={service} className="flex items-center space-x-2">
                           <Checkbox
                             id={`keep-${service}`}
@@ -1991,6 +1779,7 @@ export default function ContractForm({
             buttonRef={setPdfRef}
             contractConcludedOnPremises={contractConcludedOnPremises}
             operatorChangeData={operatorChangeData}
+            extraTelefonPackages={extraTelefonPackages}
             calculatedData={{
               phoneServices: getCurrentPhoneData().services,
               phonePromoPrice: getCurrentPhoneData().promoPrice,

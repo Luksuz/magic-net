@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch"
 import { FileText } from "lucide-react"
 import type { UserInformation, OperatorChangeData } from "@/components/user-information-form"
 import type { TerminalEquipment } from "@/lib/pdf-generator"
-import { getMeshDevices } from "@/lib/supabase"
+import { getMeshDevices, getExtraTelefonPackages, type MagicExtraTelefon } from "@/lib/supabase"
 import { useAuth } from "@/app/contexts/authContext"
 
 // Define types for field configuration
@@ -61,42 +61,8 @@ export default function ContractTableEditor({
     // Use contract_number from profile if available and no contract number provided
     let finalContractNumber = '';
     if (cleanContractNumber) {
-      // If contract number is provided, use the existing logic
-      if (userInfo?.userName) {
-        // Replace spaces with hyphens in user name
-        const formattedUserName = userInfo.userName.trim().replace(/\s+/g, '-');
-        
-        // Format seller code (pad with zeros if needed)
-        const sellerCode = userInfo.sellerCode ? String(userInfo.sellerCode).padStart(2, '0') : '00';
-        
-        // Split contract number to insert seller code before last segment
-        const parts = cleanContractNumber.split('-');
-        if (parts.length > 1) {
-          // Insert seller code before the last part
-          const lastPart = parts.pop(); // Remove and get last part
-          const baseParts = parts.join('-'); // Rejoin remaining parts
-          finalContractNumber = `${formattedUserName}-${baseParts}-${sellerCode}-${lastPart}`;
-        } else {
-          // Simple number, just add seller code before it
-          finalContractNumber = `${formattedUserName}-${sellerCode}-${cleanContractNumber}`;
-        }
-      } else if (userInfo?.sellerCode) {
-        // If no userName but we have sellerCode, still insert seller code
-        const sellerCode = String(userInfo.sellerCode).padStart(2, '0');
-        const parts = cleanContractNumber.split('-');
-        if (parts.length > 1) {
-          // Insert seller code before the last part
-          const lastPart = parts.pop(); // Remove and get last part
-          const baseParts = parts.join('-'); // Rejoin remaining parts
-          finalContractNumber = `${baseParts}-${sellerCode}-${lastPart}`;
-        } else {
-          // Simple number, just add seller code before it
-          finalContractNumber = `${sellerCode}-${cleanContractNumber}`;
-        }
-      } else {
-        // No userName and no sellerCode, use clean contract number as-is
-        finalContractNumber = cleanContractNumber;
-      }
+      // New format: BROJ ime prezime - način_pristupa
+      finalContractNumber = cleanContractNumber; // Start with the base number
     } else if (profile?.contract_number) {
       // If no contract number but we have a template, use it
       finalContractNumber = profile.contract_number;
@@ -112,6 +78,10 @@ export default function ContractTableEditor({
   const [rentalMeshCount, setRentalMeshCount] = useState(0)
   const [meshDevices, setMeshDevices] = useState<MagicMeshDevice[]>([])
   const [meshDevicesLoading, setMeshDevicesLoading] = useState(true)
+  // Add state for telephone packages
+  const [extraTelefonPackages, setExtraTelefonPackages] = useState<MagicExtraTelefon[]>([])
+  const [extraTelefonLoading, setExtraTelefonLoading] = useState(true)
+  const [selectedTelefonPackages, setSelectedTelefonPackages] = useState<{ [key: number]: boolean }>({})
   const { profile } = useAuth()
   
   // Operator change data state
@@ -146,60 +116,35 @@ export default function ContractTableEditor({
     }
   }, [formData.uredaj_otplata_na_rate, formData.uredaj_za_placanje, formData.uredaj_inicijalna_uplata, formData.uredaj_broj_obroka]);
   
-  // Update contract number when user name or seller code changes
+  // Update contract number when user name or access method changes
   useEffect(() => {
     if (contractNumber) {
       const cleanContractNumber = contractNumber.replace(/^UG\s*/, '');
       
-      let finalContractNumber = '';
+      // Build the new format: BROJ ime prezime - način_pristupa
+      let finalContractNumber = cleanContractNumber;
+      
       if (userInfo?.userName) {
-        // Format with userName and sellerCode
-        const formattedUserName = userInfo.userName.trim().replace(/\s+/g, '-');
-        const sellerCode = userInfo.sellerCode ? String(userInfo.sellerCode).padStart(2, '0') : '00';
-        
-        // Split contract number to insert seller code before last segment
-        const parts = cleanContractNumber.split('-');
-        if (parts.length > 1) {
-          // Insert seller code before the last part
-          const lastPart = parts.pop(); // Remove and get last part
-          const baseParts = parts.join('-'); // Rejoin remaining parts
-          finalContractNumber = `${formattedUserName}-${baseParts}-${sellerCode}-${lastPart}`;
-        } else {
-          // Simple number, just add seller code before it
-          finalContractNumber = `${formattedUserName}-${sellerCode}-${cleanContractNumber}`;
-        }
-      } else if (userInfo?.sellerCode) {
-        // No userName but we have sellerCode, still insert seller code
-        const sellerCode = String(userInfo.sellerCode).padStart(2, '0');
-        const parts = cleanContractNumber.split('-');
-        if (parts.length > 1) {
-          // Insert seller code before the last part
-          const lastPart = parts.pop(); // Remove and get last part
-          const baseParts = parts.join('-'); // Rejoin remaining parts
-          finalContractNumber = `${baseParts}-${sellerCode}-${lastPart}`;
-        } else {
-          // Simple number, just add seller code before it
-          finalContractNumber = `${sellerCode}-${cleanContractNumber}`;
-        }
-      } else {
-        // No userName and no sellerCode, use clean contract number as-is
-        finalContractNumber = cleanContractNumber;
+        // Add user name (keep spaces)
+        const cleanUserName = userInfo.userName.trim();
+        finalContractNumber = `${cleanContractNumber} ${cleanUserName}`;
       }
       
-      // Only update if the current contract number doesn't match our expected format
-      const currentNumber = formData.broj_ugovora || '';
-      const shouldUpdate = !currentNumber || 
-                          currentNumber === cleanContractNumber || 
-                          currentNumber !== finalContractNumber;
+      if (formData.access_method) {
+        // Add access method
+        finalContractNumber = `${finalContractNumber} - ${formData.access_method.toUpperCase()}`;
+      }
       
-      if (shouldUpdate) {
+      // Only update if the current contract number is different
+      const currentNumber = formData.broj_ugovora || '';
+      if (currentNumber !== finalContractNumber) {
         setFormData(prev => ({
           ...prev,
           broj_ugovora: finalContractNumber
         }));
       }
     }
-  }, [userInfo?.userName, userInfo?.sellerCode, contractNumber]);
+  }, [userInfo?.userName, formData.access_method, contractNumber]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -584,6 +529,75 @@ export default function ContractTableEditor({
     }
   }, [profile, userInfo.sellerPlace, onUserInfoChange]);
 
+  // Handler for dynamic telefon package selection
+  const handleTelefonPackageChange = (packageId: number, checked: boolean) => {
+    setSelectedTelefonPackages(prev => ({
+      ...prev,
+      [packageId]: checked
+    }))
+  }
+
+  // Helper function to update telephone services in form data
+  const updateTelefonServicesInFormData = () => {
+    const selectedServices: string[] = []
+    
+    extraTelefonPackages.forEach(pkg => {
+      if (selectedTelefonPackages[pkg.id]) {
+        const description = pkg.description || ""
+        selectedServices.push(`${pkg.name} - ${description}`)
+      }
+    })
+    
+    setFormData(prev => ({
+      ...prev,
+      tel_dodatne_usluge: selectedServices.join(', ')
+    }))
+  }
+
+  // Update telephone services when selection changes
+  useEffect(() => {
+    if (extraTelefonPackages.length > 0) {
+      updateTelefonServicesInFormData()
+    }
+  }, [selectedTelefonPackages, extraTelefonPackages])
+
+  // Fetch extra telefon packages on component mount
+  useEffect(() => {
+    const fetchExtraTelefonPackages = async () => {
+      setExtraTelefonLoading(true)
+      try {
+        const result = await getExtraTelefonPackages()
+        if (result.success) {
+          setExtraTelefonPackages(result.data)
+        } else {
+          console.error("Error fetching extra telefon packages:", result.error)
+        }
+      } catch (error) {
+        console.error("Error fetching extra telefon packages:", error)
+      } finally {
+        setExtraTelefonLoading(false)
+      }
+    }
+
+    fetchExtraTelefonPackages()
+  }, [])
+
+  // Initialize telephone service states based on existing data
+  useEffect(() => {
+    const telServices = formData.tel_dodatne_usluge || ""
+    
+    // Initialize dynamic telefon packages based on existing service data
+    if (extraTelefonPackages.length > 0) {
+      const newSelectedPackages: { [key: number]: boolean } = {}
+      extraTelefonPackages.forEach(pkg => {
+        if (pkg.name && telServices.toLowerCase().includes(pkg.name.toLowerCase())) {
+          newSelectedPackages[pkg.id] = true
+        }
+      })
+      setSelectedTelefonPackages(newSelectedPackages)
+    }
+  }, [formData.tel_dodatne_usluge, extraTelefonPackages])
+
   return (
     <div className="space-y-6">
       {fieldGroups.map((group) => (
@@ -812,6 +826,43 @@ export default function ContractTableEditor({
                 ))}
               </select>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="pt-6">
+          <h2 className="text-xl font-bold mb-4">Telefonski paketi konfiguracija</h2>
+          <div className="space-y-4">
+            {extraTelefonLoading ? (
+              <div className="text-center py-4">Učitavanje telefonskih paketa...</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {extraTelefonPackages.map((pkg) => (
+                  <div key={pkg.id} className="flex items-start space-x-2">
+                    <Checkbox
+                      id={`telefonPkg-${pkg.id}`}
+                      checked={selectedTelefonPackages[pkg.id] || false}
+                      onCheckedChange={(checked) => handleTelefonPackageChange(pkg.id, checked as boolean)}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor={`telefonPkg-${pkg.id}`} className="font-normal text-sm leading-tight">
+                        <span className="font-medium">{pkg.name}</span> ({pkg.price?.toFixed(2) || '0,00'} EUR/mj.)<br />
+                        <span className="text-xs text-gray-600">
+                          {pkg.description || "Nema opisa"}
+                        </span>
+                      </Label>
+                    </div>
+                  </div>
+                ))}
+                {extraTelefonPackages.length === 0 && (
+                  <div className="text-center py-4 text-gray-500">
+                    Nema dostupnih telefonskih paketa. Kontaktirajte administratora.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -61,15 +61,15 @@ export default function EditContractPageClient({ contract, profile }: Props) {
   // Operator change data state
   const [operatorChangeData, setOperatorChangeData] = useState<OperatorChangeData>({
     existingOperatorName: "",
-    contractOnDistance: false,
+    contractOnDistance: true,
     agreeToPayDebts: false,
     numberTransfer: false,
-    notificationAgreement: false,
-    vpnSeries: false,
-    servicesToCancel: [],
-    servicesToKeep: [],
-    userAccountsToKeep: [],
-    wholesaleService: false,
+    notificationAgreement: true,
+    vpnSeries: true,
+    servicesToCancel: ["Govorna usluga"],
+    servicesToKeep: ["Internet"],
+    userAccountsToKeep: ["adrese elektroničke pošte"],
+    wholesaleService: true,
     userName: "",
     legalEntity: "",
     oib: "",
@@ -139,6 +139,23 @@ export default function EditContractPageClient({ contract, profile }: Props) {
       return () => clearTimeout(timer);
     }
   }, [isGeneratingPdf, useTableView]);
+
+  // Initialize operator change data with user info when user info changes
+  useEffect(() => {
+    if (userInfo.changeOperator) {
+      setOperatorChangeData(prev => ({
+        ...prev,
+        userName: userInfo.userName || "",
+        legalEntity: userInfo.legalEntity || "",
+        oib: userInfo.oib || "",
+        phoneNumber: contractData?.pretplatnicki_broj || "",
+        contactPhone: userInfo.contactPhone || "",
+        email: userInfo.email || "",
+        connectionAddress: userInfo.connectionAddress || "",
+        sellerPlace: userInfo.sellerPlace || "",
+      }));
+    }
+  }, [userInfo, contractData?.pretplatnicki_broj]);
 
   const handlePdfFromTableView = (
     data: ContractData,

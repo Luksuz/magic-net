@@ -19,6 +19,7 @@ interface PdfButtonProps {
   buttonRef?: (button: HTMLButtonElement | null) => void
   contractConcludedOnPremises?: boolean
   operatorChangeData?: OperatorChangeData
+  extraTelefonPackages?: any[]
   calculatedData?: {
     phoneServices?: string
     phonePromoPrice?: number
@@ -39,7 +40,7 @@ interface PdfButtonProps {
   }
 }
 
-export default function PdfButton({ formData, userInfo, setActiveTab, terminalEquipment, buttonRef, contractConcludedOnPremises, operatorChangeData, calculatedData }: PdfButtonProps) {
+export default function PdfButton({ formData, userInfo, setActiveTab, terminalEquipment, buttonRef, contractConcludedOnPremises, operatorChangeData, extraTelefonPackages, calculatedData }: PdfButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGeneratingOperatorChange, setIsGeneratingOperatorChange] = useState(false)
   const [isLibraryLoaded, setIsLibraryLoaded] = useState(false)
@@ -125,6 +126,7 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
       const safeOperatorChangeData = operatorChangeData ? deepClone(operatorChangeData) : undefined;
       
       console.log("Priprema za generiranje PDF-a s korisničkim informacijama:", !!safeUserInfo);
+      console.log("DEBUG: extraTelefonPackages being passed to PDF generation:", extraTelefonPackages);
       
       // Add a longer delay to ensure content is fully prepared before generation
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -140,7 +142,8 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
           editableTemplate.html,
           contractConcludedOnPremises,
           safeOperatorChangeData,
-          calculatedData
+          calculatedData,
+          extraTelefonPackages
         )
       } else {
         console.error("Korisnički ID nije dostupan.")
@@ -155,7 +158,7 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
           // Update the user's profile with the new agreement number
           await updateProfile({
             agreement_number: newAgreementNumber,
-            activation_fees: profile.activation_fees // Keep existing activation fees
+            // activation_fees: profile.activation_fees // Keep existing activation fees
           })
         } catch (error) {
           console.error("Greška pri generiranju PDF-a:", error)
