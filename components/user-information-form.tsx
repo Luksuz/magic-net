@@ -56,6 +56,8 @@ export interface OperatorChangeData {
   email: string
   connectionAddress: string
   sellerPlace: string
+  cancelAllServices?: boolean
+  keepAllServices?: boolean
 }
 
 const defaultUserInfo: UserInformation = {
@@ -110,7 +112,7 @@ export default function UserInformationForm({
       ...initialData,
     };
     if (profile && profile.user_number !== null) {
-      baseInfo.sellerCode = profile.user_number;
+      baseInfo.sellerCode = parseInt(profile.user_number, 10);
     }
     
     // Set seller location from profile if available
@@ -152,12 +154,12 @@ export default function UserInformationForm({
   useEffect(() => {
     // This effect now only syncs sellerCode if profile changes *after* initial mount
     // or if initialData didn't provide it and profile was initially null but became available.
-    if (profile && profile.user_number !== null && userInfo.sellerCode !== profile.user_number) {
+    if (profile && profile.user_number !== null && userInfo.sellerCode !== parseInt(profile.user_number, 10)) {
         // Only update if profile.user_number is different from current userInfo.sellerCode
         // to avoid unnecessary updates if it was already set during useState initialization.
         const updatedInfo = {
           ...userInfo,
-          sellerCode: profile.user_number
+          sellerCode: parseInt(profile.user_number, 10)
         };
         setUserInfo(updatedInfo);
         // onChange will be called by the next effect if updatedInfo is different
@@ -217,27 +219,6 @@ export default function UserInformationForm({
     }
 
     handleChange(field, newValues)
-  }
-
-  // Format activation fees for display
-  const getActivationFeeOptions = () => {
-    // Default options if no profile data is available
-    if (!profile?.activation_fees?.length) {
-      return [
-        { value: "0,00", label: "0,00 EUR" },
-        { value: "16,59", label: "16,59 EUR" },
-        { value: "33,00", label: "33,00 EUR" }
-      ]
-    }
-    
-    // Format profile data for display
-    return profile.activation_fees.map(fee => {
-      const formattedFee = (fee / 100).toFixed(2).replace('.', ',')
-      return {
-        value: formattedFee,
-        label: `${formattedFee} EUR`
-      }
-    })
   }
 
   useEffect(() => {

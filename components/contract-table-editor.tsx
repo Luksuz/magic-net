@@ -98,7 +98,7 @@ export default function ContractTableEditor({
     wholesaleService: false,
     // Initialize with user data but allow independent editing
     userName: userInfo?.userName || "",
-    legalEntity: userInfo?.legalEntity || "",
+    legalEntity: "",
     oib: userInfo?.oib || "",
     phoneNumber: initialData.pretplatnicki_broj || "",
     contactPhone: userInfo?.contactPhone || "",

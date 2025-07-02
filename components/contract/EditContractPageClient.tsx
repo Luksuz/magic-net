@@ -146,7 +146,6 @@ export default function EditContractPageClient({ contract, profile }: Props) {
       setOperatorChangeData(prev => ({
         ...prev,
         userName: userInfo.userName || "",
-        legalEntity: userInfo.legalEntity || "",
         oib: userInfo.oib || "",
         phoneNumber: contractData?.pretplatnicki_broj || "",
         contactPhone: userInfo.contactPhone || "",

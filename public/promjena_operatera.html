@@ -190,7 +190,7 @@
         </tr>
         <tr>
           <td style="width: 40%; padding: 3px">Ime i prezime/naziv:</td>
-          <td style="padding: 3px">[USER_NAME] / [LEGAL_ENTITY]</td>
+          <td style="padding: 3px">[DISPLAY_NAME]</td>
         </tr>
         <tr>
           <td style="padding: 3px">OIB podnositelja zahtjeva:</td>
@@ -344,10 +344,10 @@
             Usluge koje korisnik želi raskinuti s postojećim operatorom:
           </td>
           <td style="padding: 3px">
-            <input type="checkbox" /> Pristup mreži
-            <input type="checkbox" /> Govorna usluga
-            <input type="checkbox" /> Internet
-            <input type="checkbox" /> Televizija
+            <input type="checkbox" id="cancel_pristup" /> Pristup mreži
+            <input type="checkbox" id="cancel_govorna" /> Govorna usluga
+            <input type="checkbox" id="cancel_internet" /> Internet
+            <input type="checkbox" id="cancel_televizija" /> Televizija
           </td>
         </tr>
         <tr>
@@ -355,10 +355,10 @@
             Usluge koje korisnik želi zadržati s postojećim operatorom:
           </td>
           <td style="padding: 3px">
-            <input type="checkbox" /> Pristup mreži
-            <input type="checkbox" /> Govorna usluga
-            <input type="checkbox" /> Internet
-            <input type="checkbox" /> Televizija
+            <input type="checkbox" id="keep_pristup" /> Pristup mreži
+            <input type="checkbox" id="keep_govorna" /> Govorna usluga
+            <input type="checkbox" id="keep_internet" /> Internet
+            <input type="checkbox" id="keep_televizija" /> Televizija
           </td>
         </tr>
         <tr>
@@ -412,13 +412,13 @@
         </tr>
         <tr>
           <td style="padding: 6px">Potpis podnositelja Zahtjeva:</td>
-          <td style="padding: 6px">____________________ ([USER_NAME])</td>
+          <td style="padding: 6px"></td>
         </tr>
         <tr>
           <td style="padding: 6px">
             Potpis ovlaštene osobe novog operatora/primatelja broja:
           </td>
-          <td style="padding: 6px">____________________</td>
+          <td style="padding: 6px"></td>
         </tr>
       </table>
 

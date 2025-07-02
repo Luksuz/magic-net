@@ -129,6 +129,9 @@ export default function ContractForm({
     email: "", //userInfoInitial?.email || "",
     connectionAddress: "", //userInfoInitial?.connectionAddress || "",
     sellerPlace: "", //userInfoInitial?.sellerPlace || "",
+    // Add new fields for "select all" functionality
+    cancelAllServices: false,
+    keepAllServices: false,
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -362,6 +365,26 @@ export default function ContractForm({
     }))
   }
 
+  // Handler for "select all" cancel services
+  const handleCancelAllServicesChange = (checked: boolean) => {
+    const allServices = ['Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija']
+    setOperatorChangeData(prev => ({
+      ...prev,
+      cancelAllServices: checked,
+      servicesToCancel: checked ? allServices : []
+    }))
+  }
+
+  // Handler for "select all" keep services
+  const handleKeepAllServicesChange = (checked: boolean) => {
+    const allServices = ['Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija']
+    setOperatorChangeData(prev => ({
+      ...prev,
+      keepAllServices: checked,
+      servicesToKeep: checked ? allServices : []
+    }))
+  }
+
   // Calculate current TV services and price (no state updates)
   const getCurrentTvData = () => {
     const selectedPackages: string[] = []
@@ -385,8 +408,8 @@ export default function ContractForm({
     return {
       services: selectedPackages.join(', '),
       serviceName: serviceName,
-      promoPrice: basePrice + additionalPrice,
-      regularPrice: basePrice + additionalPrice
+      promoPrice: basePrice, // Promotional price stays the same regardless of additional packages
+      regularPrice: basePrice + additionalPrice // Only regular price includes additional packages
     }
   }
 
@@ -414,8 +437,8 @@ export default function ContractForm({
     const result = {
       services: selectedServices.join(', '),
       serviceName: serviceName, // Only base service name, not including additional services
-      promoPrice: basePrice + additionalPrice, // Include additional telephone service prices
-      regularPrice: basePrice + additionalPrice // Include additional telephone service prices
+      promoPrice: basePrice, // Promotional price stays the same regardless of additional packages
+      regularPrice: basePrice + additionalPrice // Only regular price includes additional packages
     }
         
     return result
@@ -746,7 +769,7 @@ export default function ContractForm({
         ...prev,
         // Always update with current user info data (one-way sync from user info to operator change)
         userName: userInfo.userName || "",
-        legalEntity: userInfo.legalEntity || "",
+        // legalEntity: userInfo.legalEntity || "", // Removed - should remain independent
         oib: userInfo.oib || "",
         phoneNumber: formData.pretplatnicki_broj || "",
         contactPhone: userInfo.contactPhone || "",
@@ -1507,7 +1530,7 @@ export default function ContractForm({
                         <Label htmlFor="operatorLegalEntity">Pravna osoba</Label>
                         <Input
                           id="operatorLegalEntity"
-                          value={operatorChangeData.legalEntity || operatorChangeData.userName}
+                          value={operatorChangeData.legalEntity}
                           onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, legalEntity: e.target.value })}
                           placeholder="Naziv pravne osobe"
                         />
@@ -1653,20 +1676,37 @@ export default function ContractForm({
 
                   <div className="mt-6 space-y-4">
                     <h4 className="text-lg font-medium">Usluge koje korisnik želi raskinuti s postojećim operatorom</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                    
+                    <div className="mb-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="cancelAllServices"
+                          checked={operatorChangeData.cancelAllServices || false}
+                          onCheckedChange={(checked) => handleCancelAllServicesChange(checked as boolean)}
+                        />
+                        <Label htmlFor="cancelAllServices" className="font-bold text-sm">
+                          Sve usluge
+                        </Label>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       {['Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija'].map((service) => (
                         <div key={service} className="flex items-center space-x-2">
                           <Checkbox
                             id={`cancel-${service}`}
                             checked={operatorChangeData.servicesToCancel.includes(service)}
+                            disabled={operatorChangeData.cancelAllServices}
                             onCheckedChange={(checked) => {
-                              const updatedServices = checked
-                                ? [...operatorChangeData.servicesToCancel, service]
-                                : operatorChangeData.servicesToCancel.filter(s => s !== service)
-                              handleOperatorChangeDataChange({ ...operatorChangeData, servicesToCancel: updatedServices })
+                              if (!operatorChangeData.cancelAllServices) {
+                                const updatedServices = checked
+                                  ? [...operatorChangeData.servicesToCancel, service]
+                                  : operatorChangeData.servicesToCancel.filter(s => s !== service)
+                                handleOperatorChangeDataChange({ ...operatorChangeData, servicesToCancel: updatedServices })
+                              }
                             }}
                           />
-                          <Label htmlFor={`cancel-${service}`} className="font-normal text-sm">
+                          <Label htmlFor={`cancel-${service}`} className={`font-normal text-sm ${operatorChangeData.cancelAllServices ? 'text-gray-500' : ''}`}>
                             {service}
                           </Label>
                         </div>
@@ -1676,20 +1716,37 @@ export default function ContractForm({
 
                   <div className="mt-6 space-y-4">
                     <h4 className="text-lg font-medium">Usluge koje korisnik želi zadržati s postojećim operatorom</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                    
+                    <div className="mb-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="keepAllServices"
+                          checked={operatorChangeData.keepAllServices || false}
+                          onCheckedChange={(checked) => handleKeepAllServicesChange(checked as boolean)}
+                        />
+                        <Label htmlFor="keepAllServices" className="font-bold text-sm">
+                          Sve usluge
+                        </Label>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       {['Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija'].map((service) => (
                         <div key={service} className="flex items-center space-x-2">
                           <Checkbox
                             id={`keep-${service}`}
                             checked={operatorChangeData.servicesToKeep.includes(service)}
+                            disabled={operatorChangeData.keepAllServices}
                             onCheckedChange={(checked) => {
-                              const updatedServices = checked
-                                ? [...operatorChangeData.servicesToKeep, service]
-                                : operatorChangeData.servicesToKeep.filter(s => s !== service)
-                              handleOperatorChangeDataChange({ ...operatorChangeData, servicesToKeep: updatedServices })
+                              if (!operatorChangeData.keepAllServices) {
+                                const updatedServices = checked
+                                  ? [...operatorChangeData.servicesToKeep, service]
+                                  : operatorChangeData.servicesToKeep.filter(s => s !== service)
+                                handleOperatorChangeDataChange({ ...operatorChangeData, servicesToKeep: updatedServices })
+                              }
                             }}
                           />
-                          <Label htmlFor={`keep-${service}`} className="font-normal text-sm">
+                          <Label htmlFor={`keep-${service}`} className={`font-normal text-sm ${operatorChangeData.keepAllServices ? 'text-gray-500' : ''}`}>
                             {service}
                           </Label>
                         </div>

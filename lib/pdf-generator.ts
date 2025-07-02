@@ -524,17 +524,28 @@ export async function generatePDF(
     // Generate PDF with proper contract numbering
     const ownerPassword = process.env.NEXT_PUBLIC_PDF_OWNER_PASSWORD
     
-    // Create filename using broj_ugovora which is already properly formatted
+    // Create filename using same format as PDF contract number (base + access method)
     let filename = 'contract.pdf'; // fallback
     
     if (data.broj_ugovora) {
-      // broj_ugovora is already in the correct format: "BROJ ime prezime - način_pristupa"
-      // Clean the contract number for filename use (remove special characters but keep spaces and hyphens)
-      const cleanContractNumber = data.broj_ugovora.trim().replace(/[^\w\s\-_.]/g, '');
-      filename = cleanContractNumber + '.pdf';
-    } else if (contractNumber) {
-      // Fallback to contract number if broj_ugovora is not available
-      filename = contractNumber + '.pdf';
+      // Extract base contract number and access method, removing user name
+      // Format is: "BROJ ime prezime - način_pristupa"
+      // We want: "BROJ - način_pristupa" for filename (same as PDF contract number)
+      const contractParts = data.broj_ugovora.split(' ');
+      const baseNumber = contractParts[0]; // Take only the first part (base number)
+      
+      // Look for access method after the last " - "
+      const dashIndex = data.broj_ugovora.lastIndexOf(' - ');
+      if (dashIndex !== -1) {
+        const accessMethod = data.broj_ugovora.substring(dashIndex + 3); // Get everything after " - "
+        filename = `${baseNumber} - ${accessMethod}.pdf`;
+      } else {
+        // No access method found, use just the base number
+        filename = baseNumber + '.pdf';
+      }
+    } else {
+      // Fallback if no contract number in form
+      filename = 'contract.pdf';
     }
     
     // Use the contract number if available
@@ -676,9 +687,32 @@ function formatHtml(
   // Remove operator change content from main contract - now handled separately
     html = html.replace('<!-- ZAHTJEV_ZA_PROMJENU_OPERATERA -->', '');
 
-  // If we have a contractNumber from tracking, use it; otherwise use fallback
-  const agreementNumber = data.broj_ugovora || contractNumber || `${data.id}`;
-  safeReplace('AGREEMENT_NUMBER', agreementNumber)
+  // Use contract number from form data, just remove user name for PDF display
+  // Format should be "BASE_NUMBER - ACCESS_METHOD" (e.g. "025-06-09 - BS")
+  let pdfContractNumber = data.broj_ugovora;
+  if (pdfContractNumber) {
+    // Extract base contract number and access method, removing user name
+    // Format is: "BROJ ime prezime - način_pristupa"
+    // We want: "BROJ - način_pristupa"
+    const contractParts = pdfContractNumber.split(' ');
+    const baseNumber = contractParts[0]; // Take only the first part (base number)
+    
+    // Look for access method after the last " - "
+    const dashIndex = pdfContractNumber.lastIndexOf(' - ');
+    if (dashIndex !== -1) {
+      const accessMethod = pdfContractNumber.substring(dashIndex + 3); // Get everything after " - "
+      pdfContractNumber = `${baseNumber} - ${accessMethod}`;
+    } else {
+      // No access method found, use just the base number
+      pdfContractNumber = baseNumber;
+    }
+  } else {
+    // Fallback if no contract number in form
+    pdfContractNumber = `${data.id}`;
+  }
+  
+  safeReplace('AGREEMENT_NUMBER', pdfContractNumber || `${data.id}`)
+  safeReplace('CURRENT_DATE', data.contract_date || '')
 
   // Contract duration
   console.log('Package name:', (data as any).fiksni_paket)
@@ -1000,8 +1034,18 @@ function formatHtml(
   // User & Contract Information
   if (userInfo) {
     safeReplace('USER_ID', userInfo.userId)
-    safeReplace('USER_NAME', userInfo.userName)
-    safeReplace('LEGAL_ENTITY', userInfo.legalEntity)
+    // If legal entity is provided, use it for display name, otherwise use user name
+    const displayName = userInfo.legalEntity && userInfo.legalEntity.trim() !== '' 
+      ? userInfo.legalEntity 
+      : userInfo.userName;
+    
+    // For authorized person, only show user name if legal entity is provided
+    const authorizedPersonName = userInfo.legalEntity && userInfo.legalEntity.trim() !== '' 
+      ? userInfo.userName
+      : '';
+    
+    safeReplace('DISPLAY_NAME', displayName)
+    safeReplace('AUTHORIZED_PERSON_NAME', authorizedPersonName)
     safeReplace('RESIDENCE_ADDRESS', userInfo.residenceAddress)
     safeReplace('CONNECTION_ADDRESS', userInfo.connectionAddress)
     safeReplace('OIB', userInfo.oib)
@@ -1399,17 +1443,31 @@ export async function generateOperatorChangePDF(
     // Generate PDF with proper contract numbering
     const ownerPassword = process.env.NEXT_PUBLIC_PDF_OWNER_PASSWORD
     
-    // Create filename using broj_ugovora which is already properly formatted
+    // Create filename using same format as PDF contract number (base + access method)
     let filename = 'operator-change.pdf'; // fallback
     
     if (data.broj_ugovora) {
-      // broj_ugovora is already in the correct format: "BROJ ime prezime - način_pristupa"
-      // Clean the contract number for filename use and add operator change suffix
-      const cleanContractNumber = data.broj_ugovora.trim().replace(/[^\w\s\-_.]/g, '');
-      filename = cleanContractNumber + ' - operator-change.pdf';
+      // Extract base contract number and access method, removing user name
+      // Format is: "BROJ ime prezime - način_pristupa"
+      // We want: "BROJ - način_pristupa - operator-change" for filename
+      const contractParts = data.broj_ugovora.split(' ');
+      const baseNumber = contractParts[0]; // Take only the first part (base number)
+      
+      // Look for access method after the last " - "
+      const dashIndex = data.broj_ugovora.lastIndexOf(' - ');
+      if (dashIndex !== -1) {
+        const accessMethod = data.broj_ugovora.substring(dashIndex + 3); // Get everything after " - "
+        filename = `${baseNumber} - ${accessMethod} - operator-change.pdf`;
+      } else {
+        // No access method found, use just the base number
+        filename = baseNumber + ' - operator-change.pdf';
+      }
     } else if (contractNumber) {
       // Fallback to contract number if broj_ugovora is not available
       filename = 'operator-change-' + contractNumber + '.pdf';
+    } else {
+      // Fallback if no contract number in form
+      filename = 'operator-change.pdf';
     }
     
     // Use the contract number if available
@@ -1479,13 +1537,48 @@ function formatOperatorChangeHtml(
   }
 
   // Replace basic placeholders
-  safeReplace('AGREEMENT_NUMBER', data.broj_ugovora || contractNumber || `${data.id}`)
+  // Use contract number from form data, just remove user name for PDF display
+  // Format should be "BASE_NUMBER - ACCESS_METHOD" (e.g. "025-06-09 - BS")
+  let pdfContractNumber = data.broj_ugovora;
+  if (pdfContractNumber) {
+    // Extract base contract number and access method, removing user name
+    // Format is: "BROJ ime prezime - način_pristupa"
+    // We want: "BROJ - način_pristupa"
+    const contractParts = pdfContractNumber.split(' ');
+    const baseNumber = contractParts[0]; // Take only the first part (base number)
+    
+    // Look for access method after the last " - "
+    const dashIndex = pdfContractNumber.lastIndexOf(' - ');
+    if (dashIndex !== -1) {
+      const accessMethod = pdfContractNumber.substring(dashIndex + 3); // Get everything after " - "
+      pdfContractNumber = `${baseNumber} - ${accessMethod}`;
+    } else {
+      // No access method found, use just the base number
+      pdfContractNumber = baseNumber;
+    }
+  } else {
+    // Fallback if no contract number in form
+    pdfContractNumber = `${data.id}`;
+  }
+  
+  safeReplace('AGREEMENT_NUMBER', pdfContractNumber || `${data.id}`)
   safeReplace('CURRENT_DATE', data.contract_date || '')
 
   // User information - use operatorChangeData fields if available, otherwise fall back to userInfo
   if (operatorChangeData) {
-    safeReplace('USER_NAME', operatorChangeData.userName || (userInfo?.userName || ''))
-    safeReplace('LEGAL_ENTITY', operatorChangeData.legalEntity || (userInfo?.userName || ''))
+    // Determine display name: legal entity if provided, otherwise user name
+    const operatorDisplayName = operatorChangeData.legalEntity && operatorChangeData.legalEntity.trim() !== '' 
+      ? operatorChangeData.legalEntity 
+      : (operatorChangeData.userName || (userInfo?.userName || ''));
+    
+    // For authorized person, only show user name if legal entity is provided
+    const authorizedPersonName = operatorChangeData.legalEntity && operatorChangeData.legalEntity.trim() !== '' 
+      ? (operatorChangeData.userName || (userInfo?.userName || ''))
+      : '';
+    
+    safeReplace('DISPLAY_NAME', operatorDisplayName)
+    safeReplace('AUTHORIZED_PERSON_NAME', authorizedPersonName)
+    safeReplace('USER_NAME', operatorChangeData.userName || (userInfo?.userName || ''))  // Always show user name, not authorized person
     safeReplace('OIB', operatorChangeData.oib || (userInfo?.oib || ''))
     safeReplace('PHONE_NUMBER', operatorChangeData.phoneNumber || (data.pretplatnicki_broj || ''))
     safeReplace('CONTACT_PHONE', operatorChangeData.contactPhone || (userInfo?.contactPhone || ''))
@@ -1493,8 +1586,19 @@ function formatOperatorChangeHtml(
     safeReplace('CONNECTION_ADDRESS', operatorChangeData.connectionAddress || (userInfo?.connectionAddress || ''))
     safeReplace('SELLER_PLACE', operatorChangeData.sellerPlace || (userInfo?.sellerPlace || ''))
   } else if (userInfo) {
-    safeReplace('USER_NAME', userInfo.userName)
-    safeReplace('LEGAL_ENTITY', userInfo.legalEntity)
+    // Determine display name: legal entity if provided, otherwise user name
+    const userDisplayName = userInfo.legalEntity && userInfo.legalEntity.trim() !== '' 
+      ? userInfo.legalEntity 
+      : userInfo.userName;
+    
+    // For authorized person, only show user name if legal entity is provided
+    const authorizedPersonName = userInfo.legalEntity && userInfo.legalEntity.trim() !== '' 
+      ? userInfo.userName
+      : '';
+    
+    safeReplace('DISPLAY_NAME', userDisplayName)
+    safeReplace('AUTHORIZED_PERSON_NAME', authorizedPersonName)
+    safeReplace('USER_NAME', userInfo.userName)  // Always show user name, not authorized person
     safeReplace('OIB', userInfo.oib)
     safeReplace('PHONE_NUMBER', data.pretplatnicki_broj)
     safeReplace('CONTACT_PHONE', userInfo.contactPhone)
@@ -1648,38 +1752,56 @@ function formatOperatorChangeHtml(
       );
     }
     
-    // Services to cancel checkboxes - target specific section
+    // Services to cancel checkboxes - handle individual services only
     console.log('DEBUG: Services to cancel:', operatorChangeData.servicesToCancel);
+    
+    // Handle individual cancel service checkboxes
     const servicesToCancelServices = ['Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija'];
-    servicesToCancelServices.forEach(service => {
-      const isChecked = operatorChangeData.servicesToCancel.includes(service);
-      console.log(`DEBUG: Cancel service "${service}": ${isChecked}`);
-      // Find the section for services to cancel and update checkboxes there
+    const cancelServiceIds = ['cancel_pristup', 'cancel_govorna', 'cancel_internet', 'cancel_televizija'];
+    
+    servicesToCancelServices.forEach((service, index) => {
+      const isChecked = operatorChangeData.servicesToCancel.includes(service) || operatorChangeData.cancelAllServices;
+      const serviceId = cancelServiceIds[index];
+      console.log(`DEBUG: Cancel service "${service}" (${serviceId}): ${isChecked}`);
+      
+      // Update by ID first
+      html = html.replace(
+        new RegExp(`(<input[^>]*id="${serviceId}"[^>]*)`, 'g'),
+        `$1${isChecked ? ' checked' : ''}`
+      );
+      
+      // Fallback: update by text pattern if ID method doesn't work
       const cancelSectionRegex = new RegExp(
         `(Usluge koje korisnik želi raskinuti s postojećim operatorom:[\\s\\S]*?)<input type="checkbox" />\\s*${service.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
         'g'
       );
-      const beforeReplace = html.includes(`<input type="checkbox" /> ${service}`);
       html = html.replace(cancelSectionRegex, `$1<input type="checkbox"${isChecked ? ' checked' : ''} /> ${service}`);
-      const afterReplace = html.includes(`<input type="checkbox"${isChecked ? ' checked' : ''} /> ${service}`);
-      console.log(`DEBUG: Cancel "${service}" - before: ${beforeReplace}, after: ${afterReplace}`);
     });
     
-    // Services to keep checkboxes - target specific section  
+    // Services to keep checkboxes - handle individual services only
     console.log('DEBUG: Services to keep:', operatorChangeData.servicesToKeep);
+    
+    // Handle individual keep service checkboxes
     const servicesToKeepServices = ['Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija'];
-    servicesToKeepServices.forEach(service => {
-      const isChecked = operatorChangeData.servicesToKeep.includes(service);
-      console.log(`DEBUG: Keep service "${service}": ${isChecked}`);
-      // Find the section for services to keep and update checkboxes there
+    const keepServiceIds = ['keep_pristup', 'keep_govorna', 'keep_internet', 'keep_televizija'];
+    
+    servicesToKeepServices.forEach((service, index) => {
+      const isChecked = operatorChangeData.servicesToKeep.includes(service) || operatorChangeData.keepAllServices;
+      const serviceId = keepServiceIds[index];
+      console.log(`DEBUG: Keep service "${service}" (${serviceId}): ${isChecked}`);
+      
+      // Update by ID first
+      html = html.replace(
+        new RegExp(`(<input[^>]*id="${serviceId}"[^>]*)`, 'g'),
+        `$1${isChecked ? ' checked' : ''}`
+      );
+      
+      // Fallback: update by text pattern if ID method doesn't work
       const keepSectionRegex = new RegExp(
         `(Usluge koje korisnik želi zadržati s postojećim operatorom:[\\s\\S]*?)<input type="checkbox" />\\s*${service.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
         'g'
       );
-      const beforeReplace = html.includes(`<input type="checkbox" /> ${service}`);
       html = html.replace(keepSectionRegex, `$1<input type="checkbox"${isChecked ? ' checked' : ''} /> ${service}`);
-      const afterReplace = html.includes(`<input type="checkbox"${isChecked ? ' checked' : ''} /> ${service}`);
-      console.log(`DEBUG: Keep "${service}" - before: ${beforeReplace}, after: ${afterReplace}`);
     });
     
     // User accounts to keep checkboxes
@@ -1693,10 +1815,7 @@ function formatOperatorChangeHtml(
         `(Vezano uz uslugu pristupa internetu zadržavaju se korisnički računi:[\\s\\S]*?)<input type="checkbox" />\\s*${account.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
         'g'
       );
-      const beforeReplace = html.includes(`<input type="checkbox" /> ${account}`);
       html = html.replace(accountSectionRegex, `$1<input type="checkbox"${isChecked ? ' checked' : ''} /> ${account}`);
-      const afterReplace = html.includes(`<input type="checkbox"${isChecked ? ' checked' : ''} /> ${account}`);
-      console.log(`DEBUG: Keep account "${account}" - before: ${beforeReplace}, after: ${afterReplace}`);
     });
   }
 
