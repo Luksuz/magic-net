@@ -20,6 +20,7 @@ interface PdfButtonProps {
   contractConcludedOnPremises?: boolean
   operatorChangeData?: OperatorChangeData
   extraTelefonPackages?: any[]
+  additionalTvDevices?: any[]
   calculatedData?: {
     phoneServices?: string
     phonePromoPrice?: number
@@ -40,7 +41,7 @@ interface PdfButtonProps {
   }
 }
 
-export default function PdfButton({ formData, userInfo, setActiveTab, terminalEquipment, buttonRef, contractConcludedOnPremises, operatorChangeData, extraTelefonPackages, calculatedData }: PdfButtonProps) {
+export default function PdfButton({ formData, userInfo, setActiveTab, terminalEquipment, buttonRef, contractConcludedOnPremises, operatorChangeData, extraTelefonPackages, additionalTvDevices, calculatedData }: PdfButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGeneratingOperatorChange, setIsGeneratingOperatorChange] = useState(false)
   const [isLibraryLoaded, setIsLibraryLoaded] = useState(false)
@@ -143,7 +144,8 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
           contractConcludedOnPremises,
           safeOperatorChangeData,
           calculatedData,
-          extraTelefonPackages
+          extraTelefonPackages,
+          additionalTvDevices
         )
       } else {
         console.error("Korisnički ID nije dostupan.")

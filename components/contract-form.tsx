@@ -400,7 +400,8 @@ export default function ContractForm({
       }
     })
 
-    const basePrice = baseTvPrice || 0
+    const basePromoPrice = baseTvPrice || formData.promo_price_tv || 0
+    const baseRegularPrice = formData.regular_price_tv || 0
     
     // Create service name from base service only (additional packages shown separately)
     let serviceName = formData.tv_paket || "TV usluga"
@@ -408,8 +409,8 @@ export default function ContractForm({
     return {
       services: selectedPackages.join(', '),
       serviceName: serviceName,
-      promoPrice: basePrice, // Promotional price stays the same regardless of additional packages
-      regularPrice: basePrice + additionalPrice // Only regular price includes additional packages
+      promoPrice: basePromoPrice, // Promotional price from form or baseTvPrice
+      regularPrice: baseRegularPrice // Regular price from form data
     }
   }
 
@@ -429,7 +430,8 @@ export default function ContractForm({
       }
     })
 
-    const basePrice = basePhonePrice || 0
+    const basePromoPrice = basePhonePrice || formData.promo_price_phone || 0
+    const baseRegularPrice = formData.regular_price_phone || 0
     
     // Create service name from base service only (additional services shown separately)
     let serviceName = formData.tarifa || "Telefonska usluga"
@@ -437,8 +439,8 @@ export default function ContractForm({
     const result = {
       services: selectedServices.join(', '),
       serviceName: serviceName, // Only base service name, not including additional services
-      promoPrice: basePrice, // Promotional price stays the same regardless of additional packages
-      regularPrice: basePrice + additionalPrice // Only regular price includes additional packages
+      promoPrice: basePromoPrice, // Promotional price from form or basePhonePrice
+      regularPrice: baseRegularPrice // Regular price from form data
     }
         
     return result
@@ -1837,6 +1839,7 @@ export default function ContractForm({
             contractConcludedOnPremises={contractConcludedOnPremises}
             operatorChangeData={operatorChangeData}
             extraTelefonPackages={extraTelefonPackages}
+            additionalTvDevices={additionalTvDevices}
             calculatedData={{
               phoneServices: getCurrentPhoneData().services,
               phonePromoPrice: getCurrentPhoneData().promoPrice,

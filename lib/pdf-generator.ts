@@ -127,7 +127,8 @@ export async function generatePDF(
     meshRegularPrice?: number
     meshServiceName?: string
   },
-  extraTelefonPackages?: any[]
+  extraTelefonPackages?: any[],
+  additionalTvDevices?: any[]
 ) {
   // Make sure html2pdf is available
   if (typeof window === "undefined" || !window.html2pdf) {
@@ -363,7 +364,8 @@ export async function generatePDF(
       contractNumber, // Pass the contract number to formatHtml
       operatorChangeData,
       calculatedData,
-      extraTelefonPackages
+      extraTelefonPackages,
+      additionalTvDevices
     );
     
     // Start: Added logic to hide empty tables and their headings
@@ -372,6 +374,9 @@ export async function generatePDF(
     const allTables = tempHtmlDiv.querySelectorAll('table');
 
     allTables.forEach(table => {
+      // Check if this table is inside the signature section
+      const isSignatureSection = table.closest('#potpis-korisnika') !== null;
+      
       const rows = table.querySelectorAll('tr');
       let hasVisibleRows = false;
       let hasMeaningfulContent = false;
@@ -384,34 +389,43 @@ export async function generatePDF(
         }
 
         let rowHasActualValue = false;
-        for (let i = 0; i < cells.length; i++) {
-          const cell = cells[i];
-          const trimmedCellText = cell.textContent?.trim() || '';
-          
-          // Skip the first column if it's just a row number (like "1.", "2.", etc.)
-          if (i === 0) {
-            const isRowNumber = /^\d+\.$/.test(trimmedCellText);
-            if (isRowNumber) {
-              continue; // Don't count row numbers as meaningful data
+        
+        // For signature section, always show all rows (don't check for meaningful content)
+        if (isSignatureSection) {
+          rowHasActualValue = true;
+          hasMeaningfulContent = true;
+          hasVisibleRows = true;
+        } else {
+          // Normal logic for other tables
+          for (let i = 0; i < cells.length; i++) {
+            const cell = cells[i];
+            const trimmedCellText = cell.textContent?.trim() || '';
+            
+            // Skip the first column if it's just a row number (like "1.", "2.", etc.)
+            if (i === 0) {
+              const isRowNumber = /^\d+\.$/.test(trimmedCellText);
+              if (isRowNumber) {
+                continue; // Don't count row numbers as meaningful data
+              }
             }
-          }
-          
-          // Check for meaningful content (not empty, not placeholder, not just labels)
-          const isLikelyStaticLabel = /^[A-ZČĆŽŠĐa-zčćžšđ\s\d(),%/€.'"-À-ÖØ-öø-ÿ]+:$/.test(trimmedCellText);
-          const isPlaceholderText = /^\[[A-Z0-9_]+\]$/.test(trimmedCellText); // Checks for unreplaced placeholders like [FOO_BAR]
-          const isEmpty = trimmedCellText === '';
-          const isZeroValue = trimmedCellText === '0' || trimmedCellText === '0,00' || trimmedCellText === '0.00' || trimmedCellText === '0,00 EUR' || trimmedCellText === '0.00 EUR';
-          const isEmptyDash = trimmedCellText === '-' || trimmedCellText === '—' || trimmedCellText === 'N/A' || trimmedCellText === 'n/a';
+            
+            // Check for meaningful content (not empty, not placeholder, not just labels)
+            const isLikelyStaticLabel = /^[A-ZČĆŽŠĐa-zčćžšđ\s\d(),%/€.'"-À-ÖØ-öø-ÿ]+:$/.test(trimmedCellText);
+            const isPlaceholderText = /^\[[A-Z0-9_]+\]$/.test(trimmedCellText); // Checks for unreplaced placeholders like [FOO_BAR]
+            const isEmpty = trimmedCellText === '';
+            const isZeroValue = trimmedCellText === '0' || trimmedCellText === '0,00' || trimmedCellText === '0.00' || trimmedCellText === '0,00 EUR' || trimmedCellText === '0.00 EUR';
+            const isEmptyDash = trimmedCellText === '-' || trimmedCellText === '—' || trimmedCellText === 'N/A' || trimmedCellText === 'n/a';
 
-          if (!isEmpty && !isLikelyStaticLabel && !isPlaceholderText && !isZeroValue && !isEmptyDash) {
-            rowHasActualValue = true;
-            hasMeaningfulContent = true;
-            break; // Found a cell with meaningful data in this row
+            if (!isEmpty && !isLikelyStaticLabel && !isPlaceholderText && !isZeroValue && !isEmptyDash) {
+              rowHasActualValue = true;
+              hasMeaningfulContent = true;
+              break; // Found a cell with meaningful data in this row
+            }
           }
         }
 
-        // Hide the row if it doesn't have meaningful data
-        if (!rowHasActualValue) {
+        // Hide the row if it doesn't have meaningful data (except for signature section)
+        if (!rowHasActualValue && !isSignatureSection) {
           row.style.display = 'none';
         } else {
           hasVisibleRows = true;
@@ -524,25 +538,14 @@ export async function generatePDF(
     // Generate PDF with proper contract numbering
     const ownerPassword = process.env.NEXT_PUBLIC_PDF_OWNER_PASSWORD
     
-    // Create filename using same format as PDF contract number (base + access method)
+    // Create filename using full contract number (with user name)
     let filename = 'contract.pdf'; // fallback
     
     if (data.broj_ugovora) {
-      // Extract base contract number and access method, removing user name
+      // Use the full contract number as filename
       // Format is: "BROJ ime prezime - način_pristupa"
-      // We want: "BROJ - način_pristupa" for filename (same as PDF contract number)
-      const contractParts = data.broj_ugovora.split(' ');
-      const baseNumber = contractParts[0]; // Take only the first part (base number)
-      
-      // Look for access method after the last " - "
-      const dashIndex = data.broj_ugovora.lastIndexOf(' - ');
-      if (dashIndex !== -1) {
-        const accessMethod = data.broj_ugovora.substring(dashIndex + 3); // Get everything after " - "
-        filename = `${baseNumber} - ${accessMethod}.pdf`;
-      } else {
-        // No access method found, use just the base number
-        filename = baseNumber + '.pdf';
-      }
+      // We want: "BROJ ime prezime - način_pristupa.pdf" for filename
+      filename = `${data.broj_ugovora}.pdf`;
     } else {
       // Fallback if no contract number in form
       filename = 'contract.pdf';
@@ -627,7 +630,8 @@ function formatHtml(
     meshRegularPrice?: number
     meshServiceName?: string
   },
-  extraTelefonPackages?: any[]
+  extraTelefonPackages?: any[],
+  additionalTvDevices?: any[]
 ): string {
   if (!html) throw new Error("HTML is required")
   
@@ -687,25 +691,16 @@ function formatHtml(
   // Remove operator change content from main contract - now handled separately
     html = html.replace('<!-- ZAHTJEV_ZA_PROMJENU_OPERATERA -->', '');
 
-  // Use contract number from form data, just remove user name for PDF display
-  // Format should be "BASE_NUMBER - ACCESS_METHOD" (e.g. "025-06-09 - BS")
+  // Use contract number from form data, show only base number for PDF display (without user name and access method)
   let pdfContractNumber = data.broj_ugovora;
   if (pdfContractNumber) {
-    // Extract base contract number and access method, removing user name
+    // Extract only the base contract number, removing user name and access method
     // Format is: "BROJ ime prezime - način_pristupa"
-    // We want: "BROJ - način_pristupa"
+    // We want: "BROJ" for PDF display
     const contractParts = pdfContractNumber.split(' ');
     const baseNumber = contractParts[0]; // Take only the first part (base number)
     
-    // Look for access method after the last " - "
-    const dashIndex = pdfContractNumber.lastIndexOf(' - ');
-    if (dashIndex !== -1) {
-      const accessMethod = pdfContractNumber.substring(dashIndex + 3); // Get everything after " - "
-      pdfContractNumber = `${baseNumber} - ${accessMethod}`;
-    } else {
-      // No access method found, use just the base number
-      pdfContractNumber = baseNumber;
-    }
+    pdfContractNumber = baseNumber; // Use only the base number
   } else {
     // Fallback if no contract number in form
     pdfContractNumber = `${data.id}`;
@@ -715,13 +710,13 @@ function formatHtml(
   safeReplace('CURRENT_DATE', data.contract_date || '')
 
   // Contract duration
-  console.log('Package name:', (data as any).fiksni_paket)
-  safeReplace('PACKAGE_NAME', (data as any).fiksni_paket || '')
+  console.log('Package name:', data.usluga)
+  safeReplace('PACKAGE_NAME', data.usluga || '')
   safeReplace('CONTRACT_DURATION', (data as any).contract_duration || '')
 
   // Internet service details
   safeReplace('INTERNET_SERVICE_NAME', 'Usluga fiksne mreže putem svjetlovodnog priključka')
-  safeReplace('INTERNET_PACKAGE_NAME', data.fiksni_paket)
+  safeReplace('INTERNET_PACKAGE_NAME', data.usluga || data.fiksni_paket)
   safeReplace('INTERNET_SPEED', data.fiksna_brzina)
   safeReplace('INTERNET_ADDITIONAL_SERVICES', data.fiksne_dodatne_usluge)
   safeReplace('INTERNET_EQUIPMENT', data.fiksna_oprema)
@@ -729,29 +724,81 @@ function formatHtml(
 
   // TV service details
   safeReplace('TV_SERVICE_NAME', 'Usluga Televizije')
-  safeReplace('TV_PACKAGE_NAME', data.tv_paket)
+  safeReplace('TV_PACKAGE_NAME', data.usluga || data.tv_paket)
   safeReplace('TV_ADDITIONAL_SERVICES', calculatedData?.tvServices || data.tv_dodatne_usluge)
   safeReplace('TV_EQUIPMENT', data.tv_oprema)
   safeReplace('TV_NAZIV_USLUGE', calculatedData?.tvServiceName || data.tv_naziv_ugovorene_usluge)
 
-  // Additional TV packages - FILMSKI
-  const hasFilmskiPackage = calculatedData?.tvServices?.toLowerCase().includes('filmski') || data.tv_dodatne_usluge?.toLowerCase().includes('filmski')
-  safeReplace('FILMSKI_SERVICE_NAME', hasFilmskiPackage ? 'FILMSKI paket' : '')
-  safeReplace('FILMSKI_PROMO_PRICE', hasFilmskiPackage ? formatCurrency(5.00) : '')
-  safeReplace('FILMSKI_REGULAR_PRICE', hasFilmskiPackage ? formatCurrency(5.00) : '')
+  // Dynamic additional TV services using additionalTvDevices
+  if (additionalTvDevices && additionalTvDevices.length > 0) {
+    console.log('DEBUG: Additional TV devices received:', additionalTvDevices);
+    console.log('DEBUG: Selected TV services:', calculatedData?.tvServices);
+    
+    // Get selected services from calculatedData or form data
+    const selectedTvServices = calculatedData?.tvServices || data.tv_dodatne_usluge || '';
 
-  // Additional TV packages - ODRASLI
-  const hasOdrasliPackage = calculatedData?.tvServices?.toLowerCase().includes('odrasli') || data.tv_dodatne_usluge?.toLowerCase().includes('odrasli')
-  safeReplace('ODRASLI_SERVICE_NAME', hasOdrasliPackage ? 'ODRASLI paket' : '')
-  safeReplace('ODRASLI_PROMO_PRICE', hasOdrasliPackage ? formatCurrency(5.00) : '')
-  safeReplace('ODRASLI_REGULAR_PRICE', hasOdrasliPackage ? formatCurrency(5.00) : '')
+    // Filter packages to only include selected ones and populate placeholders
+    let serviceIndex = 1;
+    additionalTvDevices.forEach((device: any) => {
+      if (device.name) {
+        // Check if this device is selected
+        const isSelected = selectedTvServices.toLowerCase().includes(device.name.toLowerCase());
+        
+        if (isSelected) {
+          const serviceName = device.name;
+          const servicePrice = device.price || 0;
+          
+          console.log(`DEBUG: Adding selected TV service ${serviceIndex}: ${serviceName} (${servicePrice} EUR)`);
+          
+          safeReplace(`TV_EXTRA_SERVICE_${serviceIndex}_NAME`, serviceName)
+          safeReplace(`TV_EXTRA_SERVICE_${serviceIndex}_PROMO_PRICE`, formatCurrency(servicePrice))
+          safeReplace(`TV_EXTRA_SERVICE_${serviceIndex}_REGULAR_PRICE`, formatCurrency(servicePrice))
+          
+          serviceIndex++;
+        }
+      }
+    })
+    
+    console.log(`DEBUG: Total selected TV services added: ${serviceIndex - 1}`);
+  } else {
+    // Clear all dynamic TV service placeholders if no packages available
+    console.log('DEBUG: No additional TV devices received, clearing placeholders');
+    const maxTvServices = 6;
+    for (let i = 1; i <= maxTvServices; i++) {
+      safeReplace(`TV_EXTRA_SERVICE_${i}_NAME`, '')
+      safeReplace(`TV_EXTRA_SERVICE_${i}_PROMO_PRICE`, '')
+      safeReplace(`TV_EXTRA_SERVICE_${i}_REGULAR_PRICE`, '')
+    }
+  }
 
-  // Additional TV Card
-  const hasAdditionalTvCard = calculatedData?.tvServices?.toLowerCase().includes('dodatna tv kartica') || data.tv_dodatne_usluge?.toLowerCase().includes('dodatna tv kartica')
-  safeReplace('ADDITIONAL_TV_CARD_SERVICE_NAME', hasAdditionalTvCard ? 'Dodatna TV kartica' : '')
-  safeReplace('ADDITIONAL_TV_CARD_PROMO_PRICE', hasAdditionalTvCard ? formatCurrency(3.98) : '')
-  safeReplace('ADDITIONAL_TV_CARD_REGULAR_PRICE', hasAdditionalTvCard ? formatCurrency(3.98) : '')
+  // Add additional TV packages separately
+  let additionalTvPrice = 0;
+  const tvServices = calculatedData?.tvServices || data.tv_dodatne_usluge || '';
+  
+  // Add dynamic additional TV devices separately (similar to telephone packages)
+  if (additionalTvDevices && additionalTvDevices.length > 0) {
+    // Get selected services from calculatedData or form data
+    const selectedTvServices = calculatedData?.tvServices || data.tv_dodatne_usluge || '';
+    console.log('DEBUG: Selected TV services for total calculation:', selectedTvServices);
+    
+    // Calculate price for each selected TV service
+    additionalTvDevices.forEach((device: any) => {
+      if (device.name) {
+        // Check if this device is selected
+        const isSelected = selectedTvServices.toLowerCase().includes(device.name.toLowerCase());
+        
+        if (isSelected) {
+          const servicePrice = device.price || 0;
+          additionalTvPrice += servicePrice;
+          console.log(`DEBUG: Adding ${device.name} to TV total: ${servicePrice} EUR`);
+        }
+      }
+    });
+    
+    console.log(`DEBUG: Total additional TV services price: ${additionalTvPrice} EUR`);
+  }
 
+ 
   // MESH services using calculatedData or formData
   const meshServices = calculatedData?.meshServices || data.fiksne_dodatne_usluge || '';
   console.log('PDF Generator MESH debug:', {
@@ -797,7 +844,7 @@ function formatHtml(
     // Filter packages to only include selected ones and populate placeholders
     let serviceIndex = 1;
     extraTelefonPackages.forEach((pkg: any) => {
-      if (serviceIndex <= selectedPhoneServices.length && pkg.name) {
+      if (pkg.name) {
         // Check if this package is selected - handle both "Package Name" and "Package Name - Description" formats
         const isSelectedByName = selectedPhoneServices.toLowerCase().includes(pkg.name.toLowerCase());
         const isSelectedByFullFormat = pkg.description && 
@@ -1010,15 +1057,15 @@ function formatHtml(
   // Periodic Pricing Section
   safeReplace('FIKSNI_PAKET', data.fiksni_paket)
   safeReplace('FIKSNA_BRZINA', data.fiksna_brzina)
-  safeReplace('PROMO_PRICE_FIKSNI', formatCurrency((data as any).promo_price_fiksni))
-  safeReplace('CONTRACT_PRICE_FIKSNI', formatCurrency((data as any).contract_price_fiksni))
-  safeReplace('REGULAR_PRICE_FIKSNI', formatCurrency((data as any).regular_price_fiksni))
+  safeReplace('PROMO_PRICE_FIKSNI', formatCurrency(calculatedData?.internetPromoPrice ?? (data as any).promo_price_fiksni))
+  safeReplace('CONTRACT_PRICE_FIKSNI', formatCurrency(calculatedData?.internetPromoPrice ?? (data as any).contract_price_fiksni))
+  safeReplace('REGULAR_PRICE_FIKSNI', formatCurrency(calculatedData?.internetRegularPrice ?? (data as any).regular_price_fiksni))
   
   safeReplace('TV_PAKET', data.tv_paket)
   safeReplace('TV_DODATNE_USLUGE', data.tv_dodatne_usluge)
-  safeReplace('PROMO_PRICE_TV', formatCurrency((data as any).promo_price_tv))
-  safeReplace('CONTRACT_PRICE_TV', formatCurrency((data as any).contract_price_tv))
-  safeReplace('REGULAR_PRICE_TV', formatCurrency((data as any).regular_price_tv))
+  safeReplace('PROMO_PRICE_TV', formatCurrency(calculatedData?.tvPromoPrice ?? (data as any).promo_price_tv))
+  safeReplace('CONTRACT_PRICE_TV', formatCurrency(calculatedData?.tvPromoPrice ?? (data as any).contract_price_tv))
+  safeReplace('REGULAR_PRICE_TV', formatCurrency(calculatedData?.tvRegularPrice ?? (data as any).regular_price_tv))
   
   safeReplace('TARIFA', data.tarifa)
   safeReplace('PRETPLATNICKI_BROJ', data.pretplatnicki_broj)
@@ -1027,13 +1074,14 @@ function formatHtml(
   safeReplace('REGULAR_PRICE_PHONE', formatCurrency(calculatedData?.phoneRegularPrice ?? (data as any).regular_price_phone))
   
   // Calculate and set total prices (moved to end to include all additional services)
-  safeReplace('TOTAL_PROMO_PRICE', formatCurrency(calculateTotalPrice(data, 'promo', calculatedData, extraTelefonPackages)))
-  safeReplace('TOTAL_CONTRACT_PRICE', formatCurrency(calculateTotalPrice(data, 'contract', calculatedData, extraTelefonPackages)))
-  safeReplace('TOTAL_REGULAR_PRICE', formatCurrency(calculateTotalPrice(data, 'regular', calculatedData, extraTelefonPackages)))
+  safeReplace('TOTAL_PROMO_PRICE', formatCurrency(calculateTotalPrice(data, 'promo', calculatedData, extraTelefonPackages, additionalTvDevices)))
+  safeReplace('TOTAL_CONTRACT_PRICE', formatCurrency(calculateTotalPrice(data, 'contract', calculatedData, extraTelefonPackages, additionalTvDevices)))
+  safeReplace('TOTAL_REGULAR_PRICE', formatCurrency(calculateTotalPrice(data, 'regular', calculatedData, extraTelefonPackages, additionalTvDevices)))
   
   // User & Contract Information
   if (userInfo) {
     safeReplace('USER_ID', userInfo.userId)
+    safeReplace('USER_NAME', userInfo.userName)
     // If legal entity is provided, use it for display name, otherwise use user name
     const displayName = userInfo.legalEntity && userInfo.legalEntity.trim() !== '' 
       ? userInfo.legalEntity 
@@ -1152,101 +1200,172 @@ function calculateTotalPrice(
     meshRegularPrice?: number
     meshServiceName?: string
   },
-  extraTelefonPackages?: any[]
+  extraTelefonPackages?: any[],
+  additionalTvDevices?: any[]
 ): number {
-  const fiksniPrice = (data as any)[`${type}_price_fiksni`] || 0;
-  const tvPrice = (data as any)[`${type}_price_tv`] || 0;
-  const phonePrice = (data as any)[`${type}_price_phone`] || 0;
-  
-  console.log(`Calculating ${type} total:`, {
-    fiksniPrice,
-    tvPrice,
-    phonePrice,
-    tv_dodatne_usluge: data.tv_dodatne_usluge,
-    fiksne_dodatne_usluge: data.fiksne_dodatne_usluge,
-    tel_dodatne_usluge: data.tel_dodatne_usluge,
-    calculatedData
+  console.log(`\n=== CALCULATING ${type.toUpperCase()} TOTAL PRICE ===`);
+  console.log('Input data:', {
+    'data.promo_price_fiksni': (data as any).promo_price_fiksni,
+    'data.regular_price_fiksni': (data as any).regular_price_fiksni,
+    'data.promo_price_tv': (data as any).promo_price_tv,
+    'data.regular_price_tv': (data as any).regular_price_tv,
+    'data.promo_price_phone': (data as any).promo_price_phone,
+    'data.regular_price_phone': (data as any).regular_price_phone,
+    'calculatedData': calculatedData
   });
   
-  let additionalServicesPrice = 0;
+  // Use base prices for TV and phone services, not the calculated ones that include additional packages
+  let fiksniPrice = 0;
+  let baseTvPrice = 0;  // Base TV price only
+  let basePhonePrice = 0; // Base phone price only
   
-  // Use calculatedData for TV services if available, otherwise fall back to data fields
+  if (type === 'promo') {
+    fiksniPrice = calculatedData?.internetPromoPrice ?? (data as any).promo_price_fiksni ?? 0;
+    baseTvPrice = (data as any).promo_price_tv ?? 0; // Use base TV price from form data
+    basePhonePrice = (data as any).promo_price_phone ?? 0; // Use base phone price from form data
+  } else if (type === 'regular') {
+    fiksniPrice = calculatedData?.internetRegularPrice ?? (data as any).regular_price_fiksni ?? 0;
+    baseTvPrice = (data as any).regular_price_tv ?? 0; // Use base TV price from form data
+    basePhonePrice = (data as any).regular_price_phone ?? 0; // Use base phone price from form data
+  } else { // contract
+    fiksniPrice = calculatedData?.internetPromoPrice ?? (data as any).contract_price_fiksni ?? 0;
+    baseTvPrice = (data as any).contract_price_tv ?? 0; // Use base TV price from form data
+    basePhonePrice = (data as any).contract_price_phone ?? 0; // Use base phone price from form data
+  }
+  
+  console.log(`Step 1 - Base service prices for ${type}:`, {
+    fiksniPrice,
+    baseTvPrice,
+    basePhonePrice
+  });
+  
+  // Add additional TV packages separately
+  let additionalTvPrice = 0;
   const tvServices = calculatedData?.tvServices || data.tv_dodatne_usluge || '';
-  const phoneServices = calculatedData?.phoneServices || data.tel_dodatne_usluge || '';
-  const meshServices = calculatedData?.meshServices || data.fiksne_dodatne_usluge || '';
+  console.log(`Step 2 - TV Services check:`, {
+    'calculatedData?.tvServices': calculatedData?.tvServices,
+    'data.tv_dodatne_usluge': data.tv_dodatne_usluge,
+    'final tvServices': tvServices,
+    'additionalTvDevices length': additionalTvDevices?.length || 0
+  });
   
-  // Add TV additional packages using calculatedData or formData
-  if (tvServices.toLowerCase().includes('filmski')) {
-    additionalServicesPrice += 5.00;
-    console.log('Added FILMSKI: +5.00');
-  }
-  if (tvServices.toLowerCase().includes('odrasli')) {
-    additionalServicesPrice += 5.00;
-    console.log('Added ODRASLI: +5.00');
-  }
-  if (tvServices.toLowerCase().includes('dodatna tv kartica')) {
-    additionalServicesPrice += 3.98;
-    console.log('Added Dodatna TV kartica: +3.98');
-  }
-  
-  // Add MESH services using calculatedData or formData
-  if (meshServices.toLowerCase().includes('besplatan mesh')) {
-    if (type === 'promo') {
-      additionalServicesPrice += 0.00; // Free in promo period
-      console.log('Added BESPLATAN MESH (promo): +0.00');
-    } else {
-      additionalServicesPrice += 3.00; // Regular price
-      console.log('Added BESPLATAN MESH (regular): +3.00');
-    }
-  }
-  
-  // Add rental MESH services using calculatedData or formData
-  const rentalMeshMatch = meshServices.match(/extra mesh u najam \((\d+)\)/i);
-  const rentalMeshCount = rentalMeshMatch ? parseInt(rentalMeshMatch[1], 10) : 
-    (meshServices.toLowerCase().includes('extra mesh u najam') ? 1 : 0);
-  
-  if (rentalMeshCount > 0) {
-    additionalServicesPrice += rentalMeshCount * 3.00; // 3 EUR per unit for both promo and regular
-    console.log(`Added ${rentalMeshCount} RENTAL MESH: +${rentalMeshCount * 3.00}`);
-  }
-  
-  // Helper function to get package price by name from extraTelefonPackages
-  const getPackagePrice = (packageName: string): number => {
-    if (!extraTelefonPackages || extraTelefonPackages.length === 0) {
-      // Fallback to hardcoded prices if no packages available
-      const fallbackPrices: Record<string, number> = {
-        'telefonski mix 1': 2.65,
-        'telefonski mix 2': 4.65,
-        'telefon europa 1 100': 5.18,
-        'telefon europa 1 200': 9.95,
-        'telefon europa 2 100': 7.30,
-        'telefon europa 2 200': 13.14
-      };
-      return fallbackPrices[packageName.toLowerCase()] || 0;
-    }
-    
-    const pkg = extraTelefonPackages.find((p: any) => 
-      p.name && p.name.toLowerCase().includes(packageName.toLowerCase())
-    );
-    return pkg ? (pkg.price || 0) : 0;
-  };
-
-  // Add telephone services using extraTelefonPackages or calculatedData
-  if (extraTelefonPackages && extraTelefonPackages.length > 0) {
+  // Add dynamic additional TV devices separately (similar to telephone packages)
+  if (additionalTvDevices && additionalTvDevices.length > 0) {
     // Get selected services from calculatedData or form data
-    const selectedPhoneServices = calculatedData?.phoneServices || data.tel_dodatne_usluge || '';
+    const selectedTvServices = calculatedData?.tvServices || data.tv_dodatne_usluge || '';
+    console.log('DEBUG: Selected TV services for total calculation:', selectedTvServices);
     
-    extraTelefonPackages.forEach((pkg: any) => {
-      if (pkg.name && selectedPhoneServices.toLowerCase().includes(pkg.name.toLowerCase())) {
-        const servicePrice = pkg.price || 0;
-        additionalServicesPrice += servicePrice;
-        console.log(`Added telephone service ${pkg.name}: +${servicePrice}`);
+    // Calculate price for each selected TV service
+    additionalTvDevices.forEach((device: any, index: number) => {
+      console.log(`DEBUG: Checking TV device ${index + 1}:`, {
+        'device.name': device.name,
+        'device.price': device.price
+      });
+      
+      if (device.name) {
+        // Check if this device is selected
+        const isSelected = selectedTvServices.toLowerCase().includes(device.name.toLowerCase());
+        console.log(`DEBUG: Is "${device.name}" selected?`, isSelected);
+        
+        if (isSelected) {
+          const servicePrice = device.price || 0;
+          additionalTvPrice += servicePrice;
+          console.log(`DEBUG: Adding ${device.name} to TV total: ${servicePrice} EUR (running total: ${additionalTvPrice} EUR)`);
+        }
       }
     });
+    
+    console.log(`DEBUG: Final additional TV services price: ${additionalTvPrice} EUR`);
+  } else {
+    console.log('DEBUG: No additional TV devices available or provided');
   }
   
-  const total = fiksniPrice + tvPrice + phonePrice + additionalServicesPrice;
-  console.log(`Total ${type}: ${total} (base: ${fiksniPrice + tvPrice + phonePrice}, additional: ${additionalServicesPrice})`);
+  console.log(`Step 3 - Additional TV price: ${additionalTvPrice}`);
+  
+  // Add extra telephone services separately
+  let extraTelephonePrice = 0;
+  console.log(`Step 4 - Phone Services check:`, {
+    'extraTelefonPackages length': extraTelefonPackages?.length || 0,
+    'calculatedData?.phoneServices': calculatedData?.phoneServices,
+    'data.tel_dodatne_usluge': data.tel_dodatne_usluge
+  });
+  
+  if (extraTelefonPackages && extraTelefonPackages.length > 0) {
+    // Get selected phone services from calculatedData or form data
+    const selectedPhoneServices = calculatedData?.phoneServices || data.tel_dodatne_usluge || '';
+    console.log('DEBUG: Selected phone services for total calculation:', selectedPhoneServices);
+    
+    // Calculate price for each selected service
+    extraTelefonPackages.forEach((pkg: any, index: number) => {
+      console.log(`DEBUG: Checking phone package ${index + 1}:`, {
+        'pkg.name': pkg.name,
+        'pkg.description': pkg.description,
+        'pkg.price': pkg.price
+      });
+      
+      if (pkg.name) {
+        // Check if this package is selected - handle both "Package Name" and "Package Name - Description" formats
+        const isSelectedByName = selectedPhoneServices.toLowerCase().includes(pkg.name.toLowerCase());
+        const isSelectedByFullFormat = pkg.description && 
+          selectedPhoneServices.toLowerCase().includes(`${pkg.name.toLowerCase()} - ${pkg.description.toLowerCase()}`);
+        
+        const isSelected = isSelectedByName || isSelectedByFullFormat;
+        console.log(`DEBUG: Is "${pkg.name}" selected?`, {
+          isSelectedByName,
+          isSelectedByFullFormat,
+          finalIsSelected: isSelected
+        });
+        
+        if (isSelected) {
+          const servicePrice = pkg.price || 0;
+          extraTelephonePrice += servicePrice;
+          console.log(`DEBUG: Adding ${pkg.name} to phone total: ${servicePrice} EUR (running total: ${extraTelephonePrice} EUR)`);
+        }
+      }
+    });
+    
+    console.log(`DEBUG: Final extra telephone services price: ${extraTelephonePrice} EUR`);
+  } else {
+    console.log('DEBUG: No extra telephone packages available or provided');
+  }
+  
+  console.log(`Step 5 - Extra telephone price: ${extraTelephonePrice}`);
+  
+  // Add MESH services separately
+  let meshPrice = 0;
+  console.log(`Step 6 - MESH Services check:`, {
+    'calculatedData?.meshPromoPrice': calculatedData?.meshPromoPrice,
+    'calculatedData?.meshRegularPrice': calculatedData?.meshRegularPrice,
+    'type': type
+  });
+  
+  if (calculatedData?.meshPromoPrice !== undefined || calculatedData?.meshRegularPrice !== undefined) {
+    if (type === 'promo') {
+      meshPrice = calculatedData?.meshPromoPrice ?? 0;
+    } else if (type === 'regular') {
+      meshPrice = calculatedData?.meshRegularPrice ?? 0;
+    } else { // contract
+      meshPrice = calculatedData?.meshPromoPrice ?? 0;
+    }
+    console.log(`DEBUG: MESH price for ${type}: ${meshPrice} EUR`);
+  } else {
+    console.log('DEBUG: No MESH pricing data available');
+  }
+  
+  console.log(`Step 7 - MESH price: ${meshPrice}`);
+  
+  const total = fiksniPrice + baseTvPrice + basePhonePrice + additionalTvPrice + meshPrice + extraTelephonePrice;
+  
+  console.log(`\n=== FINAL CALCULATION BREAKDOWN FOR ${type.toUpperCase()} ===`);
+  console.log(`Internet (fiksni):        ${fiksniPrice} EUR`);
+  console.log(`Base TV:                  ${baseTvPrice} EUR`);
+  console.log(`Base Phone:               ${basePhonePrice} EUR`);
+  console.log(`Additional TV services:   ${additionalTvPrice} EUR`);
+  console.log(`MESH services:            ${meshPrice} EUR`);
+  console.log(`Extra telephone services: ${extraTelephonePrice} EUR`);
+  console.log(`-----------------------------------`);
+  console.log(`TOTAL:                    ${total} EUR`);
+  console.log(`===================================\n`);
   
   return total;
 }
@@ -1443,25 +1562,14 @@ export async function generateOperatorChangePDF(
     // Generate PDF with proper contract numbering
     const ownerPassword = process.env.NEXT_PUBLIC_PDF_OWNER_PASSWORD
     
-    // Create filename using same format as PDF contract number (base + access method)
+    // Create filename using full contract number (with user name) for operator change
     let filename = 'operator-change.pdf'; // fallback
     
     if (data.broj_ugovora) {
-      // Extract base contract number and access method, removing user name
+      // Use the full contract number as filename with operator-change suffix
       // Format is: "BROJ ime prezime - način_pristupa"
-      // We want: "BROJ - način_pristupa - operator-change" for filename
-      const contractParts = data.broj_ugovora.split(' ');
-      const baseNumber = contractParts[0]; // Take only the first part (base number)
-      
-      // Look for access method after the last " - "
-      const dashIndex = data.broj_ugovora.lastIndexOf(' - ');
-      if (dashIndex !== -1) {
-        const accessMethod = data.broj_ugovora.substring(dashIndex + 3); // Get everything after " - "
-        filename = `${baseNumber} - ${accessMethod} - operator-change.pdf`;
-      } else {
-        // No access method found, use just the base number
-        filename = baseNumber + ' - operator-change.pdf';
-      }
+      // We want: "BROJ ime prezime - način_pristupa - operator-change.pdf" for filename
+      filename = `${data.broj_ugovora} - operator-change.pdf`;
     } else if (contractNumber) {
       // Fallback to contract number if broj_ugovora is not available
       filename = 'operator-change-' + contractNumber + '.pdf';
@@ -1537,25 +1645,16 @@ function formatOperatorChangeHtml(
   }
 
   // Replace basic placeholders
-  // Use contract number from form data, just remove user name for PDF display
-  // Format should be "BASE_NUMBER - ACCESS_METHOD" (e.g. "025-06-09 - BS")
+  // Use contract number from form data, show only base number for PDF display (without user name and access method)
   let pdfContractNumber = data.broj_ugovora;
   if (pdfContractNumber) {
-    // Extract base contract number and access method, removing user name
+    // Extract only the base contract number, removing user name and access method
     // Format is: "BROJ ime prezime - način_pristupa"
-    // We want: "BROJ - način_pristupa"
+    // We want: "BROJ" for PDF display
     const contractParts = pdfContractNumber.split(' ');
     const baseNumber = contractParts[0]; // Take only the first part (base number)
     
-    // Look for access method after the last " - "
-    const dashIndex = pdfContractNumber.lastIndexOf(' - ');
-    if (dashIndex !== -1) {
-      const accessMethod = pdfContractNumber.substring(dashIndex + 3); // Get everything after " - "
-      pdfContractNumber = `${baseNumber} - ${accessMethod}`;
-    } else {
-      // No access method found, use just the base number
-      pdfContractNumber = baseNumber;
-    }
+    pdfContractNumber = baseNumber; // Use only the base number
   } else {
     // Fallback if no contract number in form
     pdfContractNumber = `${data.id}`;
