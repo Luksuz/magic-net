@@ -54,10 +54,11 @@ export interface OperatorChangeData {
   phoneNumber: string
   contactPhone: string
   email: string
+  contactEmail: string
   connectionAddress: string
   sellerPlace: string
-  cancelAllServices?: boolean
-  keepAllServices?: boolean
+  // cancelAllServices?: boolean
+  // keepAllServices?: boolean
 }
 
 const defaultUserInfo: UserInformation = {

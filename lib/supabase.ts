@@ -82,7 +82,23 @@ export type MagicAdditionalTvDevice = {
 }
 
 export type OperatorChangeData = {
-  // Add any necessary properties for OperatorChangeData
+  existingOperatorName: string
+  contractOnDistance: boolean
+  agreeToPayDebts: boolean
+  numberTransfer: boolean
+  notificationAgreement: boolean
+  vpnSeries: boolean
+  servicesToCancel: string[]
+  servicesToKeep: string[]
+  userAccountsToKeep: string[]
+  wholesaleService?: boolean
+  userName?: string
+  legalEntity: string
+  oib: string
+  phoneNumber: string
+  contactPhone: string
+  email: string
+  contactEmail: string
 }
 
 export async function getPackages() {

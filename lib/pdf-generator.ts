@@ -538,16 +538,48 @@ export async function generatePDF(
     // Generate PDF with proper contract numbering
     const ownerPassword = process.env.NEXT_PUBLIC_PDF_OWNER_PASSWORD
     
-    // Create filename using full contract number (with user name)
+    // Create filename using the format: 2025-10-09-001-[nacin pristupa] PREZIME IME
     let filename = 'contract.pdf'; // fallback
     
-    if (data.broj_ugovora) {
-      // Use the full contract number as filename
-      // Format is: "BROJ ime prezime - način_pristupa"
-      // We want: "BROJ ime prezime - način_pristupa.pdf" for filename
+    if (data.broj_ugovora && userInfo?.userName) {
+      try {
+        // Extract components from contract number and user data
+        const contractParts = data.broj_ugovora.split(' ');
+        const baseNumber = contractParts[0]; // e.g., "2025-10-09-001"
+        
+        // Get access method from form data
+        const accessMethod = data.access_method || '';
+        
+        // Format user name: split and put last name first
+        const nameParts = userInfo.userName.trim().split(' ');
+        let formattedName = userInfo.userName;
+        
+        if (nameParts.length >= 2) {
+          // Put last name first: "Marko Petrić" -> "PETRIĆ MARKO"
+          const lastName = nameParts[nameParts.length - 1].toUpperCase();
+          const firstNames = nameParts.slice(0, -1).join(' ').toUpperCase();
+          formattedName = `${lastName} ${firstNames}`;
+        } else {
+          // Single name, just uppercase
+          formattedName = userInfo.userName.toUpperCase();
+        }
+        
+        // Build filename: 2025-10-09-001-[nacin pristupa] PREZIME IME
+        filename = `${baseNumber}`;
+        if (accessMethod) {
+          filename += `-${accessMethod}`;
+        }
+        filename += ` ${formattedName}.pdf`;
+      } catch (error) {
+        console.error('Error formatting filename:', error);
+        // Fallback to simple format
+        filename = `${data.broj_ugovora}.pdf`;
+      }
+    } else if (data.broj_ugovora) {
+      // Fallback if no user name available
       filename = `${data.broj_ugovora}.pdf`;
     } else {
-      // Fallback if no contract number in form
+      // Final fallback
       filename = 'contract.pdf';
     }
     
@@ -724,7 +756,7 @@ function formatHtml(
 
   // TV service details
   safeReplace('TV_SERVICE_NAME', 'Usluga Televizije')
-  safeReplace('TV_PACKAGE_NAME', data.usluga || data.tv_paket)
+  safeReplace('TV_PACKAGE_NAME', data.tv_paket || data.usluga)
   safeReplace('TV_ADDITIONAL_SERVICES', calculatedData?.tvServices || data.tv_dodatne_usluge)
   safeReplace('TV_EQUIPMENT', data.tv_oprema)
   safeReplace('TV_NAZIV_USLUGE', calculatedData?.tvServiceName || data.tv_naziv_ugovorene_usluge)
@@ -1082,6 +1114,7 @@ function formatHtml(
   if (userInfo) {
     safeReplace('USER_ID', userInfo.userId)
     safeReplace('USER_NAME', userInfo.userName)
+    safeReplace('LEGAL_ENTITY', userInfo.legalEntity)
     // If legal entity is provided, use it for display name, otherwise use user name
     const displayName = userInfo.legalEntity && userInfo.legalEntity.trim() !== '' 
       ? userInfo.legalEntity 
@@ -1164,6 +1197,11 @@ function formatHtml(
     }
     safeReplace('PAYMENT_METHOD_FORMATTED',
       userInfo.paymentMethod ? paymentMethodMap[userInfo.paymentMethod] || userInfo.paymentMethod : '')
+  }
+
+  // Safety check: ensure LEGAL_ENTITY is always replaced, even if userInfo is not available
+  if (!userInfo) {
+    safeReplace('LEGAL_ENTITY', '')
   }
 
   // Replace POSLOVNI_PROSTOR_NAPOMENA placeholders
@@ -1562,21 +1600,58 @@ export async function generateOperatorChangePDF(
     // Generate PDF with proper contract numbering
     const ownerPassword = process.env.NEXT_PUBLIC_PDF_OWNER_PASSWORD
     
-    // Create filename using full contract number (with user name) for operator change
-    let filename = 'operator-change.pdf'; // fallback
+    // Create filename using the format: Zahtjev za promjenu operatora - [korisnikovo ime ili firma]
+    let filename = 'Zahtjev za promjenu operatora.pdf'; // fallback
     
-    if (data.broj_ugovora) {
-      // Use the full contract number as filename with operator-change suffix
-      // Format is: "BROJ ime prezime - način_pristupa"
-      // We want: "BROJ ime prezime - način_pristupa - operator-change.pdf" for filename
-      filename = `${data.broj_ugovora} - operator-change.pdf`;
-    } else if (contractNumber) {
-      // Fallback to contract number if broj_ugovora is not available
-      filename = 'operator-change-' + contractNumber + '.pdf';
-    } else {
-      // Fallback if no contract number in form
-      filename = 'operator-change.pdf';
+    try {
+      // Determine if we should use legal entity or user name
+      let displayName = '';
+      
+      if (operatorChangeData) {
+        // Use legal entity if provided, otherwise format user name
+        if (operatorChangeData.legalEntity && operatorChangeData.legalEntity.trim() !== '') {
+          displayName = operatorChangeData.legalEntity;
+        } else if (operatorChangeData.userName && operatorChangeData.userName.trim() !== '') {
+          // Format user name: split and put last name first
+          const nameParts = operatorChangeData.userName.trim().split(' ');
+          if (nameParts.length >= 2) {
+            // Put last name first: "Marko Petrić" -> "Petrić Marko"
+            const lastName = nameParts[nameParts.length - 1];
+            const firstNames = nameParts.slice(0, -1).join(' ');
+            displayName = `${lastName} ${firstNames}`;
+          } else {
+            // Single name, use as is
+            displayName = operatorChangeData.userName;
+          }
+        }
+      } else if (userInfo) {
+        // Use legal entity if provided, otherwise format user name
+        if (userInfo.legalEntity && userInfo.legalEntity.trim() !== '') {
+          displayName = userInfo.legalEntity;
+        } else if (userInfo.userName && userInfo.userName.trim() !== '') {
+          // Format user name: split and put last name first
+          const nameParts = userInfo.userName.trim().split(' ');
+          if (nameParts.length >= 2) {
+            // Put last name first: "Marko Petrić" -> "Petrić Marko"
+            const lastName = nameParts[nameParts.length - 1];
+            const firstNames = nameParts.slice(0, -1).join(' ');
+            displayName = `${lastName} ${firstNames}`;
+          } else {
+            // Single name, use as is
+            displayName = userInfo.userName;
+          }
+        }
+      }
+      
+      if (displayName) {
+        filename = `Zahtjev za promjenu operatora - ${displayName}.pdf`;
+      }
+    } catch (error) {
+      console.error('Error formatting operator change filename:', error);
+      // Keep fallback filename
     }
+    
+    console.log('Operator change PDF filename:', filename);
     
     // Use the contract number if available
     const pdfOptions = {
@@ -1678,10 +1753,12 @@ function formatOperatorChangeHtml(
     safeReplace('DISPLAY_NAME', operatorDisplayName)
     safeReplace('AUTHORIZED_PERSON_NAME', authorizedPersonName)
     safeReplace('USER_NAME', operatorChangeData.userName || (userInfo?.userName || ''))  // Always show user name, not authorized person
+    safeReplace('LEGAL_ENTITY', operatorChangeData.legalEntity || (userInfo?.legalEntity || ''))
+    safeReplace('LEGAL_ENTITY_OPERATOR', operatorChangeData.legalEntity || '') // Specific for operator change, no fallback
     safeReplace('OIB', operatorChangeData.oib || (userInfo?.oib || ''))
     safeReplace('PHONE_NUMBER', operatorChangeData.phoneNumber || (data.pretplatnicki_broj || ''))
     safeReplace('CONTACT_PHONE', operatorChangeData.contactPhone || (userInfo?.contactPhone || ''))
-    safeReplace('EMAIL', operatorChangeData.email || (userInfo?.email || ''))
+    safeReplace('EMAIL', operatorChangeData.contactEmail || operatorChangeData.email || (userInfo?.email || ''))
     safeReplace('CONNECTION_ADDRESS', operatorChangeData.connectionAddress || (userInfo?.connectionAddress || ''))
     safeReplace('SELLER_PLACE', operatorChangeData.sellerPlace || (userInfo?.sellerPlace || ''))
   } else if (userInfo) {
@@ -1698,12 +1775,20 @@ function formatOperatorChangeHtml(
     safeReplace('DISPLAY_NAME', userDisplayName)
     safeReplace('AUTHORIZED_PERSON_NAME', authorizedPersonName)
     safeReplace('USER_NAME', userInfo.userName)  // Always show user name, not authorized person
+    safeReplace('LEGAL_ENTITY', userInfo.legalEntity)
+    safeReplace('LEGAL_ENTITY_OPERATOR', userInfo.legalEntity || '') // Specific for operator change, no fallback
     safeReplace('OIB', userInfo.oib)
     safeReplace('PHONE_NUMBER', data.pretplatnicki_broj)
     safeReplace('CONTACT_PHONE', userInfo.contactPhone)
     safeReplace('EMAIL', userInfo.email)
     safeReplace('CONNECTION_ADDRESS', userInfo.connectionAddress)
     safeReplace('SELLER_PLACE', userInfo.sellerPlace)
+  }
+
+  // Safety check: ensure LEGAL_ENTITY_OPERATOR is always replaced, even if no user data is available
+  if (!operatorChangeData && !userInfo) {
+    safeReplace('LEGAL_ENTITY', '')
+    safeReplace('LEGAL_ENTITY_OPERATOR', '')
   }
 
   // Process operator change data checkboxes if available
@@ -1855,11 +1940,11 @@ function formatOperatorChangeHtml(
     console.log('DEBUG: Services to cancel:', operatorChangeData.servicesToCancel);
     
     // Handle individual cancel service checkboxes
-    const servicesToCancelServices = ['Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija'];
-    const cancelServiceIds = ['cancel_pristup', 'cancel_govorna', 'cancel_internet', 'cancel_televizija'];
+    const servicesToCancelServices = ["Sve usluge", "Pristup mreži", "Govorna usluga", "Internet", "Televizija"];
+    const cancelServiceIds = ['cancel_sve', 'cancel_pristup', 'cancel_govorna', 'cancel_internet', 'cancel_televizija'];
     
     servicesToCancelServices.forEach((service, index) => {
-      const isChecked = operatorChangeData.servicesToCancel.includes(service) || operatorChangeData.cancelAllServices;
+      const isChecked = operatorChangeData.servicesToCancel.includes(service);
       const serviceId = cancelServiceIds[index];
       console.log(`DEBUG: Cancel service "${service}" (${serviceId}): ${isChecked}`);
       
@@ -1881,11 +1966,11 @@ function formatOperatorChangeHtml(
     console.log('DEBUG: Services to keep:', operatorChangeData.servicesToKeep);
     
     // Handle individual keep service checkboxes
-    const servicesToKeepServices = ['Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija'];
+    const servicesToKeepServices = ["Sve usluge", "Pristup mreži", "Govorna usluga", "Internet", "Televizija"];
     const keepServiceIds = ['keep_pristup', 'keep_govorna', 'keep_internet', 'keep_televizija'];
     
     servicesToKeepServices.forEach((service, index) => {
-      const isChecked = operatorChangeData.servicesToKeep.includes(service) || operatorChangeData.keepAllServices;
+      const isChecked = operatorChangeData.servicesToKeep.includes(service);
       const serviceId = keepServiceIds[index];
       console.log(`DEBUG: Keep service "${service}" (${serviceId}): ${isChecked}`);
       

@@ -120,19 +120,31 @@ export default function ContractForm({
     servicesToKeep: ["Internet"],
     userAccountsToKeep: ["adrese elektroničke pošte"],
     wholesaleService: true,
+    // cancelAllServices: false,
+    // keepAllServices: false,
     // Initialize with user data but allow independent editing
     userName: "", //userInfoInitial?.userName || "",
     legalEntity: "", //userInfoInitial?.legalEntity || "",
     oib: "", //userInfoInitial?.oib || "",
-    phoneNumber: "", //initialData.pretplatnicki_broj || "",
+    phoneNumber: "", //formData.pretplatnicki_broj || "",
     contactPhone: "", //userInfoInitial?.contactPhone || "",
     email: "", //userInfoInitial?.email || "",
+    contactEmail: "", // New field for email when "adrese elektroničke pošte" is selected
     connectionAddress: "", //userInfoInitial?.connectionAddress || "",
     sellerPlace: "", //userInfoInitial?.sellerPlace || "",
-    // Add new fields for "select all" functionality
-    cancelAllServices: false,
-    keepAllServices: false,
   })
+  
+  // Track manual edits to prevent auto-sync from overriding them
+  const [operatorChangeManualEdits, setOperatorChangeManualEdits] = useState({
+    legalEntity: false,
+    // contactPhone and email are no longer auto-synced, so no need to track manual edits
+    // contactPhone: false,
+    // email: false,
+    contactEmail: false,
+  })
+  
+  // State for operator dropdown selection
+  const [selectedOperatorType, setSelectedOperatorType] = useState<string>('custom')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -261,6 +273,24 @@ export default function ContractForm({
   }
   
   const handleOperatorChangeDataChange = (data: OperatorChangeData) => {
+    // Check if any manually tracked fields have changed
+    const newEdits = { ...operatorChangeManualEdits }
+    
+    if (data.legalEntity !== operatorChangeData.legalEntity) {
+      newEdits.legalEntity = true
+    }
+    // contactPhone and email are no longer tracked since they're not auto-synced
+    // if (data.contactPhone !== operatorChangeData.contactPhone) {
+    //   newEdits.contactPhone = true
+    // }
+    // if (data.email !== operatorChangeData.email) {
+    //   newEdits.email = true
+    // }
+    if (data.contactEmail !== operatorChangeData.contactEmail) {
+      newEdits.contactEmail = true
+    }
+    
+    setOperatorChangeManualEdits(newEdits)
     setOperatorChangeData(data)
     if (onOperatorChangeDataChange) {
       onOperatorChangeDataChange(data)
@@ -366,24 +396,10 @@ export default function ContractForm({
   }
 
   // Handler for "select all" cancel services
-  const handleCancelAllServicesChange = (checked: boolean) => {
-    const allServices = ['Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija']
-    setOperatorChangeData(prev => ({
-      ...prev,
-      cancelAllServices: checked,
-      servicesToCancel: checked ? allServices : []
-    }))
-  }
+  // Removed - "Sve usluge" is now treated as a regular service option
 
-  // Handler for "select all" keep services
-  const handleKeepAllServicesChange = (checked: boolean) => {
-    const allServices = ['Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija']
-    setOperatorChangeData(prev => ({
-      ...prev,
-      keepAllServices: checked,
-      servicesToKeep: checked ? allServices : []
-    }))
-  }
+  // Handler for "select all" keep services  
+  // Removed - "Sve usluge" is now treated as a regular service option
 
   // Calculate current TV services and price (no state updates)
   const getCurrentTvData = () => {
@@ -771,16 +787,48 @@ export default function ContractForm({
         ...prev,
         // Always update with current user info data (one-way sync from user info to operator change)
         userName: userInfo.userName || "",
-        // legalEntity: userInfo.legalEntity || "", // Removed - should remain independent
+        // Only update if not manually edited
+        legalEntity: operatorChangeManualEdits.legalEntity ? prev.legalEntity : (userInfo.legalEntity || ""),
         oib: userInfo.oib || "",
         phoneNumber: formData.pretplatnicki_broj || "",
-        contactPhone: userInfo.contactPhone || "",
-        email: userInfo.email || "",
+        // contactPhone and email are excluded from auto-sync - they remain empty initially
+        // contactPhone: operatorChangeManualEdits.contactPhone ? prev.contactPhone : (userInfo.contactPhone || ""),
+        // email: operatorChangeManualEdits.email ? prev.email : (userInfo.email || ""),
         connectionAddress: userInfo.connectionAddress || "",
         sellerPlace: userInfo.sellerPlace || "",
       }));
     }
-  }, [userInfo, formData.pretplatnicki_broj]);
+  }, [userInfo, formData.pretplatnicki_broj, operatorChangeManualEdits.legalEntity]);
+
+  // Handler for operator selection
+  const handleOperatorSelection = (operatorType: string) => {
+    setSelectedOperatorType(operatorType)
+    
+    if (operatorType !== 'custom') {
+      // Set predefined operator name
+      handleOperatorChangeDataChange({ 
+        ...operatorChangeData, 
+        existingOperatorName: operatorType 
+      })
+    }
+    // If custom, keep the current value or clear it
+  }
+
+  // Initialize operator type based on existing data
+  useEffect(() => {
+    const predefinedOperators = [
+      'Hrvatski telekom d.d.',
+      'Telemach Hrvatska d.o.o.',
+      'A1 Hrvatska d.o.o.'
+    ]
+    
+    if (operatorChangeData.existingOperatorName && 
+        predefinedOperators.includes(operatorChangeData.existingOperatorName)) {
+      setSelectedOperatorType(operatorChangeData.existingOperatorName)
+    } else {
+      setSelectedOperatorType('custom')
+    }
+  }, [operatorChangeData.existingOperatorName])
 
   return (
     <div className="space-y-6">
@@ -1522,7 +1570,7 @@ export default function ContractForm({
                         <Label htmlFor="operatorUserName">Ime i prezime</Label>
                         <Input
                           id="operatorUserName"
-                          value={operatorChangeData.userName}
+                          value={operatorChangeData.userName || ""}
                           onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, userName: e.target.value })}
                           placeholder="Ime i prezime korisnika"
                         />
@@ -1532,7 +1580,7 @@ export default function ContractForm({
                         <Label htmlFor="operatorLegalEntity">Pravna osoba</Label>
                         <Input
                           id="operatorLegalEntity"
-                          value={operatorChangeData.legalEntity}
+                          value={operatorChangeData.legalEntity || ""}
                           onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, legalEntity: e.target.value })}
                           placeholder="Naziv pravne osobe"
                         />
@@ -1542,7 +1590,7 @@ export default function ContractForm({
                         <Label htmlFor="operatorOib">OIB</Label>
                         <Input
                           id="operatorOib"
-                          value={operatorChangeData.oib}
+                          value={operatorChangeData.oib || ""}
                           onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, oib: e.target.value })}
                           placeholder="OIB korisnika"
                         />
@@ -1552,7 +1600,7 @@ export default function ContractForm({
                         <Label htmlFor="operatorPhoneNumber">Pretplatnički broj</Label>
                         <Input
                           id="operatorPhoneNumber"
-                          value={operatorChangeData.phoneNumber}
+                          value={operatorChangeData.phoneNumber || ""}
                           onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, phoneNumber: e.target.value })}
                           placeholder="Pretplatnički broj"
                         />
@@ -1562,7 +1610,7 @@ export default function ContractForm({
                         <Label htmlFor="operatorContactPhone">Kontakt telefon</Label>
                         <Input
                           id="operatorContactPhone"
-                          value={operatorChangeData.contactPhone}
+                          value={operatorChangeData.contactPhone || ""}
                           onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, contactPhone: e.target.value })}
                           placeholder="Kontakt telefon"
                         />
@@ -1573,7 +1621,7 @@ export default function ContractForm({
                         <Input
                           id="operatorEmail"
                           type="email"
-                          value={operatorChangeData.email}
+                          value={operatorChangeData.email || ""}
                           onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, email: e.target.value })}
                           placeholder="Email adresa"
                         />
@@ -1583,7 +1631,7 @@ export default function ContractForm({
                         <Label htmlFor="operatorConnectionAddress">Adresa priključka</Label>
                         <Input
                           id="operatorConnectionAddress"
-                          value={operatorChangeData.connectionAddress}
+                          value={operatorChangeData.connectionAddress || ""}
                           onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, connectionAddress: e.target.value })}
                           placeholder="Adresa priključka"
                         />
@@ -1593,7 +1641,7 @@ export default function ContractForm({
                         <Label htmlFor="operatorSellerPlace">Mjesto</Label>
                         <Input
                           id="operatorSellerPlace"
-                          value={operatorChangeData.sellerPlace}
+                          value={operatorChangeData.sellerPlace || ""}
                           onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, sellerPlace: e.target.value })}
                           placeholder="Mjesto"
                         />
@@ -1602,14 +1650,30 @@ export default function ContractForm({
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                    <div className="space-y-2 md:col-span-2">
                       <Label htmlFor="existingOperatorName">Naziv davatelja broja/postojećeg operatera</Label>
-                      <Input
-                        id="existingOperatorName"
-                        value={operatorChangeData.existingOperatorName}
-                        onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, existingOperatorName: e.target.value })}
-                        placeholder="Unesite naziv postojećeg operatera"
-                      />
+                      
+                      <div className="space-y-3">
+                        <select
+                          value={selectedOperatorType}
+                          onChange={(e) => handleOperatorSelection(e.target.value)}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <option value="Hrvatski telekom d.d.">Hrvatski telekom d.d.</option>
+                          <option value="Telemach Hrvatska d.o.o.">Telemach Hrvatska d.o.o.</option>
+                          <option value="A1 Hrvatska d.o.o.">A1 Hrvatska d.o.o.</option>
+                          <option value="custom">Ostalo (ručni unos)</option>
+                        </select>
+                        
+                        {selectedOperatorType === 'custom' && (
+                          <Input
+                            id="existingOperatorName"
+                            value={operatorChangeData.existingOperatorName || ""}
+                            onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, existingOperatorName: e.target.value })}
+                            placeholder="Unesite naziv postojećeg operatera"
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -1679,36 +1743,20 @@ export default function ContractForm({
                   <div className="mt-6 space-y-4">
                     <h4 className="text-lg font-medium">Usluge koje korisnik želi raskinuti s postojećim operatorom</h4>
                     
-                    <div className="mb-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="cancelAllServices"
-                          checked={operatorChangeData.cancelAllServices || false}
-                          onCheckedChange={(checked) => handleCancelAllServicesChange(checked as boolean)}
-                        />
-                        <Label htmlFor="cancelAllServices" className="font-bold text-sm">
-                          Sve usluge
-                        </Label>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {['Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija'].map((service) => (
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                      {['Sve usluge', 'Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija'].map((service) => (
                         <div key={service} className="flex items-center space-x-2">
                           <Checkbox
                             id={`cancel-${service}`}
                             checked={operatorChangeData.servicesToCancel.includes(service)}
-                            disabled={operatorChangeData.cancelAllServices}
                             onCheckedChange={(checked) => {
-                              if (!operatorChangeData.cancelAllServices) {
-                                const updatedServices = checked
-                                  ? [...operatorChangeData.servicesToCancel, service]
-                                  : operatorChangeData.servicesToCancel.filter(s => s !== service)
-                                handleOperatorChangeDataChange({ ...operatorChangeData, servicesToCancel: updatedServices })
-                              }
+                              const updatedServices = checked
+                                ? [...operatorChangeData.servicesToCancel, service]
+                                : operatorChangeData.servicesToCancel.filter(s => s !== service)
+                              handleOperatorChangeDataChange({ ...operatorChangeData, servicesToCancel: updatedServices })
                             }}
                           />
-                          <Label htmlFor={`cancel-${service}`} className={`font-normal text-sm ${operatorChangeData.cancelAllServices ? 'text-gray-500' : ''}`}>
+                          <Label htmlFor={`cancel-${service}`} className="font-normal text-sm">
                             {service}
                           </Label>
                         </div>
@@ -1719,36 +1767,20 @@ export default function ContractForm({
                   <div className="mt-6 space-y-4">
                     <h4 className="text-lg font-medium">Usluge koje korisnik želi zadržati s postojećim operatorom</h4>
                     
-                    <div className="mb-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="keepAllServices"
-                          checked={operatorChangeData.keepAllServices || false}
-                          onCheckedChange={(checked) => handleKeepAllServicesChange(checked as boolean)}
-                        />
-                        <Label htmlFor="keepAllServices" className="font-bold text-sm">
-                          Sve usluge
-                        </Label>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {['Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija'].map((service) => (
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                      {['Sve usluge', 'Pristup mreži', 'Govorna usluga', 'Internet', 'Televizija'].map((service) => (
                         <div key={service} className="flex items-center space-x-2">
                           <Checkbox
                             id={`keep-${service}`}
                             checked={operatorChangeData.servicesToKeep.includes(service)}
-                            disabled={operatorChangeData.keepAllServices}
                             onCheckedChange={(checked) => {
-                              if (!operatorChangeData.keepAllServices) {
-                                const updatedServices = checked
-                                  ? [...operatorChangeData.servicesToKeep, service]
-                                  : operatorChangeData.servicesToKeep.filter(s => s !== service)
-                                handleOperatorChangeDataChange({ ...operatorChangeData, servicesToKeep: updatedServices })
-                              }
+                              const updatedServices = checked
+                                ? [...operatorChangeData.servicesToKeep, service]
+                                : operatorChangeData.servicesToKeep.filter(s => s !== service)
+                              handleOperatorChangeDataChange({ ...operatorChangeData, servicesToKeep: updatedServices })
                             }}
                           />
-                          <Label htmlFor={`keep-${service}`} className={`font-normal text-sm ${operatorChangeData.keepAllServices ? 'text-gray-500' : ''}`}>
+                          <Label htmlFor={`keep-${service}`} className="font-normal text-sm">
                             {service}
                           </Label>
                         </div>
@@ -1777,6 +1809,21 @@ export default function ContractForm({
                         </div>
                       ))}
                     </div>
+                    
+                    {/* Contact Email input - shown when "adrese elektroničke pošte" is selected */}
+                    {operatorChangeData.userAccountsToKeep.includes('adrese elektroničke pošte') && (
+                      <div className="mt-4 space-y-2">
+                        <Label htmlFor="contactEmail">Kontakt email za adrese elektroničke pošte</Label>
+                        <Input
+                          id="contactEmail"
+                          type="email"
+                          value={operatorChangeData.contactEmail || ""}
+                          onChange={(e) => handleOperatorChangeDataChange({ ...operatorChangeData, contactEmail: e.target.value })}
+                          placeholder="Unesite kontakt email adresu"
+                          className="max-w-md"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-6 space-y-4">
