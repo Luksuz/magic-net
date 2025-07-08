@@ -8,7 +8,7 @@
         line-height: 1.1;
     }
     .pdf-content { /* Renamed from container class */
-        padding: 8px;
+        padding: 2px;
         box-sizing: border-box;
         width: 100%;
         max-width: 100%;
@@ -16,14 +16,14 @@
     }
     h1, h2, h3, h4, h5, h6 { 
         color: #1a3c5e; 
-        margin-top: 8px;
-        margin-bottom: 4px;
+        margin-top: 4px;
+        margin-bottom: 2px;
         line-height: 1.1;
     }
     .page-break-placeholder { /* Simulate page break visually */
          height: 20px;
          border-top: 2px dashed #ccc;
-         margin: 10px 0;
+         margin: 5px 0;
          text-align: center;
          color: #999;
          font-style: italic;
@@ -42,13 +42,13 @@
     table {
         border-collapse: collapse; 
         width: 100%; 
-        margin-bottom: 8px;
+        margin-bottom: 4px;
         table-layout: fixed; 
         max-width: 100%;
         font-size: 9px;
     }
     th, td { 
-        padding: 3px;
+        padding: 2px;
         border: 1px solid #ddd; 
         line-height: 1.1;
         overflow-wrap: break-word; 
@@ -68,11 +68,11 @@
     a { color: #1a3c5e; text-decoration: none; }
     a:hover { text-decoration: underline; }
     p { 
-        margin: 2px 0;
+        margin: 1px 0;
         line-height: 1.2;
     }
     ul { 
-        margin: 4px 0;
+        margin: 2px 0;
         padding-left: 15px;
     }
     li {
@@ -83,17 +83,16 @@
     <div class="pdf-container" style="font-family: Arial, sans-serif;
       font-size: 10px;
       color: #333;
-      margin: 10px auto;
-      padding: 8px;
-      border: 1px solid #ccc;
-      width: 180mm; /* Reduced from 210mm */
+      margin: 2px auto;
+      padding: 2px;
+      width: 210mm; /* Increased from 180mm */
       max-width: 100%;
       box-sizing: border-box;
       position: relative;
       background-color: white; /* Added background for clarity */">
       <div class="pdf-content">
-      <div style="overflow: hidden; margin-bottom: 8px;">
-          <div style="float: right; margin-left: 8px; width: 60px; height: 60px; border-radius: 50%; background-color: #1a3c5e; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; font-weight: bold;">
+      <div style="overflow: hidden; margin-bottom: 4px;">
+          <div style="float: right; margin-left: 4px; width: 50px; height: 50px; border-radius: 50%; background-color: #1a3c5e; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; font-weight: bold;">
               <img src="https://qfpjbgjxkpwtsegtkaze.supabase.co/storage/v1/object/public/images//logo.png" alt="Company Logo" style="width: 100%; height: 100%; border-radius: 50%;">
           </div>
           <div>
@@ -108,19 +107,19 @@
       </div>
       <div style="clear: both;"></div>
   
-      <div style="text-align: center; margin: 12px 0;">
+      <div style="text-align: center; margin: 6px 0;">
           <p style="margin: 0; font-size: 12px; font-weight: bold;">Broj ugovora: [AGREEMENT_NUMBER]</p>
           <p style="margin: 0; font-size: 14px; font-weight: bold;">SAŽETAK UGOVORA</p>
       </div>
   
-      <div style="margin-bottom: 8px;">
+      <div style="margin-bottom: 4px;">
           <ul style="list-style-type: disc; padding-left: 15px; font-size: 9px;">
           <li>U ovom su sažetku ugovora navedeni glavni elementi ove ponude usluge u skladu s pravom EU-a¹.</li>
           <li>Sažetak Ugovora olakšava usporedbu različitih ponuda usluge.</li>
           <li>Potpune informacije o usluzi navedene su u drugim dokumentima.</li>
           </ul>
       </div>
-      <div style="margin-bottom: 8px;">
+      <div style="margin-bottom: 4px;">
           <h2 style="font-size: 12px; font-weight: bold; border-bottom: 1px solid #1a3c5e; padding-bottom: 2px; margin-bottom: 4px;">Usluge i oprema</h2>
           <p style="font-weight: bold; margin-bottom: 2px; font-size: 10px;">Podaci o ugovorenim uslugama</p>
   
@@ -149,7 +148,7 @@
           </table>
       </div>
   
-      <div style="margin-bottom: 8px;">
+      <div style="margin-bottom: 4px;">
           <h2 style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Podaci o kupljenim uređajima</h2>
           <p style="font-weight: bold; margin-bottom: 2px; font-size: 10px;">Proizvođač i model: [EQUIPMENT__MODEL]</p>
           <table>
@@ -167,20 +166,20 @@
        <!-- PAGE BREAK PLACEHOLDER -->
        <div class="page-break"></div>
   
-       <div style="margin-bottom: 8px;">
+       <div style="margin-bottom: 4px;">
            <h2 style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Brzine internetske usluge</h2>
            <p style="margin-bottom: 2px; font-size: 9px;"><strong>Minimalna brzina</strong> Vašeg interneta za preuzimanje (download) jest [BRZINA_MIN_DOWNLOAD] Mbit/s, a za upload (učitavanje) jest [BRZINA_MIN_UPLOAD] Mbit/s.</p>
            <p style="margin-bottom: 2px; font-size: 9px;"><strong>Uobičajeno dostupna brzina</strong> procijenjena je na [BRZINA_OBICNA_DOWNLOAD] Mbit/s za preuzimanje (download) i [BRZINA_OBICNA_UPLOAD] Mbit/s za učitavanje (upload) tijekom 99% vremena.</p>
            <p style="margin-bottom: 2px; font-size: 9px;"><strong>Maksimalna brzina</strong> je [BRZINA_MAX_DOWNLOAD] Mbit/s za preuzimanje (download) i [BRZINA_MAX_UPLOAD] Mbit/s za učitavanje (upload).</p>
        </div>
   
-       <div style="margin-bottom: 8px;">
+       <div style="margin-bottom: 4px;">
            <h2 style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Pravna sredstva u slučaju problema</h2>
            <p style="margin-bottom: 2px; font-size: 9px;">U slučaju podnošenja prigovora na brzinu pristupa internetu, potrebno je da priložite rezultate minimalno 3 mjerenja provedenih tijekom 5 uzastopnih dana (najviše jedno mjerenje po danu) putem certificiranog alata HAKOmetar, izrađenog od strane HAKOM-a. Bitno je da mjerenje napravite s računalom koje je žičano spojeno s modemom. Vaš prigovor možemo uzeti u obzir i provjeriti situaciju samo u slučaju kada su mjerenja odrađena na opisan način.</p>
            <p style="margin-bottom: 2px; font-size: 9px;">U slučaju da nismo osigurali minimalnu brzinu pristupa internetu, obvezni smo Vam ponuditi raskid ugovora bez plaćanja naknade zbog prijevremenog raskida ugovora, a dodatno Vam možemo omogućiti prelazak na paket koji je prikladniji stvarno ostvarivoj brzini pristupa internetu ili umanjenje mjesečne naknade.</p>
        </div>
   
-       <div style="margin-bottom: 8px;">
+       <div style="margin-bottom: 4px;">
            <h2 style="font-size: 12px; font-weight: bold; border-bottom: 1px solid #1a3c5e; padding-bottom: 2px;">Cijena</h2>
   
            <p style="font-weight: bold; margin: 6px 0 2px 0; font-size: 10px;">Cijena priključenja na svjetlovodnu mrežu</p>
@@ -348,7 +347,7 @@
    </div>
    <!-- PAGE BREAK PLACEHOLDER -->
 
-   <div style="margin-bottom: 8px;">
+   <div style="margin-bottom: 4px;">
     <h2 style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Cijena opreme dane na korištenje (Terminalna oprema)</h2>
     <table>
      <tr style="background-color: #f2f2f2;">
@@ -397,7 +396,7 @@
  <div class="page-break"></div>
 
   
-       <div style="margin-bottom: 8px;">
+       <div style="margin-bottom: 4px;">
        <h2 style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Trajanje, obnova i raskid</h2>
        <hr style="border: none; border-top: 1px solid #ddd; margin-bottom: 3px;">
        <p style="margin-bottom: 3px; font-size: 9px;">Trajanje ugovora za [PACKAGE_NAME] : [CONTRACT_DURATION].</p>
@@ -437,10 +436,10 @@
        <!-- PAGE BREAK PLACEHOLDER -->
    <div class="page-break"></div>
   
-   <div style="margin-bottom: 8px;">
+   <div style="margin-bottom: 4px;">
        <h2 style="font-size: 12px; font-weight: bold; text-align: center; margin-bottom: 6px;">[AGREEMENT_NUMBER]</h2>
   
-       <h3 style="font-size: 11px; font-weight: bold; margin-top: 8px; margin-bottom: 6px;">PODACI O KORISNIKU</h3>
+       <h3 style="font-size: 11px; font-weight: bold; margin-top: 4px; margin-bottom: 3px;">PODACI O KORISNIKU</h3>
        <table>
        <tr><td style="width: 40%;">ID Korisnika:</td><td>[USER_ID]</td></tr>
        <tr><td>Ime i prezime korisnika:</td><td>[USER_NAME]</td></tr>
@@ -453,14 +452,14 @@
        <tr><td>E-mail adresa:</td><td>[EMAIL]</td></tr>
        </table>
   
-       <h3 style="font-size: 11px; font-weight: bold; margin-top: 8px; margin-bottom: 6px;">PODACI O KONTAKT OSOBI</h3>
+       <h3 style="font-size: 11px; font-weight: bold; margin-top: 4px; margin-bottom: 3px;">PODACI O KONTAKT OSOBI</h3>
        <table>
        <tr><td style="width: 40%;">Ime i prezime kontakt osobe:</td><td>[CONTACT_PERSON_NAME]</td></tr>
        <tr><td>Kontakt telefon/mobitel:</td><td>[CONTACT_PERSON_PHONE]</td></tr>
        <tr><td>E-mail adresa za kontakt:</td><td>[CONTACT_PERSON_EMAIL]</td></tr>
        </table>
   
-       <h3 style="font-size: 11px; font-weight: bold; margin-top: 8px; margin-bottom: 6px;">PODACI O NAČINU PLAĆANJA I DOSTAVE RAČUNA</h3>
+       <h3 style="font-size: 11px; font-weight: bold; margin-top: 4px; margin-bottom: 3px;">PODACI O NAČINU PLAĆANJA I DOSTAVE RAČUNA</h3>
        <table>
        <tr><td style="width: 50%;">Uplata (opća uplatnica):</td><td style="width: 50%; text-align: center;">[INVOICE_DELIVERY_METHOD_MAIL]</td></tr>
        <tr><td>e-račun bez papirnate verzije:</td><td style="text-align: center;">[INVOICE_DELIVERY_METHOD_EINVOICE]</td></tr>
@@ -468,25 +467,25 @@
        <tr><td>e-mailom na drugu adresu:</td><td style="text-align: center;">[INVOICE_DELIVERY_METHOD_CONTACT_EMAIL]</td></tr>
        </table>
   
-       <h3 style="font-size: 11px; font-weight: bold; margin-top: 8px; margin-bottom: 6px;">SUGLASNOST ZA OBRADU OSOBNIH PODATAKA I KONTAKTIRANJE ZA SVE KORISNIKOVE USLUGE KOD MAGIC NET - d.o.o.</h3>
-       <p style="margin-bottom: 3px; font-size: 10px;"><strong>1. PRIVOLE ZA MARKINŠKO KONTAKTIRANJE</strong></p>
-       <p style="margin-bottom: 6px; font-size: 9px;">Želja nam je kontaktirati Vas na način na koji želite.</p>
+       <h3 style="font-size: 11px; font-weight: bold; margin-top: 4px; margin-bottom: 3px;">SUGLASNOST ZA OBRADU OSOBNIH PODATAKA I KONTAKTIRANJE ZA SVE KORISNIKOVE USLUGE KOD MAGIC NET - d.o.o.</h3>
+       <p style="margin-bottom: 2px; font-size: 10px;"><strong>1. PRIVOLE ZA MARKINŠKO KONTAKTIRANJE</strong></p>
+       <p style="margin-bottom: 3px; font-size: 9px;">Želja nam je kontaktirati Vas na način na koji želite.</p>
        <table>
        <tr><td style="width: 33%;">pozivom</td><td style="text-align: center;">[MARKETING_CONTACT_PHONE]</td></tr>
        <tr><td>SMS-om</td><td style="text-align: center;">[MARKETING_CONTACT_SMS]</td></tr>
        <tr><td>e-mailom</td><td style="text-align: center;">[MARKETING_CONTACT_EMAIL]</td></tr>
        </table>
   
-       <p style="margin-bottom: 3px; font-size: 9px;">Vaše je pravo da u svakom trenutku povučete dane privole. Više o obradi osobnih podataka možete pronaći na https://mtnet.hr/politika-privatnosti/.</p>
-       <p style="margin-bottom: 3px; font-size: 9px;">Davanjem suglasnosti na ovu Obavijest o sklopljenom ugovoru (dalje u tekstu: Obavijest) i Sažetak ugovora prihvaćate našu ponudu za sklapanje ugovora na daljinu ili izvan naših poslovnih prostora, pod uvjetima koji su navedeni u ovoj Obavijesti i Sažetku ugovora.</p>
-       <p style="margin-bottom: 3px; font-size: 9px;">Davanjem suglasnosti na ovu Obavijest i Sažetak ugovora potvrđujete da su isti ispunjeni u skladu s Vašim željama i da se o svakoj odredbi pregovaralo.</p>
-       <p style="margin-bottom: 3px; font-size: 9px;">Po isteku razdoblja obveznog trajanja Ugovora, pretplatnički odnos se nastavlja na neodređeno vrijeme do raskida s Vaše ili naše strane.</p>
-       <p style="margin-bottom: 8px; font-size: 9px;">U slučaju da pretplatnički odnos bude raskinut iz bilo kojeg razloga prije otplate uređaja, preostale neplaćene rate obračunat ćemo Vam na prvom sljedećem računu.</p>
-       <p style="margin-bottom: 2px; font-size: 9px;">Ovime potvrđujemo da je Vaš zahtjev za sklapanje ugovora prihvaćen. Obavijestit ćemo Vas u slučaju eventualnih promjena okolnosti koje su nastale nakon prihvata zahtjeva, a koje se nisu mogle predvidjeti u vrijeme prihvata zahtjeva.</p>
-       <p style="margin-bottom: 2px; font-size: 9px;">Usluge u paketima nije moguće mijenjati. Uz usluge sadržane u paketu, moguće je uzeti dodatne opcije usluga koje se naplaćuju prema Cjeniku. Detaljan opis usluga i opcija nalaze se u Cjeniku.</p>
-       <p style="margin-bottom: 2px; font-size: 9px;">Prihvaćanjem ove Obavijesti potvrđujete da Vam je uručen Sažetak ugovora i da ste suglasni sa svim uvjetima koji su navedeni u Sažetku ugovora i ovoj Obavijesti.</p>
-       <p style="margin-bottom: 2px; font-size: 9px;">☒Potvrđujem da su mi uručeni Opći uvjeti poslovanja MAGIC NET – d.o.o., posebni uvjeti pružanja usluga i Cjenik istih.</p>
-       <p style="margin-bottom: 2px; font-size: 9px;">☐Potvrđujem da ću Opće uvjete poslovanja MAGIC NET – d.o.o., posebne uvjete pružanja usluga i Cjenik istihpreuzeti na https://mtnet.hr/opci-dokumeti/ odnosno na drugi odgovarajući način.</p>
+       <p style="margin-bottom: 2px; font-size: 9px;">Vaše je pravo da u svakom trenutku povučete dane privole. Više o obradi osobnih podataka možete pronaći na https://mtnet.hr/politika-privatnosti/.</p>
+       <p style="margin-bottom: 2px; font-size: 9px;">Davanjem suglasnosti na ovu Obavijest o sklopljenom ugovoru (dalje u tekstu: Obavijest) i Sažetak ugovora prihvaćate našu ponudu za sklapanje ugovora na daljinu ili izvan naših poslovnih prostora, pod uvjetima koji su navedeni u ovoj Obavijesti i Sažetku ugovora.</p>
+       <p style="margin-bottom: 2px; font-size: 9px;">Davanjem suglasnosti na ovu Obavijest i Sažetak ugovora potvrđujete da su isti ispunjeni u skladu s Vašim željama i da se o svakoj odredbi pregovaralo.</p>
+       <p style="margin-bottom: 2px; font-size: 9px;">Po isteku razdoblja obveznog trajanja Ugovora, pretplatnički odnos se nastavlja na neodređeno vrijeme do raskida s Vaše ili naše strane.</p>
+       <p style="margin-bottom: 4px; font-size: 9px;">U slučaju da pretplatnički odnos bude raskinut iz bilo kojeg razloga prije otplate uređaja, preostale neplaćene rate obračunat ćemo Vam na prvom sljedećem računu.</p>
+       <p style="margin-bottom: 1px; font-size: 9px;">Ovime potvrđujemo da je Vaš zahtjev za sklapanje ugovora prihvaćen. Obavijestit ćemo Vas u slučaju eventualnih promjena okolnosti koje su nastale nakon prihvata zahtjeva, a koje se nisu mogle predvidjeti u vrijeme prihvata zahtjeva.</p>
+       <p style="margin-bottom: 1px; font-size: 9px;">Usluge u paketima nije moguće mijenjati. Uz usluge sadržane u paketu, moguće je uzeti dodatne opcije usluga koje se naplaćuju prema Cjeniku. Detaljan opis usluga i opcija nalaze se u Cjeniku.</p>
+       <p style="margin-bottom: 1px; font-size: 9px;">Prihvaćanjem ove Obavijesti potvrđujete da Vam je uručen Sažetak ugovora i da ste suglasni sa svim uvjetima koji su navedeni u Sažetku ugovora i ovoj Obavijesti.</p>
+       <p style="margin-bottom: 1px; font-size: 9px;">☒Potvrđujem da su mi uručeni Opći uvjeti poslovanja MAGIC NET – d.o.o., posebni uvjeti pružanja usluga i Cjenik istih.</p>
+       <p style="margin-bottom: 1px; font-size: 9px;">☐Potvrđujem da ću Opće uvjete poslovanja MAGIC NET – d.o.o., posebne uvjete pružanja usluga i Cjenik istihpreuzeti na https://mtnet.hr/opci-dokumeti/ odnosno na drugi odgovarajući način.</p>
    </div>
   
    <!-- PAGE BREAK PLACEHOLDER -->
@@ -538,7 +537,7 @@
          </tr>
          <tr>
            <td>Potpis Korisnika:</td>
-           <td>____________________</td>
+           <td></td>
          </tr>
          <tr>
            <td>OIB (ovlaštena osoba):</td>
