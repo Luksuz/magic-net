@@ -35,6 +35,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
   const [userInfo, setUserInfo] = useState<UserInformation>({
     userId: "",
     userName: "",
+    userTitle: "g.",
     legalEntity: "",
     residenceAddress: "",
     connectionAddress: "",
@@ -43,6 +44,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
     contactPhone: "",
     email: "",
     contactPersonName: "",
+    contactPersonTitle: "g.",
     contactPersonPhone: "",
     contactPersonEmail: "",
     additionalServices: "",
@@ -62,14 +64,14 @@ export default function EditContractPageClient({ contract, profile }: Props) {
   const [operatorChangeData, setOperatorChangeData] = useState<OperatorChangeData>({
     existingOperatorName: "",
     contractOnDistance: true,
-    agreeToPayDebts: false,
-    numberTransfer: false,
+    agreeToPayDebts: true,
+    numberTransfer: true,
     notificationAgreement: true,
-    vpnSeries: true,
-    servicesToCancel: ["Govorna usluga"],
-    servicesToKeep: ["Internet"],
-    userAccountsToKeep: ["adrese elektroničke pošte"],
-    wholesaleService: true,
+    vpnSeries: false,
+    servicesToCancel: ["Sve usluge"],
+    servicesToKeep: [],
+    userAccountsToKeep: [],
+    wholesaleService: false,
     userName: "",
     legalEntity: "",
     oib: "",
@@ -78,7 +80,19 @@ export default function EditContractPageClient({ contract, profile }: Props) {
     email: "",
     connectionAddress: "",
     sellerPlace: "",
+    contactEmail: "",
   });
+
+  // Debug log for checking default values
+  useEffect(() => {
+    console.log("🔍 DEBUG: operatorChangeData default values:", {
+      servicesToCancel: operatorChangeData.servicesToCancel,
+      servicesToKeep: operatorChangeData.servicesToKeep,
+      userAccountsToKeep: operatorChangeData.userAccountsToKeep,
+      agreeToPayDebts: operatorChangeData.agreeToPayDebts,
+      numberTransfer: operatorChangeData.numberTransfer
+    });
+  }, []);
 
   // Default terminal equipment if none is loaded from contract (e.g., new contract from basic template)
   // This will be overridden by useEffect if contract.terminalna_oprema exists.
@@ -301,6 +315,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
           serviceName={contractData?.usluga}
           recipientEmail={userInfo?.email}
           recipientName={userInfo?.userName}
+          userInfo={userInfo}
         />
       </div>
     </main>

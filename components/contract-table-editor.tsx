@@ -87,22 +87,22 @@ export default function ContractTableEditor({
   // Operator change data state
   const [operatorChangeData, setOperatorChangeData] = useState<OperatorChangeData>(operatorChangeDataInitial || {
     existingOperatorName: "",
-    contractOnDistance: false,
-    agreeToPayDebts: false,
-    numberTransfer: false,
-    notificationAgreement: false,
+    contractOnDistance: true,
+    agreeToPayDebts: true,
+    numberTransfer: true,
+    notificationAgreement: true,
     vpnSeries: false,
-    servicesToCancel: [],
-    servicesToKeep: [],
-    userAccountsToKeep: [],
-    wholesaleService: false,
-    // Initialize with user data but allow independent editing
+    servicesToCancel: ["sve usluge"],
+    servicesToKeep: [""],
+    userAccountsToKeep: [""],
+    wholesaleService: true,
     userName: userInfo?.userName || "",
     legalEntity: "",
     oib: userInfo?.oib || "",
     phoneNumber: initialData.pretplatnicki_broj || "",
     contactPhone: userInfo?.contactPhone || "",
     email: userInfo?.email || "",
+    contactEmail: "",
     connectionAddress: userInfo?.connectionAddress || "",
     sellerPlace: userInfo?.sellerPlace || "",
   })
@@ -411,6 +411,7 @@ export default function ContractTableEditor({
       name: "Osnovni podaci korisnika", 
       fields: [
         { key: "userId", label: "ID korisnika", type: "text" },
+        { key: "userTitle", label: "Titula", type: "text" },
         { key: "userName", label: "Ime korisnika", type: "text" },
         { key: "legalEntity", label: "Pravna osoba", type: "text" },
         { key: "residenceAddress", label: "Adresa prebivališta", type: "text" },
@@ -424,6 +425,7 @@ export default function ContractTableEditor({
     {
       name: "Kontakt osoba",
       fields: [
+        { key: "contactPersonTitle", label: "Titula kontakt osobe", type: "text" },
         { key: "contactPersonName", label: "Ime kontakt osobe", type: "text" },
         { key: "contactPersonPhone", label: "Telefon kontakt osobe", type: "text" },
         { key: "contactPersonEmail", label: "Email kontakt osobe", type: "text" }

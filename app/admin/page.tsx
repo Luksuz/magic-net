@@ -3,7 +3,7 @@
 import { useAuth } from '../contexts/authContext'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { FileText, UserPlus, Trash2Icon as DeleteUserIcon, Settings, PackagePlus, Edit3Icon } from 'lucide-react'
+import { FileText, UserPlus, Trash2Icon as DeleteUserIcon, Settings, PackagePlus, Edit3Icon, Percent } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function AdminDashboard() {
@@ -159,6 +159,25 @@ export default function AdminDashboard() {
               <CardContent className="flex-grow">
                 <p className="text-sm text-muted-foreground">
                   Dodajte, uredite ili obrišite dodatne TV pakete kao što su FILMSKI, ODRASLI, itd.
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/admin/manage-actions" className="block h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Percent className="mr-2 h-5 w-5 text-primary" />
+                  Upravljaj Akcijskim Ponudama
+                </CardTitle>
+                <CardDescription>
+                  Upravljajte akcijskim ponudama s postotkom popusta.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground">
+                  Dodajte, uredite ili obrišite akcijske ponude koje će se koristiti za izračun akcijskih cijena.
                 </p>
               </CardContent>
             </Card>

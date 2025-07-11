@@ -26,14 +26,17 @@ interface PdfButtonProps {
     phonePromoPrice?: number
     phoneRegularPrice?: number
     phoneServiceName?: string
+    phoneActionPrice?: number
     tvServices?: string
     tvPromoPrice?: number
     tvRegularPrice?: number
     tvServiceName?: string
+    tvActionPrice?: number
     internetServices?: string
     internetPromoPrice?: number
     internetRegularPrice?: number
     internetServiceName?: string
+    internetActionPrice?: number
     meshServices?: string
     meshPromoPrice?: number
     meshRegularPrice?: number

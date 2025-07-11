@@ -114,14 +114,17 @@ export async function generatePDF(
     phonePromoPrice?: number
     phoneRegularPrice?: number
     phoneServiceName?: string
+    phoneActionPrice?: number
     tvServices?: string
     tvPromoPrice?: number
     tvRegularPrice?: number
     tvServiceName?: string
+    tvActionPrice?: number
     internetServices?: string
     internetPromoPrice?: number
     internetRegularPrice?: number
     internetServiceName?: string
+    internetActionPrice?: number
     meshServices?: string
     meshPromoPrice?: number
     meshRegularPrice?: number
@@ -649,14 +652,17 @@ function formatHtml(
     phonePromoPrice?: number
     phoneRegularPrice?: number
     phoneServiceName?: string
+    phoneActionPrice?: number
     tvServices?: string
     tvPromoPrice?: number
     tvRegularPrice?: number
     tvServiceName?: string
+    tvActionPrice?: number
     internetServices?: string
     internetPromoPrice?: number
     internetRegularPrice?: number
     internetServiceName?: string
+    internetActionPrice?: number
     meshServices?: string
     meshPromoPrice?: number
     meshRegularPrice?: number
@@ -1089,23 +1095,27 @@ function formatHtml(
   // Periodic Pricing Section
   safeReplace('FIKSNI_PAKET', data.fiksni_paket)
   safeReplace('FIKSNA_BRZINA', data.fiksna_brzina)
+  safeReplace('ACTION_PRICE_FIKSNI', formatCurrency(calculatedData?.internetActionPrice ?? data.action_price_fiksni))
   safeReplace('PROMO_PRICE_FIKSNI', formatCurrency(calculatedData?.internetPromoPrice ?? (data as any).promo_price_fiksni))
   safeReplace('CONTRACT_PRICE_FIKSNI', formatCurrency(calculatedData?.internetPromoPrice ?? (data as any).contract_price_fiksni))
   safeReplace('REGULAR_PRICE_FIKSNI', formatCurrency(calculatedData?.internetRegularPrice ?? (data as any).regular_price_fiksni))
   
   safeReplace('TV_PAKET', data.tv_paket)
   safeReplace('TV_DODATNE_USLUGE', data.tv_dodatne_usluge)
+  safeReplace('ACTION_PRICE_TV', formatCurrency(calculatedData?.tvActionPrice ?? data.action_price_tv))
   safeReplace('PROMO_PRICE_TV', formatCurrency(calculatedData?.tvPromoPrice ?? (data as any).promo_price_tv))
   safeReplace('CONTRACT_PRICE_TV', formatCurrency(calculatedData?.tvPromoPrice ?? (data as any).contract_price_tv))
   safeReplace('REGULAR_PRICE_TV', formatCurrency(calculatedData?.tvRegularPrice ?? (data as any).regular_price_tv))
   
   safeReplace('TARIFA', data.tarifa)
   safeReplace('PRETPLATNICKI_BROJ', data.pretplatnicki_broj)
+  safeReplace('ACTION_PRICE_PHONE', formatCurrency(calculatedData?.phoneActionPrice ?? data.action_price_phone))
   safeReplace('PROMO_PRICE_PHONE', formatCurrency(calculatedData?.phonePromoPrice ?? (data as any).promo_price_phone))
   safeReplace('CONTRACT_PRICE_PHONE', formatCurrency(calculatedData?.phonePromoPrice ?? (data as any).contract_price_phone))
   safeReplace('REGULAR_PRICE_PHONE', formatCurrency(calculatedData?.phoneRegularPrice ?? (data as any).regular_price_phone))
   
   // Calculate and set total prices (moved to end to include all additional services)
+  safeReplace('TOTAL_ACTION_PRICE', formatCurrency(calculateTotalPrice(data, 'action', calculatedData, extraTelefonPackages, additionalTvDevices)))
   safeReplace('TOTAL_PROMO_PRICE', formatCurrency(calculateTotalPrice(data, 'promo', calculatedData, extraTelefonPackages, additionalTvDevices)))
   safeReplace('TOTAL_CONTRACT_PRICE', formatCurrency(calculateTotalPrice(data, 'contract', calculatedData, extraTelefonPackages, additionalTvDevices)))
   safeReplace('TOTAL_REGULAR_PRICE', formatCurrency(calculateTotalPrice(data, 'regular', calculatedData, extraTelefonPackages, additionalTvDevices)))
@@ -1219,20 +1229,23 @@ function formatHtml(
 // Helper function to calculate total prices
 function calculateTotalPrice(
   data: ContractData, 
-  type: 'promo' | 'contract' | 'regular',
+  type: 'promo' | 'contract' | 'regular' | 'action',
   calculatedData?: {
     phoneServices?: string
     phonePromoPrice?: number
     phoneRegularPrice?: number
     phoneServiceName?: string
+    phoneActionPrice?: number
     tvServices?: string
     tvPromoPrice?: number
     tvRegularPrice?: number
     tvServiceName?: string
+    tvActionPrice?: number
     internetServices?: string
     internetPromoPrice?: number
     internetRegularPrice?: number
     internetServiceName?: string
+    internetActionPrice?: number
     meshServices?: string
     meshPromoPrice?: number
     meshRegularPrice?: number
@@ -1241,171 +1254,42 @@ function calculateTotalPrice(
   extraTelefonPackages?: any[],
   additionalTvDevices?: any[]
 ): number {
-  console.log(`\n=== CALCULATING ${type.toUpperCase()} TOTAL PRICE ===`);
-  console.log('Input data:', {
-    'data.promo_price_fiksni': (data as any).promo_price_fiksni,
-    'data.regular_price_fiksni': (data as any).regular_price_fiksni,
-    'data.promo_price_tv': (data as any).promo_price_tv,
-    'data.regular_price_tv': (data as any).regular_price_tv,
-    'data.promo_price_phone': (data as any).promo_price_phone,
-    'data.regular_price_phone': (data as any).regular_price_phone,
-    'calculatedData': calculatedData
-  });
-  
-  // Use base prices for TV and phone services, not the calculated ones that include additional packages
-  let fiksniPrice = 0;
-  let baseTvPrice = 0;  // Base TV price only
-  let basePhonePrice = 0; // Base phone price only
-  
-  if (type === 'promo') {
-    fiksniPrice = calculatedData?.internetPromoPrice ?? (data as any).promo_price_fiksni ?? 0;
-    baseTvPrice = (data as any).promo_price_tv ?? 0; // Use base TV price from form data
-    basePhonePrice = (data as any).promo_price_phone ?? 0; // Use base phone price from form data
+  let total = 0
+
+  // Base internet/fixed line services
+  if (type === 'action') {
+    total += calculatedData?.internetActionPrice ?? data.action_price_fiksni ?? 0
+  } else if (type === 'promo') {
+    total += calculatedData?.internetPromoPrice ?? (data as any).promo_price_fiksni ?? 0
+  } else if (type === 'contract') {
+    total += calculatedData?.internetPromoPrice ?? (data as any).contract_price_fiksni ?? 0
   } else if (type === 'regular') {
-    fiksniPrice = calculatedData?.internetRegularPrice ?? (data as any).regular_price_fiksni ?? 0;
-    baseTvPrice = (data as any).regular_price_tv ?? 0; // Use base TV price from form data
-    basePhonePrice = (data as any).regular_price_phone ?? 0; // Use base phone price from form data
-  } else { // contract
-    fiksniPrice = calculatedData?.internetPromoPrice ?? (data as any).contract_price_fiksni ?? 0;
-    baseTvPrice = (data as any).contract_price_tv ?? 0; // Use base TV price from form data
-    basePhonePrice = (data as any).contract_price_phone ?? 0; // Use base phone price from form data
+    total += calculatedData?.internetRegularPrice ?? (data as any).regular_price_fiksni ?? 0
   }
-  
-  console.log(`Step 1 - Base service prices for ${type}:`, {
-    fiksniPrice,
-    baseTvPrice,
-    basePhonePrice
-  });
-  
-  // Add additional TV packages separately
-  let additionalTvPrice = 0;
-  const tvServices = calculatedData?.tvServices || data.tv_dodatne_usluge || '';
-  console.log(`Step 2 - TV Services check:`, {
-    'calculatedData?.tvServices': calculatedData?.tvServices,
-    'data.tv_dodatne_usluge': data.tv_dodatne_usluge,
-    'final tvServices': tvServices,
-    'additionalTvDevices length': additionalTvDevices?.length || 0
-  });
-  
-  // Add dynamic additional TV devices separately (similar to telephone packages)
-  if (additionalTvDevices && additionalTvDevices.length > 0) {
-    // Get selected services from calculatedData or form data
-    const selectedTvServices = calculatedData?.tvServices || data.tv_dodatne_usluge || '';
-    console.log('DEBUG: Selected TV services for total calculation:', selectedTvServices);
-    
-    // Calculate price for each selected TV service
-    additionalTvDevices.forEach((device: any, index: number) => {
-      console.log(`DEBUG: Checking TV device ${index + 1}:`, {
-        'device.name': device.name,
-        'device.price': device.price
-      });
-      
-      if (device.name) {
-        // Check if this device is selected
-        const isSelected = selectedTvServices.toLowerCase().includes(device.name.toLowerCase());
-        console.log(`DEBUG: Is "${device.name}" selected?`, isSelected);
-        
-        if (isSelected) {
-          const servicePrice = device.price || 0;
-          additionalTvPrice += servicePrice;
-          console.log(`DEBUG: Adding ${device.name} to TV total: ${servicePrice} EUR (running total: ${additionalTvPrice} EUR)`);
-        }
-      }
-    });
-    
-    console.log(`DEBUG: Final additional TV services price: ${additionalTvPrice} EUR`);
-  } else {
-    console.log('DEBUG: No additional TV devices available or provided');
+
+  // TV services
+  if (type === 'action') {
+    total += calculatedData?.tvActionPrice ?? data.action_price_tv ?? 0
+  } else if (type === 'promo') {
+    total += calculatedData?.tvPromoPrice ?? (data as any).promo_price_tv ?? 0
+  } else if (type === 'contract') {
+    total += calculatedData?.tvPromoPrice ?? (data as any).contract_price_tv ?? 0
+  } else if (type === 'regular') {
+    total += calculatedData?.tvRegularPrice ?? (data as any).regular_price_tv ?? 0
   }
-  
-  console.log(`Step 3 - Additional TV price: ${additionalTvPrice}`);
-  
-  // Add extra telephone services separately
-  let extraTelephonePrice = 0;
-  console.log(`Step 4 - Phone Services check:`, {
-    'extraTelefonPackages length': extraTelefonPackages?.length || 0,
-    'calculatedData?.phoneServices': calculatedData?.phoneServices,
-    'data.tel_dodatne_usluge': data.tel_dodatne_usluge
-  });
-  
-  if (extraTelefonPackages && extraTelefonPackages.length > 0) {
-    // Get selected phone services from calculatedData or form data
-    const selectedPhoneServices = calculatedData?.phoneServices || data.tel_dodatne_usluge || '';
-    console.log('DEBUG: Selected phone services for total calculation:', selectedPhoneServices);
-    
-    // Calculate price for each selected service
-    extraTelefonPackages.forEach((pkg: any, index: number) => {
-      console.log(`DEBUG: Checking phone package ${index + 1}:`, {
-        'pkg.name': pkg.name,
-        'pkg.description': pkg.description,
-        'pkg.price': pkg.price
-      });
-      
-      if (pkg.name) {
-        // Check if this package is selected - handle both "Package Name" and "Package Name - Description" formats
-        const isSelectedByName = selectedPhoneServices.toLowerCase().includes(pkg.name.toLowerCase());
-        const isSelectedByFullFormat = pkg.description && 
-          selectedPhoneServices.toLowerCase().includes(`${pkg.name.toLowerCase()} - ${pkg.description.toLowerCase()}`);
-        
-        const isSelected = isSelectedByName || isSelectedByFullFormat;
-        console.log(`DEBUG: Is "${pkg.name}" selected?`, {
-          isSelectedByName,
-          isSelectedByFullFormat,
-          finalIsSelected: isSelected
-        });
-        
-        if (isSelected) {
-          const servicePrice = pkg.price || 0;
-          extraTelephonePrice += servicePrice;
-          console.log(`DEBUG: Adding ${pkg.name} to phone total: ${servicePrice} EUR (running total: ${extraTelephonePrice} EUR)`);
-        }
-      }
-    });
-    
-    console.log(`DEBUG: Final extra telephone services price: ${extraTelephonePrice} EUR`);
-  } else {
-    console.log('DEBUG: No extra telephone packages available or provided');
+
+  // Phone services
+  if (type === 'action') {
+    total += calculatedData?.phoneActionPrice ?? data.action_price_phone ?? 0
+  } else if (type === 'promo') {
+    total += calculatedData?.phonePromoPrice ?? (data as any).promo_price_phone ?? 0
+  } else if (type === 'contract') {
+    total += calculatedData?.phonePromoPrice ?? (data as any).contract_price_phone ?? 0
+  } else if (type === 'regular') {
+    total += calculatedData?.phoneRegularPrice ?? (data as any).regular_price_phone ?? 0
   }
-  
-  console.log(`Step 5 - Extra telephone price: ${extraTelephonePrice}`);
-  
-  // Add MESH services separately
-  let meshPrice = 0;
-  console.log(`Step 6 - MESH Services check:`, {
-    'calculatedData?.meshPromoPrice': calculatedData?.meshPromoPrice,
-    'calculatedData?.meshRegularPrice': calculatedData?.meshRegularPrice,
-    'type': type
-  });
-  
-  if (calculatedData?.meshPromoPrice !== undefined || calculatedData?.meshRegularPrice !== undefined) {
-    if (type === 'promo') {
-      meshPrice = calculatedData?.meshPromoPrice ?? 0;
-    } else if (type === 'regular') {
-      meshPrice = calculatedData?.meshRegularPrice ?? 0;
-    } else { // contract
-      meshPrice = calculatedData?.meshPromoPrice ?? 0;
-    }
-    console.log(`DEBUG: MESH price for ${type}: ${meshPrice} EUR`);
-  } else {
-    console.log('DEBUG: No MESH pricing data available');
-  }
-  
-  console.log(`Step 7 - MESH price: ${meshPrice}`);
-  
-  const total = fiksniPrice + baseTvPrice + basePhonePrice + additionalTvPrice + meshPrice + extraTelephonePrice;
-  
-  console.log(`\n=== FINAL CALCULATION BREAKDOWN FOR ${type.toUpperCase()} ===`);
-  console.log(`Internet (fiksni):        ${fiksniPrice} EUR`);
-  console.log(`Base TV:                  ${baseTvPrice} EUR`);
-  console.log(`Base Phone:               ${basePhonePrice} EUR`);
-  console.log(`Additional TV services:   ${additionalTvPrice} EUR`);
-  console.log(`MESH services:            ${meshPrice} EUR`);
-  console.log(`Extra telephone services: ${extraTelephonePrice} EUR`);
-  console.log(`-----------------------------------`);
-  console.log(`TOTAL:                    ${total} EUR`);
-  console.log(`===================================\n`);
-  
-  return total;
+
+  return total
 }
 
 export async function generateOperatorChangePDF(

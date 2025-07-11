@@ -8,6 +8,12 @@ export type ContractData = {
   contract_duration: string | null
   contract_date: string | null
   access_method: string | null
+  // Action fields
+  selected_action_item_id: number | null
+  action_price_fiksni: number | null
+  action_price_tv: number | null
+  action_price_phone: number | null
+  // Internet/Fixed line fields
   fiksni_paket: string | null
   fiksna_brzina: string | null
   fiksne_dodatne_usluge: string | null
@@ -16,6 +22,7 @@ export type ContractData = {
   contract_price_fiksni?: number | null
   regular_price_fiksni?: number | null
   fiksni_naziv_ugovorene_usluge?: string | null
+  // TV fields
   tv_paket: string | null
   tv_dodatne_usluge: string | null
   tv_oprema: string | null
@@ -23,6 +30,7 @@ export type ContractData = {
   contract_price_tv?: number | null
   regular_price_tv?: number | null
   tv_naziv_ugovorene_usluge?: string | null
+  // Phone fields
   pretplatnicki_broj: string | null
   tarifa: string | null
   tel_dodatne_usluge: string | null
@@ -31,6 +39,7 @@ export type ContractData = {
   contract_price_phone?: number | null
   regular_price_phone?: number | null
   tel_naziv_ugovorene_usluge?: string | null
+  // Device fields
   uredaj_proizvodac_model: string | null
   uredaj_cijena: number | null
   uredaj_popust: number | null
@@ -39,12 +48,14 @@ export type ContractData = {
   uredaj_broj_obroka: number | null
   uredaj_inicijalna_uplata: number | null
   uredaj_mjesecna_rata: number | null
+  // Speed fields
   brzina_min_download: string | null
   brzina_min_upload: string | null
   brzina_obicna_download: string | null
   brzina_obicna_upload: string | null
   brzina_max_download: string | null
   brzina_max_upload: string | null
+  // Price fields
   cijena_prikljucenja_opis: string | null
   cijena_prikljucenja_naknada: number | null
   cijena_prikljucenja_popust: number | null
@@ -755,5 +766,81 @@ export async function deleteAdditionalTvDevice(id: number): Promise<{ success: b
   } catch (error) {
     console.error('Error in deleteAdditionalTvDevice:', error)
     return { success: false, error: 'Failed to delete additional TV device' }
+  }
+}
+
+export interface MagicActionItem {
+  id: number
+  created_at: string
+  discount_percentage: number | null
+  name: string | null
+}
+
+// Action Items functions
+export async function getActionItems() {
+  
+  try {
+    const { data, error } = await supabase
+      .from('magic_action_items')
+      .select('*')
+      .order('name')
+    
+    if (error) throw error
+    
+    return { success: true, data: data || [] }
+  } catch (error) {
+    console.error('Error fetching action items:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error', data: [] }
+  }
+}
+
+export async function createActionItem(actionItem: Omit<MagicActionItem, 'id' | 'created_at'>) {  
+  try {
+    const { data, error } = await supabase
+      .from('magic_action_items')
+      .insert([actionItem])
+      .select()
+      .single()
+    
+    if (error) throw error
+    
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error creating action item:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+  }
+}
+
+export async function updateActionItem(id: number, actionItem: Partial<Omit<MagicActionItem, 'id' | 'created_at'>>) {
+  try {
+    const { data, error } = await supabase
+      .from('magic_action_items')
+      .update(actionItem)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error updating action item:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+  }
+}
+
+export async function deleteActionItem(id: number) {
+  try {
+    const { error } = await supabase
+      .from('magic_action_items')
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+    
+    return { success: true }
+  } catch (error) {
+    console.error('Error deleting action item:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
   }
 }

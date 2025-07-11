@@ -14,6 +14,7 @@ import { getAgreementNumber } from "@/lib/utils"
 export interface UserInformation {
   userId: string
   userName: string
+  userTitle: string // Added for title selection
   legalEntity: string
   residenceAddress: string
   connectionAddress: string
@@ -22,6 +23,7 @@ export interface UserInformation {
   contactPhone: string
   email: string
   contactPersonName: string
+  contactPersonTitle: string // Added for contact person title selection
   contactPersonPhone: string
   contactPersonEmail: string
   additionalServices: string
@@ -64,6 +66,7 @@ export interface OperatorChangeData {
 const defaultUserInfo: UserInformation = {
   userId: "",
   userName: "",
+  userTitle: "g.", // Default title
   legalEntity: "",
   residenceAddress: "",
   connectionAddress: "",
@@ -72,6 +75,7 @@ const defaultUserInfo: UserInformation = {
   contactPhone: "",
   email: "",
   contactPersonName: "",
+  contactPersonTitle: "g.", // Default contact person title
   contactPersonPhone: "",
   contactPersonEmail: "",
   additionalServices: "",
@@ -112,6 +116,12 @@ export default function UserInformationForm({
       ...defaultUserInfo,
       ...initialData,
     };
+    
+    // Ensure marketingContact always has default values
+    if (!baseInfo.marketingContact || baseInfo.marketingContact.length === 0) {
+      baseInfo.marketingContact = ["email", "sms", "phone"];
+    }
+    
     if (profile && profile.user_number !== null) {
       baseInfo.sellerCode = parseInt(profile.user_number, 10);
     }
@@ -125,6 +135,12 @@ export default function UserInformationForm({
     if (contractConcludedOnPremises && !baseInfo.sellerDate) {
       baseInfo.sellerDate = new Date().toISOString().split('T')[0];
     }
+    
+    console.log("🔍 DEBUG: UserInformationForm marketingContact initialization:", {
+      defaultUserInfo_marketingContact: defaultUserInfo.marketingContact,
+      initialData_marketingContact: initialData?.marketingContact,
+      final_baseInfo_marketingContact: baseInfo.marketingContact
+    });
     
     return baseInfo;
   });
@@ -151,6 +167,16 @@ export default function UserInformationForm({
       }
     }
   }, [contractConcludedOnPremises]);
+
+  // Debug log for marketing contact changes
+  useEffect(() => {
+    console.log("🔍 DEBUG: marketingContact current state:", {
+      marketingContact: userInfo.marketingContact,
+      includes_phone: userInfo.marketingContact.includes("phone"),
+      includes_sms: userInfo.marketingContact.includes("sms"),
+      includes_email: userInfo.marketingContact.includes("email")
+    });
+  }, [userInfo.marketingContact]);
 
   useEffect(() => {
     // This effect now only syncs sellerCode if profile changes *after* initial mount
@@ -245,6 +271,24 @@ export default function UserInformationForm({
               onChange={(e) => handleChange("userId", e.target.value)}
               placeholder="npr. 200300"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="userTitle">Titula</Label>
+            <RadioGroup
+              value={userInfo.userTitle}
+              onValueChange={(value) => handleChange("userTitle", value)}
+              className="flex flex-row space-x-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="g." id="userTitle-g" />
+                <Label htmlFor="userTitle-g" className="font-normal">g. (gospodin)</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="gđa." id="userTitle-gda" />
+                <Label htmlFor="userTitle-gda" className="font-normal">gđa. (gospođa)</Label>
+              </div>
+            </RadioGroup>
           </div>
 
           <div className="space-y-2">
@@ -352,6 +396,24 @@ export default function UserInformationForm({
           <h3 className="text-lg font-medium mb-4">PODACI O KONTAKT OSOBI</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
+              <Label htmlFor="contactPersonTitle">Titula kontakt osobe</Label>
+              <RadioGroup
+                value={userInfo.contactPersonTitle}
+                onValueChange={(value) => handleChange("contactPersonTitle", value)}
+                className="flex flex-row space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="g." id="contactPersonTitle-g" />
+                  <Label htmlFor="contactPersonTitle-g" className="font-normal">g. (gospodin)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="gđa." id="contactPersonTitle-gda" />
+                  <Label htmlFor="contactPersonTitle-gda" className="font-normal">gđa. (gospođa)</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="contactPersonName">Ime i prezime kontakt osobe</Label>
               <Input
                 id="contactPersonName"
@@ -453,6 +515,10 @@ export default function UserInformationForm({
                     id="marketingPhone"
                     checked={userInfo.marketingContact.includes("phone")}
                     onCheckedChange={(checked) => {
+                      console.log("🔍 DEBUG: marketingPhone checkbox clicked:", {
+                        checked,
+                        current_marketingContact: userInfo.marketingContact
+                      });
                       if (checked) handleCheckboxChange("marketingContact", "phone")
                       else handleCheckboxChange("marketingContact", "phone")
                     }}
@@ -466,6 +532,10 @@ export default function UserInformationForm({
                     id="marketingSms"
                     checked={userInfo.marketingContact.includes("sms")}
                     onCheckedChange={(checked) => {
+                      console.log("🔍 DEBUG: marketingSms checkbox clicked:", {
+                        checked,
+                        current_marketingContact: userInfo.marketingContact
+                      });
                       if (checked) handleCheckboxChange("marketingContact", "sms")
                       else handleCheckboxChange("marketingContact", "sms")
                     }}
@@ -479,6 +549,10 @@ export default function UserInformationForm({
                     id="marketingEmail"
                     checked={userInfo.marketingContact.includes("email")}
                     onCheckedChange={(checked) => {
+                      console.log("🔍 DEBUG: marketingEmail checkbox clicked:", {
+                        checked,
+                        current_marketingContact: userInfo.marketingContact
+                      });
                       if (checked) handleCheckboxChange("marketingContact", "email")
                       else handleCheckboxChange("marketingContact", "email")
                     }}

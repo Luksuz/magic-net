@@ -3,8 +3,8 @@
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
-import type { ContractData, MagicNetDevice, MagicMeshDevice, MagicAdditionalTvDevice } from "@/lib/supabase"
-import { getDevices, getMeshDevices, getExtraTelefonPackages, getAdditionalTvDevices, type MagicExtraTelefon } from "@/lib/supabase"
+import type { ContractData, MagicNetDevice, MagicMeshDevice, MagicAdditionalTvDevice, MagicActionItem } from "@/lib/supabase"
+import { getDevices, getMeshDevices, getExtraTelefonPackages, getAdditionalTvDevices, getActionItems, type MagicExtraTelefon } from "@/lib/supabase"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -58,6 +58,7 @@ export default function ContractForm({
   const [userInfo, setUserInfo] = useState<UserInformation>(userInfoInitial || {
     userId: "",
     userName: "",
+    userTitle: "g.",
     legalEntity: "",
     residenceAddress: "",
     connectionAddress: "",
@@ -66,6 +67,7 @@ export default function ContractForm({
     contactPhone: "",
     email: "",
     contactPersonName: "",
+    contactPersonTitle: "g.",
     contactPersonPhone: "",
     contactPersonEmail: "",
     additionalServices: "",
@@ -109,16 +111,18 @@ export default function ContractForm({
   const [additionalTvDevices, setAdditionalTvDevices] = useState<MagicAdditionalTvDevice[]>([])
   const [additionalTvLoading, setAdditionalTvLoading] = useState(true)
   const [selectedTvPackages, setSelectedTvPackages] = useState<{ [key: number]: boolean }>({})
+  const [actionItems, setActionItems] = useState<MagicActionItem[]>([])
+  const [actionItemsLoading, setActionItemsLoading] = useState(true)
   const [operatorChangeData, setOperatorChangeData] = useState<OperatorChangeData>(operatorChangeDataInitial || {
     existingOperatorName: "",
     contractOnDistance: true,
-    agreeToPayDebts: false,
-    numberTransfer: false,
+    agreeToPayDebts: true,
+    numberTransfer: true,
     notificationAgreement: true,
-    vpnSeries: true,
-    servicesToCancel: ["Govorna usluga"],
-    servicesToKeep: ["Internet"],
-    userAccountsToKeep: ["adrese elektroničke pošte"],
+    vpnSeries: false,
+    servicesToCancel: ["sve usluge"],
+    servicesToKeep: [""],
+    userAccountsToKeep: [""],
     wholesaleService: true,
     // cancelAllServices: false,
     // keepAllServices: false,
@@ -145,6 +149,20 @@ export default function ContractForm({
   
   // State for operator dropdown selection
   const [selectedOperatorType, setSelectedOperatorType] = useState<string>('custom')
+
+  // Debug log to check what values are being initialized
+  useEffect(() => {
+    console.log("🔍 DEBUG: ContractForm operatorChangeData initialized with:", {
+      passed_via_prop: operatorChangeDataInitial,
+      final_state: {
+        servicesToCancel: operatorChangeData.servicesToCancel,
+        servicesToKeep: operatorChangeData.servicesToKeep,
+        userAccountsToKeep: operatorChangeData.userAccountsToKeep,
+        agreeToPayDebts: operatorChangeData.agreeToPayDebts,
+        numberTransfer: operatorChangeData.numberTransfer
+      }
+    });
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -697,6 +715,27 @@ export default function ContractForm({
     fetchAdditionalTvDevices()
   }, [])
 
+  // Fetch action items on component mount
+  useEffect(() => {
+    const fetchActionItems = async () => {
+      setActionItemsLoading(true)
+      try {
+        const result = await getActionItems()
+        if (result.success) {
+          setActionItems(result.data)
+        } else {
+          console.error("Error fetching action items:", result.error)
+        }
+      } catch (error) {
+        console.error("Error fetching action items:", error)
+      } finally {
+        setActionItemsLoading(false)
+      }
+    }
+
+    fetchActionItems()
+  }, [])
+
   // Handler for device selection
   const handleDeviceSelection = (deviceId: string) => {
     if (deviceId === "") {
@@ -830,6 +869,75 @@ export default function ContractForm({
     }
   }, [operatorChangeData.existingOperatorName])
 
+  // Handler for action item selection
+  const handleActionItemChange = (actionItemId: string) => {
+    const selectedActionItem = actionItems.find(item => item.id.toString() === actionItemId)
+    
+    if (!selectedActionItem) {
+      // Clear action prices if no action selected
+      setFormData(prev => ({
+        ...prev,
+        selected_action_item_id: null,
+        action_price_fiksni: null,
+        action_price_tv: null,
+        action_price_phone: null
+      }))
+      return
+    }
+
+    const discountPercentage = selectedActionItem.discount_percentage || 0
+
+    // Calculate action prices based on promo prices and discount
+    const actionPriceFixni = formData.promo_price_fiksni 
+      ? formData.promo_price_fiksni - (formData.promo_price_fiksni * discountPercentage / 100)
+      : null
+
+    const actionPriceTv = formData.promo_price_tv 
+      ? formData.promo_price_tv - (formData.promo_price_tv * discountPercentage / 100)
+      : null
+
+    const actionPricePhone = formData.promo_price_phone 
+      ? formData.promo_price_phone - (formData.promo_price_phone * discountPercentage / 100)
+      : null
+
+    setFormData(prev => ({
+      ...prev,
+      selected_action_item_id: selectedActionItem.id,
+      action_price_fiksni: actionPriceFixni,
+      action_price_tv: actionPriceTv,
+      action_price_phone: actionPricePhone
+    }))
+  }
+
+  // Recalculate action prices when promo prices change
+  useEffect(() => {
+    if (formData.selected_action_item_id) {
+      const selectedActionItem = actionItems.find(item => item.id === formData.selected_action_item_id)
+      if (selectedActionItem) {
+        const discountPercentage = selectedActionItem.discount_percentage || 0
+
+        const actionPriceFixni = formData.promo_price_fiksni 
+          ? formData.promo_price_fiksni - (formData.promo_price_fiksni * discountPercentage / 100)
+          : null
+
+        const actionPriceTv = formData.promo_price_tv 
+          ? formData.promo_price_tv - (formData.promo_price_tv * discountPercentage / 100)
+          : null
+
+        const actionPricePhone = formData.promo_price_phone 
+          ? formData.promo_price_phone - (formData.promo_price_phone * discountPercentage / 100)
+          : null
+
+        setFormData(prev => ({
+          ...prev,
+          action_price_fiksni: actionPriceFixni,
+          action_price_tv: actionPriceTv,
+          action_price_phone: actionPricePhone
+        }))
+      }
+    }
+  }, [formData.promo_price_fiksni, formData.promo_price_tv, formData.promo_price_phone, formData.selected_action_item_id, actionItems])
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="basic" className="w-full tabs-container" onValueChange={setActiveTab} value={activeTab}>
@@ -930,9 +1038,50 @@ export default function ContractForm({
                         />
                         <Label htmlFor="access_method_infra" className="font-normal">INFRA</Label>
                       </div>
+
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="access_method_aeronet"
+                          checked={formData.access_method === "AERONET"}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData(prev => ({ ...prev, access_method: "AERONET" }))
+                            }
+                          }}
+                        />
+                        <Label htmlFor="access_method_aeronet" className="font-normal">AERONET</Label>
+                      </div>
+                      
                     </div>
                   </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="action_item">Akcijska ponuda</Label>
+                  <select
+                    id="action_item"
+                    value={formData.selected_action_item_id || ""}
+                    onChange={(e) => handleActionItemChange(e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={actionItemsLoading}
+                  >
+                    <option value="">
+                      {actionItemsLoading ? "Učitavanje akcija..." : "Odaberite akcijsku ponudu"}
+                    </option>
+                    {actionItems.map((item) => (
+                      <option key={item.id} value={item.id.toString()}>
+                        {item.name} {item.discount_percentage ? `(${item.discount_percentage}% popust)` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {formData.selected_action_item_id && (
+                    <p className="text-sm text-muted-foreground">
+                      Akcijske cijene će biti automatski kalkulirane na osnovu promotivnih cijena
+                    </p>
+                  )}
                 </div>
+                </div>
+
               </CardContent>
             </Card>
           </TabsContent>
@@ -1025,7 +1174,20 @@ export default function ContractForm({
                       <Label htmlFor="fiksni_naziv_ugovorene_usluge">Naziv ugovorene usluge</Label>
                       <Input id="fiksni_naziv_ugovorene_usluge" name="fiksni_naziv_ugovorene_usluge" value={formData.fiksni_paket || ""} onChange={handleChange} />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="action_price_fiksni">Akcijska mjesečna naknada (Internet)</Label>
+                        <Input 
+                          id="action_price_fiksni" 
+                          name="action_price_fiksni" 
+                          type="number" 
+                          step="0.01" 
+                          value={formData.action_price_fiksni ?? ""} 
+                          onChange={handleNumberChange}
+                          readOnly={!!formData.selected_action_item_id}
+                          className={formData.selected_action_item_id ? "bg-gray-50" : ""}
+                        />
+                      </div>
                       <div className="space-y-2">
                         <Label htmlFor="promo_price_fiksni">Promotivna mjesečna naknada (Internet)</Label>
                         <Input id="promo_price_fiksni" name="promo_price_fiksni" type="number" step="0.01" value={formData.promo_price_fiksni ?? ""} onChange={handleNumberChange} />
@@ -1172,7 +1334,20 @@ export default function ContractForm({
                       <Label htmlFor="tv_naziv_ugovorene_usluge">Naziv ugovorene usluge</Label>
                       <Input id="tv_naziv_ugovorene_usluge" name="tv_naziv_ugovorene_usluge" value={getCurrentTvData().serviceName} onChange={handleChange} readOnly />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="action_price_tv">Akcijska mjesečna naknada (TV)</Label>
+                        <Input 
+                          id="action_price_tv" 
+                          name="action_price_tv" 
+                          type="number" 
+                          step="0.01" 
+                          value={formData.action_price_tv ?? ""} 
+                          onChange={handleNumberChange}
+                          readOnly={!!formData.selected_action_item_id}
+                          className={formData.selected_action_item_id ? "bg-gray-50" : ""}
+                        />
+                      </div>
                       <div className="space-y-2">
                         <Label htmlFor="promo_price_tv">Promotivna mjesečna naknada (TV)</Label>
                         <Input id="promo_price_tv" name="promo_price_tv" type="number" step="0.01" value={getCurrentTvData().promoPrice} onChange={handleNumberChange} />
@@ -1269,7 +1444,20 @@ export default function ContractForm({
                       <Label htmlFor="tel_naziv_ugovorene_usluge">Naziv ugovorene usluge</Label>
                       <Input id="tel_naziv_ugovorene_usluge" name="tel_naziv_ugovorene_usluge" value={getCurrentPhoneData().serviceName} onChange={handleChange} readOnly />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="action_price_phone">Akcijska mjesečna naknada (Telefon)</Label>
+                        <Input 
+                          id="action_price_phone" 
+                          name="action_price_phone" 
+                          type="number" 
+                          step="0.01" 
+                          value={formData.action_price_phone ?? ""} 
+                          onChange={handleNumberChange}
+                          readOnly={!!formData.selected_action_item_id}
+                          className={formData.selected_action_item_id ? "bg-gray-50" : ""}
+                        />
+                      </div>
                       <div className="space-y-2">
                         <Label htmlFor="promo_price_phone">Promotivna mjesečna naknada (Telefon)</Label>
                         <Input id="promo_price_phone" name="promo_price_phone" type="number" step="0.01" value={getCurrentPhoneData().promoPrice} onChange={handleNumberChange} />
@@ -1892,14 +2080,17 @@ export default function ContractForm({
               phonePromoPrice: getCurrentPhoneData().promoPrice,
               phoneRegularPrice: getCurrentPhoneData().regularPrice,
               phoneServiceName: getCurrentPhoneData().serviceName,
+              phoneActionPrice: formData.action_price_phone || 0,
               tvServices: getCurrentTvData().services,
               tvPromoPrice: getCurrentTvData().promoPrice,
               tvRegularPrice: getCurrentTvData().regularPrice,
               tvServiceName: getCurrentTvData().serviceName,
+              tvActionPrice: formData.action_price_tv || 0,
               internetServices: getCurrentInternetData().services,
               internetPromoPrice: getCurrentInternetData().promoPrice,
               internetRegularPrice: getCurrentInternetData().regularPrice,
               internetServiceName: getCurrentInternetData().serviceName,
+              internetActionPrice: formData.action_price_fiksni || 0,
               meshServices: getMeshServiceData().services,
               meshPromoPrice: getMeshServiceData().promoPrice,
               meshRegularPrice: getMeshServiceData().regularPrice,
