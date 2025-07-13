@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
+import { toast } from '@/components/ui/use-toast'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 
@@ -16,33 +17,37 @@ function CreateUserMessages() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
   const message = searchParams.get('message');
-  const [displayMessage, setDisplayMessage] = useState<string | null>(null);
-  const [isError, setIsError] = useState(false);
 
   useEffect(() => {
     if (error) {
-      setDisplayMessage(error);
-      setIsError(true);
+      toast({
+        variant: "destructive",
+        title: "❌ Greška pri kreiranju korisnika",
+        description: error,
+        duration: 5000,
+      });
     } else if (message) {
-      setDisplayMessage(message);
-      setIsError(false);
-    } else {
-      setDisplayMessage(null);
-      setIsError(false);
+      toast({
+        title: "✅ Korisnik uspješno kreiran!",
+        description: message,
+        duration: 5000,
+      });
     }
   }, [error, message]);
 
-  if (!displayMessage) return null;
-
-  return (
-    <div className={`p-3 mb-4 rounded text-sm ${isError ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-      {displayMessage}
-    </div>
-  );
+  return null; // No need to render anything since we're using toasts
 }
 
 export default function CreateUserPage() {
   const { isAdmin, loading: authLoading } = useAuth()
+
+  const handleFormSubmit = () => {
+    toast({
+      title: "👤 Kreiranje korisnika...",
+      description: "Molimo pričekajte dok se novi korisnik kreira.",
+      duration: 3000,
+    });
+  };
 
   if (authLoading) {
     return <div className="container mx-auto py-10 text-center">Učitavanje...</div>
@@ -67,7 +72,7 @@ export default function CreateUserPage() {
             Unesite email i lozinku za novog korisnika. Korisnik će moći promijeniti lozinku nakon prve prijave.
           </CardDescription>
         </CardHeader>
-        <form action={signup}>
+        <form action={signup} onSubmit={handleFormSubmit}>
           <CardContent className="space-y-4">
             <Suspense fallback={null}>
               <CreateUserMessages />

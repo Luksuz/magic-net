@@ -111,7 +111,7 @@ U skladu s odredbama članka 9. Pravilnika o načinu i uvjetima obavljanja djela
 ·         potpisom Obavijesti o sklopljenom ugovoru u privitku ovog emaila i odgovorom kako dajete suglasnost na sklapanje ugovora na ovu adresu elektroničke pošte, ili
 ·         plaćanjem prvog mjesečnog računa.
  
-S obzirom da ste se odlučili na sklapanje ugovora davanjem suglasnosti na dokumentaciju koju smo Vam poslali putem emaila te i dalje želite ponudu koju ste dogovorili putem telefona, molimo Vas da g. [Vlasnik-Ugovora] potpiše Obavijest o sklopljenom ugovoru u privitku ovog emaila, pošaljete presliku [Posvojni-Zamjenica] osobne iskaznice  i odgovorite kako dajete suglasnost na sklapanje ugovora na ovu adresu elektroničke pošte.
+S obzirom da ste se odlučili na sklapanje ugovora davanjem suglasnosti na dokumentaciju koju smo Vam poslali putem emaila te i dalje želite ponudu koju ste dogovorili putem telefona, molimo Vas da [Vlasnik-Ugovora] potpiše Obavijest o sklopljenom ugovoru u privitku ovog emaila, pošaljete presliku [Posvojni-Zamjenica] osobne iskaznice  i odgovorite kako dajete suglasnost na sklapanje ugovora na ovu adresu elektroničke pošte.
  
 Budući ćete Ugovor sklopiti kanalima daljinske komunikacije i dalje zadržavate pravo, ne navodeći razloge, na raskid ugovora bez plaćanja naknade u roku 14 dana od dana davanja svoje suglasnosti na jedan od navedenih načina.
 Više informacija o detaljima ponude možete pronaći u priloženoj dokumentaciji koja sadrži Sažetak ugovora i Obavijest o sklopljenom ugovoru. Uz to, u prilogu Vam šaljemo Opće uvjete poslovanja te aktualni cjenik.
@@ -151,7 +151,7 @@ U skladu s odredbama članka 9. Pravilnika o načinu i uvjetima obavljanja djela
 ·         potpisom Obavijesti o sklopljenom ugovoru u privitku ovog emaila i odgovorom kako dajete suglasnost na sklapanje ugovora na ovu adresu elektroničke pošte, ili
 ·         plaćanjem prvog mjesečnog računa.
  
-S obzirom da ste se odlučili na sklapanje ugovora davanjem suglasnosti na dokumentaciju koju smo Vam poslali putem emaila te i dalje želite ponudu koju ste dogovorili putem telefona, molimo Vas da g. [Vlasnik-Ugovora] potpiše Obavijest o sklopljenom ugovoru u privitku ovog emaila, zahtjev za promjenu operatora, pošaljete presliku [Posvojni-Zamjenica] osobne iskaznice  i odgovorite kako dajete suglasnost na sklapanje ugovora na ovu adresu elektroničke pošte.
+S obzirom da ste se odlučili na sklapanje ugovora davanjem suglasnosti na dokumentaciju koju smo Vam poslali putem emaila te i dalje želite ponudu koju ste dogovorili putem telefona, molimo Vas da [Vlasnik-Ugovora] potpiše Obavijest o sklopljenom ugovoru u privitku ovog emaila, zahtjev za promjenu operatora, pošaljete presliku [Posvojni-Zamjenica] osobne iskaznice  i odgovorite kako dajete suglasnost na sklapanje ugovora na ovu adresu elektroničke pošte.
  
 Budući ćete Ugovor sklopiti kanalima daljinske komunikacije i dalje zadržavate pravo, ne navodeći razloge, na raskid ugovora bez plaćanja naknade u roku 14 dana od dana davanja svoje suglasnosti na jedan od navedenih načina.
 Više informacija o detaljima ponude možete pronaći u priloženoj dokumentaciji koja sadrži Sažetak ugovora i Obavijest o sklopljenom ugovoru. Uz to, u prilogu Vam šaljemo Opće uvjete poslovanja te aktualni cjenik.
@@ -322,6 +322,13 @@ export default function SendEmailPage({
     
     setIsSending(true)
     
+    // Show starting toast
+    toast({
+      title: "📤 Šalje se email...",
+      description: "Molimo pričekajte dok se email obrađuje i šalje.",
+      duration: 3000,
+    })
+    
     try {
       // Create FormData for file uploads
       const formData = new FormData()
@@ -364,9 +371,12 @@ export default function SendEmailPage({
         throw new Error(errorData.error || 'Failed to send email')
       }
 
+      const responseData = await response.json()
+
       toast({
-        title: "Uspjeh!",
-        description: `Email je uspješno poslan${attachments.length ? ' s prilozima' : ''}.`,
+        title: "📧 Email uspješno poslan!",
+        description: `Poruka je poslana na ${recipient}${attachments.length ? ` s ${attachments.length} prilogom(a)` : ''}${responseData.additionalAttachmentsCount > 0 ? ` i ${responseData.additionalAttachmentsCount} dodatnim dokumentom(a)` : ''}.`,
+        duration: 5000,
       })
       
       // Reset form

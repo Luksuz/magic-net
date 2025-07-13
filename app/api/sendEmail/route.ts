@@ -76,6 +76,11 @@ function createHtmlTemplate(subject: string, message: string): string {
           <div style="font-size: 16px; line-height: 1.7; color: #374151;">
             ${formattedMessage}
           </div>
+          
+          <!-- Email Banner -->
+          <div style="margin-top: 32px; text-align: center;">
+            <img src="https://qfpjbgjxkpwtsegtkaze.supabase.co/storage/v1/object/public/images//email-banner.png" alt="Magic NET Banner" style="width: 100%; max-width: 600px; height: auto; border-radius: 8px;" />
+          </div>
         </div>
         
         <!-- Footer -->

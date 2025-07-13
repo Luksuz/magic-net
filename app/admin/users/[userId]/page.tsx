@@ -6,6 +6,7 @@ import { useAuth } from '@/app/contexts/authContext';
 import { adminDeleteUserAction, fetchUsersAction, AuthUser } from '@/lib/actions'; // Assuming fetchUsersAction can fetch a single user if needed or we add a new one
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from '@/components/ui/use-toast';
 import Link from 'next/link';
 import { ArrowLeft, Trash2Icon, AlertTriangle } from 'lucide-react';
 
@@ -77,18 +78,39 @@ export default function ManageUserPage() {
     setIsDeleting(true);
     setError(null);
 
+    // Show starting toast
+    toast({
+      title: "🗑️ Brisanje korisnika...",
+      description: "Molimo pričekajte dok se korisnik briše iz sustava.",
+      duration: 3000,
+    });
+
     try {
       const result = await adminDeleteUserAction(userId);
       if (result.success) {
-        window.alert(`Korisnik ${userName} uspješno obrisan.`);
-        router.push('/admin?message=Korisnik uspješno obrisan'); // Redirect to admin page with a success message
+        toast({
+          title: "✅ Korisnik uspješno obrisan!",
+          description: `Korisnik ${userName} je uspješno uklonjen iz sustava.`,
+          duration: 5000,
+        });
+        router.push('/admin'); // Redirect to admin page
       } else {
         setError(result.error || 'Došlo je do pogreške prilikom brisanja korisnika.');
-        window.alert(`Greška: ${result.error || 'Došlo je do pogreške prilikom brisanja korisnika.'}`);
+        toast({
+          variant: "destructive",
+          title: "❌ Greška pri brisanju",
+          description: result.error || 'Došlo je do pogreške prilikom brisanja korisnika.',
+          duration: 5000,
+        });
       }
     } catch (e: any) {
       setError(e.message || 'Došlo je do neočekivane pogreške.');
-      window.alert(`Greška: ${e.message || 'Došlo je do neočekivane pogreške.'}`);
+      toast({
+        variant: "destructive",
+        title: "❌ Neočekivana greška",
+        description: e.message || 'Došlo je do neočekivane pogreške.',
+        duration: 5000,
+      });
     } finally {
       setIsDeleting(false);
     }

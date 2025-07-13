@@ -7,6 +7,7 @@ import { DebugWindow } from "@/components/debug-window";
 import { AuthProvider } from "./contexts/authContext";
 import { createClient } from "@/utils/supabase/server";
 import MainNavigation from "@/components/navigation/MainNavigation";
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -49,6 +50,7 @@ export default async function RootLayout({
               {children}
             </main>
             <DebugWindow />
+            <Toaster />
           </ThemeProvider>
         </AuthProvider>
       </body>

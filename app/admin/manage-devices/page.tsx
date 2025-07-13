@@ -35,16 +35,18 @@ export default function ManageDevicesPage() {
         setDevices(result.data)
       } else {
         toast({
-          title: "Greška",
+          title: "❌ Greška pri dohvaćanju",
           description: "Neuspjelo dohvaćanje uređaja: " + result.error,
-          variant: "destructive"
+          variant: "destructive",
+          duration: 5000,
         })
       }
     } catch (error) {
       toast({
-        title: "Greška",
-        description: "Neuspjelo dohvaćanje uređaja",
-        variant: "destructive"
+        title: "❌ Greška pri dohvaćanju",
+        description: "Neuspjelo dohvaćanje uređaja iz baze podataka.",
+        variant: "destructive",
+        duration: 5000,
       })
     } finally {
       setDevicesLoading(false)
@@ -86,9 +88,10 @@ export default function ManageDevicesPage() {
     
     if (!formData.device_model.trim()) {
       toast({
-        title: "Greška",
-        description: "Model uređaja je obavezan",
-        variant: "destructive"
+        title: "⚠️ Nedostaju podaci",
+        description: "Model uređaja je obavezan za dodavanje.",
+        variant: "destructive",
+        duration: 3000,
       })
       return
     }
@@ -104,17 +107,19 @@ export default function ManageDevicesPage() {
       
       if (result.success) {
         toast({
-          title: "Uspjeh",
-          description: "Uređaj je uspješno dodan"
+          title: "✅ Uređaj uspješno dodan!",
+          description: `Uređaj "${deviceData.device_model}" je uspješno dodan u sustav.`,
+          duration: 5000,
         })
         setIsAddDialogOpen(false)
         resetForm()
         fetchDevices()
       } else {
         toast({
-          title: "Greška",
+          title: "❌ Greška pri dodavanju",
           description: "Neuspjelo dodavanje uređaja: " + result.error,
-          variant: "destructive"
+          variant: "destructive",
+          duration: 5000,
         })
       }
     } catch (error) {
@@ -132,9 +137,10 @@ export default function ManageDevicesPage() {
     
     if (!editingDevice || !formData.device_model.trim()) {
       toast({
-        title: "Greška",
-        description: "Model uređaja je obavezan",
-        variant: "destructive"
+        title: "⚠️ Nedostaju podaci",
+        description: "Model uređaja je obavezan za ažuriranje.",
+        variant: "destructive",
+        duration: 3000,
       })
       return
     }
@@ -150,8 +156,9 @@ export default function ManageDevicesPage() {
       
       if (result.success) {
         toast({
-          title: "Uspjeh",
-          description: "Uređaj je uspješno ažuriran"
+          title: "✏️ Uređaj uspješno ažuriran!",
+          description: `Uređaj "${deviceData.device_model}" je uspješno ažuriran.`,
+          duration: 5000,
         })
         setIsEditDialogOpen(false)
         setEditingDevice(null)
@@ -184,8 +191,9 @@ export default function ManageDevicesPage() {
       
       if (result.success) {
         toast({
-          title: "Uspjeh",
-          description: "Uređaj je uspješno obrisan"
+          title: "🗑️ Uređaj uspješno obrisan!",
+          description: "Uređaj je uspješno uklonjen iz sustava.",
+          duration: 5000,
         })
         fetchDevices()
       } else {
