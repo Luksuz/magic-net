@@ -4,7 +4,7 @@ import { getDocuments, downloadDocument } from '@/lib/supabase';
 
 // Function to create HTML email template with Magic Net branding
 function createHtmlTemplate(subject: string, message: string): string {
-  // Convert line breaks to HTML paragraphs
+  // Convert line breaks to HTML aragraphs
   const formattedMessage = message
     .split('\n')
     .filter(line => line.trim() !== '')
