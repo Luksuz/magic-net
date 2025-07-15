@@ -30,6 +30,7 @@ interface ContractFormProps {
   operatorChangeDataInitial?: OperatorChangeData
   onOperatorChangeDataChange?: (data: OperatorChangeData) => void
   contractNumber?: string | null
+  onPdfGenerated?: (pdfFile: File) => void
 }
 
 export default function ContractForm({ 
@@ -43,7 +44,8 @@ export default function ContractForm({
   onContractConcludedOnPremisesChange,
   operatorChangeDataInitial,
   onOperatorChangeDataChange,
-  contractNumber
+  contractNumber,
+  onPdfGenerated
 }: ContractFormProps) {
   const { profile } = useAuth()
   
@@ -389,6 +391,46 @@ export default function ContractForm({
       onTerminalEquipmentChange(updatedEquipment)
     }
   }, [freeMeshEnabled, rentalMeshCount])
+
+  // Effect to append "Dodatne fiksne usluge" content to "Fiksna oprema"
+  useEffect(() => {
+    const dodatneUsluge = formData.fiksne_dodatne_usluge || ""
+    
+    setFormData(prev => {
+      const currentOprema = prev.fiksna_oprema || ""
+      
+      if (dodatneUsluge.trim()) {
+        // Append additional services to existing equipment, avoid duplicates
+        const existingParts = currentOprema.split(',').map(part => part.trim()).filter(part => part !== "")
+        const newParts = dodatneUsluge.split(',').map(part => part.trim()).filter(part => part !== "")
+        
+        // Combine and remove duplicates
+        const combinedParts = [...existingParts]
+        newParts.forEach(newPart => {
+          if (!existingParts.some(existing => existing.toLowerCase().includes(newPart.toLowerCase()) || newPart.toLowerCase().includes(existing.toLowerCase()))) {
+            combinedParts.push(newPart)
+          }
+        })
+        
+        return {
+          ...prev,
+          fiksna_oprema: combinedParts.join(', ')
+        }
+      } else {
+        // If no additional services, remove only mesh-related items but keep other equipment
+        const equipmentParts = currentOprema.split(',').map(part => part.trim()).filter(part => part !== "")
+        const filteredParts = equipmentParts.filter(part => 
+          !part.toLowerCase().includes("mesh") && 
+          !part.toLowerCase().includes("najam")
+        )
+        
+        return {
+          ...prev,
+          fiksna_oprema: filteredParts.join(', ')
+        }
+      }
+    })
+  }, [formData.fiksne_dodatne_usluge])
 
   // Handler for FILMSKI package checkbox
   const handleFilmskiPackageChange = (checked: boolean) => {
@@ -1300,7 +1342,7 @@ export default function ContractForm({
                   </div>
                   
                   <div className="space-y-4 md:col-span-2">
-                    <h4 className="text-md font-medium">Dodatni ONE TV paketi</h4>
+                    <h4 className="text-md font-medium">Dodatni TV paketi</h4>
                     {additionalTvLoading ? (
                       <div className="text-center py-4">Učitavanje TV paketa...</div>
                     ) : (
@@ -2075,6 +2117,7 @@ export default function ContractForm({
             operatorChangeData={operatorChangeData}
             extraTelefonPackages={extraTelefonPackages}
             additionalTvDevices={additionalTvDevices}
+            onPdfGenerated={onPdfGenerated}
             calculatedData={{
               phoneServices: getCurrentPhoneData().services,
               phonePromoPrice: getCurrentPhoneData().promoPrice,

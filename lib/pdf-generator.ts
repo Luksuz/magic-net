@@ -131,7 +131,9 @@ export async function generatePDF(
     meshServiceName?: string
   },
   extraTelefonPackages?: any[],
-  additionalTvDevices?: any[]
+  additionalTvDevices?: any[],
+  returnBlob?: boolean,
+  onPdfGenerated?: (pdfFile: File) => void
 ) {
   // Make sure html2pdf is available
   if (typeof window === "undefined" || !window.html2pdf) {
@@ -617,7 +619,21 @@ export async function generatePDF(
     }
 
     // Use window.html2pdf instead of importing the library
-    await window.html2pdf().from(container).set(pdfOptions).save()
+    if (returnBlob && onPdfGenerated) {
+      console.log("DEBUG: Generating PDF as blob for email attachment, filename:", filename, "Timestamp:", Date.now())
+      // Generate PDF as blob and trigger callback, then also download
+      const pdfBlob = await window.html2pdf().from(container).set(pdfOptions).outputPdf('blob')
+      const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' })
+      console.log("DEBUG: PDF blob generated, calling callback, Timestamp:", Date.now())
+      onPdfGenerated(pdfFile)
+      
+      // Also download the PDF for the user
+      await window.html2pdf().from(container).set(pdfOptions).save()
+    } else {
+      console.log("DEBUG: Normal PDF download only, returnBlob:", returnBlob, "onPdfGenerated:", !!onPdfGenerated)
+      // Normal download behavior only
+      await window.html2pdf().from(container).set(pdfOptions).save()
+    }
     
         // Contract creation is already tracked before PDF generation
     
@@ -720,14 +736,69 @@ function formatHtml(
     return value.toFixed(2).replace(".", ",") + " EUR"
   }
 
+  // Check if action pricing is enabled (if any action price exists)
+  const hasActionPricing = !!(
+    (calculatedData?.internetActionPrice ?? data.action_price_fiksni) ||
+    (calculatedData?.tvActionPrice ?? data.action_price_tv) ||
+    (calculatedData?.phoneActionPrice ?? data.action_price_phone) ||
+    data.selected_action_item_id
+  )
+
+  // Hide action price column if no action pricing is available
+  if (!hasActionPricing) {
+    // Remove action price column header and adjust widths
+    html = html.replace(
+      /<th style="width: 21%;">Akcijska mjesečna naknada<\/th>/g,
+      ''
+    )
+    
+    // Update other column widths when action column is removed
+    html = html.replace(
+      /<th style="width: 34%;">Ugovorene usluge<\/th>/g,
+      '<th style="width: 40%;">Ugovorene usluge</th>'
+    )
+    html = html.replace(
+      /<th style="width: 21%;">Promotivna mjesečna naknada\*<\/th>/g,
+      '<th style="width: 30%;">Promotivna mjesečna naknada*</th>'
+    )
+    html = html.replace(
+      /<th style="width: 20%;">Redovna mjesečna naknada<\/th>/g,
+      '<th style="width: 30%;">Redovna mjesečna naknada</th>'
+    )
+    
+    // Remove all action price data cells
+    html = html.replace(
+      /<td style="text-align: right;">\[ACTION_PRICE_[A-Z_]+\]<\/td>/g,
+      ''
+    )
+    html = html.replace(
+      /<td style="text-align: right;">\[FREE_MESH_ACTION_PRICE\]<\/td>/g,
+      ''
+    )
+    html = html.replace(
+      /<td style="text-align: right;">\[RENTAL_MESH_ACTION_PRICE\]<\/td>/g,
+      ''
+    )
+    html = html.replace(
+      /<td style="text-align: right;">\[TV_EXTRA_SERVICE_\d+_ACTION_PRICE\]<\/td>/g,
+      ''
+    )
+    html = html.replace(
+      /<td style="text-align: right;">\[TEL_EXTRA_SERVICE_\d+_ACTION_PRICE\]<\/td>/g,
+      ''
+    )
+    html = html.replace(
+      /<td style="text-align: right; font-weight: bold;">\[TOTAL_ACTION_PRICE\]<\/td>/g,
+      ''
+    )
+  }
+
   // Helper function to safely replace placeholders
   const safeReplace = (placeholder: string, value: string | number | null | undefined) => {
     const stringValue = value !== null && value !== undefined ? String(value) : ""
-    html = html.replace(new RegExp(`\\[${placeholder}\\]`, 'g'), stringValue)
+    html = html.replace(new RegExp(`\\[${placeholder}\\]`, 'g'), stringValue)    
+    html = html.replace(new RegExp(`<!--${placeholder}-->`, 'g'), stringValue)
   }
-
-  // Remove operator change content from main contract - now handled separately
-    html = html.replace('<!-- ZAHTJEV_ZA_PROMJENU_OPERATERA -->', '');
 
   // Use contract number from form data, show only base number for PDF display (without user name and access method)
   let pdfContractNumber = data.broj_ugovora;
@@ -789,6 +860,7 @@ function formatHtml(
           console.log(`DEBUG: Adding selected TV service ${serviceIndex}: ${serviceName} (${servicePrice} EUR)`);
           
           safeReplace(`TV_EXTRA_SERVICE_${serviceIndex}_NAME`, serviceName)
+          safeReplace(`TV_EXTRA_SERVICE_${serviceIndex}_ACTION_PRICE`, hasActionPricing ? formatCurrency(servicePrice) : '')
           safeReplace(`TV_EXTRA_SERVICE_${serviceIndex}_PROMO_PRICE`, formatCurrency(servicePrice))
           safeReplace(`TV_EXTRA_SERVICE_${serviceIndex}_REGULAR_PRICE`, formatCurrency(servicePrice))
           
@@ -804,6 +876,7 @@ function formatHtml(
     const maxTvServices = 6;
     for (let i = 1; i <= maxTvServices; i++) {
       safeReplace(`TV_EXTRA_SERVICE_${i}_NAME`, '')
+      safeReplace(`TV_EXTRA_SERVICE_${i}_ACTION_PRICE`, '')
       safeReplace(`TV_EXTRA_SERVICE_${i}_PROMO_PRICE`, '')
       safeReplace(`TV_EXTRA_SERVICE_${i}_REGULAR_PRICE`, '')
     }
@@ -847,6 +920,7 @@ function formatHtml(
   
   const hasFreeMesh = meshServices.toLowerCase().includes('besplatan mesh')
   safeReplace('FREE_MESH_SERVICE_NAME', hasFreeMesh ? 'BESPLATAN MESH' : '')
+  safeReplace('FREE_MESH_ACTION_PRICE', hasFreeMesh && hasActionPricing ? formatCurrency(0.00) : '')
   safeReplace('FREE_MESH_PROMO_PRICE', hasFreeMesh ? formatCurrency(0.00) : '')
   safeReplace('FREE_MESH_REGULAR_PRICE', hasFreeMesh ? formatCurrency(3.00) : '')
   
@@ -860,6 +934,7 @@ function formatHtml(
   console.log('Rental MESH detected:', { rentalMeshMatch, rentalMeshCount })
   
   safeReplace('RENTAL_MESH_SERVICE_NAME', rentalMeshCount > 0 ? `EXTRA MESH U NAJAM (${rentalMeshCount})` : '')
+  safeReplace('RENTAL_MESH_ACTION_PRICE', rentalMeshCount > 0 && hasActionPricing ? formatCurrency(rentalMeshCount * 3.00) : '')
   safeReplace('RENTAL_MESH_PROMO_PRICE', rentalMeshCount > 0 ? formatCurrency(rentalMeshCount * 3.00) : '')
   safeReplace('RENTAL_MESH_REGULAR_PRICE', rentalMeshCount > 0 ? formatCurrency(rentalMeshCount * 3.00) : '')
 
@@ -895,6 +970,7 @@ function formatHtml(
           console.log(`DEBUG: Adding selected service ${serviceIndex}: ${serviceName} (${servicePrice} EUR)`);
           
           safeReplace(`TEL_EXTRA_SERVICE_${serviceIndex}_NAME`, serviceName)
+          safeReplace(`TEL_EXTRA_SERVICE_${serviceIndex}_ACTION_PRICE`, hasActionPricing ? formatCurrency(servicePrice) : '')
           safeReplace(`TEL_EXTRA_SERVICE_${serviceIndex}_PROMO_PRICE`, formatCurrency(servicePrice))
           safeReplace(`TEL_EXTRA_SERVICE_${serviceIndex}_REGULAR_PRICE`, formatCurrency(servicePrice))
           
@@ -910,6 +986,7 @@ function formatHtml(
     const maxTelephoneServices = 8;
     for (let i = 1; i <= maxTelephoneServices; i++) {
       safeReplace(`TEL_EXTRA_SERVICE_${i}_NAME`, '')
+      safeReplace(`TEL_EXTRA_SERVICE_${i}_ACTION_PRICE`, '')
       safeReplace(`TEL_EXTRA_SERVICE_${i}_PROMO_PRICE`, '')
       safeReplace(`TEL_EXTRA_SERVICE_${i}_REGULAR_PRICE`, '')
     }
@@ -1084,38 +1161,104 @@ function formatHtml(
 
   // --- Additional template variables ---
   
-  // Connection & Activation Fees (already implemented above, but adding the variable names for completeness)
-  safeReplace('CONNECTION_FEE', formatCurrency(connectionFee))
-  safeReplace('CONNECTION_DISCOUNT_PERCENT', connectionDiscountPercent)
-  safeReplace('CONNECTION_FEE_TOTAL', formatCurrency(connectionFeeTotal))
+  // Check access method and handle connection fees accordingly
+  const shouldHideConnectionFees = data.access_method === 'BS' || data.access_method === 'FA' || data.access_method === 'INFRA';
+  const isAeronet = data.access_method === 'AERONET';
+
+  console.log('DEBUG: should hide connection fees:', shouldHideConnectionFees, 'is aeronet:', isAeronet, 'access method:', data.access_method)
+  
+  // Connection & Activation Fees - handle different access methods
+  if (shouldHideConnectionFees) {
+    // For BS, FA, INFRA: show "-"
+    safeReplace('CONNECTION_FEE', '-')
+    safeReplace('CONNECTION_DISCOUNT_PERCENT', '-')
+    safeReplace('CONNECTION_FEE_TOTAL', '-')
+  } else if (isAeronet) {
+    // For AERONET: specific values
+    safeReplace('CONNECTION_FEE', formatCurrency(40.00))
+    safeReplace('CONNECTION_DISCOUNT_PERCENT', '100')
+    safeReplace('CONNECTION_FEE_TOTAL', formatCurrency(0.00))
+  } else {
+    // For all other access methods: use form data or defaults
+    safeReplace('CONNECTION_FEE', formatCurrency(connectionFee))
+    safeReplace('CONNECTION_DISCOUNT_PERCENT', connectionDiscountPercent)
+    safeReplace('CONNECTION_FEE_TOTAL', formatCurrency(connectionFeeTotal))
+  }
   safeReplace('ACTIVATION_FEE', formatCurrency(activationFee))
   safeReplace('ACTIVATION_DISCOUNT_PERCENT', activationDiscountPercent)
   safeReplace('ACTIVATION_FEE_TOTAL', formatCurrency(activationFeeTotal))
 
+    // Deactivation Fee Table - show for BS, FA, or INFRA access methods
+  let deactivationFeeTableHtml = '';
+  
+  if (data.access_method === 'BS' || data.access_method === 'FA') {
+    // For BS and FA: show 30,00 EUR values
+    deactivationFeeTableHtml = `
+   <div style="margin-bottom: 4px;">
+    <h2 style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Cijena deaktivacije usluge</h2>
+    <table>
+     <tr style="background-color: #f2f2f2;">
+          <th>Redni broj</th><th>Jednokratna naknada</th><th>Cijena</th><th>Popust</th><th>Iznos za plaćanje</th>
+      </tr>
+      <tr>
+         <td style="text-align: center;">1.</td>
+         <td>Trajno isključenje usluge pružane preko infrastrukture drugog operatora</td>
+         <td style="text-align: center;">30,00 EUR</td>
+         <td style="text-align: center;">-</td>
+         <td style="text-align: center;">30,00 EUR*</td>
+     </tr>
+     </table>
+     <p style="margin-top: 4px; margin-bottom: 8px; font-size: 8px;"><strong>*Napomena:</strong> U slučaju trajnog isključenja Usluge pružane preko infrastrukture drugog operatora i raskida Ugovora, bit će Vam naplaćena naknada za deaktivaciju usluge pružane preko infrastrukture drugog operatora u iznosu navedenom u tablici Cijena deaktivacije usluge. U navedenom slučaju, naknada za deaktivaciju usluge pružane preko infrastrukture drugog operatora naplaćuje se neovisno o tome postoji li ugovorna obveza ili ne. Naplata naknade za deaktivaciju usluge pružane preko infrastrukture drugog operatora ne isključuje naplatu naknade za prijevremeni raskid ugovora ukoliko postoji ugovorna obveza koja nije istekla. Također, u slučaju da odustanete od zatražene usluge prije uključenja usluge pružane preko infrastrukture drugog operatora, zadržavamo pravo naplatiti Vam naknadu u istom iznosu kao i deaktivaciju iz ovog stavka.
+    </div>
+   `;
+  } else if (data.access_method === 'INFRA') {
+    // For INFRA: show "-" values
+    deactivationFeeTableHtml = `
+   <div style="margin-bottom: 4px;">
+    <h2 style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Cijena deaktivacije usluge</h2>
+    <table>
+     <tr style="background-color: #f2f2f2;">
+          <th>Redni broj</th><th>Jednokratna naknada</th><th>Cijena</th><th>Popust</th><th>Iznos za plaćanje</th>
+      </tr>
+      <tr>
+         <td style="text-align: center;">1.</td>
+         <td>Trajno isključenje usluge pružane preko infrastrukture drugog operatora</td>
+         <td style="text-align: center;">-</td>
+         <td style="text-align: center;">-</td>
+         <td style="text-align: center;">-</td>
+     </tr>
+     </table>
+     <p style="margin-top: 4px; margin-bottom: 8px; font-size: 8px;"><strong>*Napomena:</strong> *Napomena: U slučaju trajnog isključenja Usluge pružane preko infrastrukture drugog operatora i raskida Ugovora, bit će Vam naplaćena naknada za deaktivaciju usluge pružane preko infrastrukture drugog operatora u iznosu navedenom u tablici Cijena deaktivacije usluge. U navedenom slučaju, naknada za deaktivaciju usluge pružane preko infrastrukture drugog operatora naplaćuje se neovisno o tome postoji li ugovorna obveza ili ne. Naplata naknade za deaktivaciju usluge pružane preko infrastrukture drugog operatora ne isključuje naplatu naknade za prijevremeni raskid ugovora ukoliko postoji ugovorna obveza koja nije istekla. Također, u slučaju da odustanete od zatražene usluge prije uključenja usluge pružane preko infrastrukture drugog operatora, zadržavamo pravo naplatiti Vam naknadu u istom iznosu kao i deaktivaciju iz ovog stavka.
+    </div>
+   `;
+  }
+  
+  safeReplace('DEACTIVATION_FEE_TABLE', deactivationFeeTableHtml)
+
   // Periodic Pricing Section
   safeReplace('FIKSNI_PAKET', data.fiksni_paket)
   safeReplace('FIKSNA_BRZINA', data.fiksna_brzina)
-  safeReplace('ACTION_PRICE_FIKSNI', formatCurrency(calculatedData?.internetActionPrice ?? data.action_price_fiksni))
+  safeReplace('ACTION_PRICE_FIKSNI', hasActionPricing ? formatCurrency(calculatedData?.internetActionPrice ?? data.action_price_fiksni) : '')
   safeReplace('PROMO_PRICE_FIKSNI', formatCurrency(calculatedData?.internetPromoPrice ?? (data as any).promo_price_fiksni))
   safeReplace('CONTRACT_PRICE_FIKSNI', formatCurrency(calculatedData?.internetPromoPrice ?? (data as any).contract_price_fiksni))
   safeReplace('REGULAR_PRICE_FIKSNI', formatCurrency(calculatedData?.internetRegularPrice ?? (data as any).regular_price_fiksni))
   
   safeReplace('TV_PAKET', data.tv_paket)
   safeReplace('TV_DODATNE_USLUGE', data.tv_dodatne_usluge)
-  safeReplace('ACTION_PRICE_TV', formatCurrency(calculatedData?.tvActionPrice ?? data.action_price_tv))
+  safeReplace('ACTION_PRICE_TV', hasActionPricing ? formatCurrency(calculatedData?.tvActionPrice ?? data.action_price_tv) : '')
   safeReplace('PROMO_PRICE_TV', formatCurrency(calculatedData?.tvPromoPrice ?? (data as any).promo_price_tv))
   safeReplace('CONTRACT_PRICE_TV', formatCurrency(calculatedData?.tvPromoPrice ?? (data as any).contract_price_tv))
   safeReplace('REGULAR_PRICE_TV', formatCurrency(calculatedData?.tvRegularPrice ?? (data as any).regular_price_tv))
   
   safeReplace('TARIFA', data.tarifa)
   safeReplace('PRETPLATNICKI_BROJ', data.pretplatnicki_broj)
-  safeReplace('ACTION_PRICE_PHONE', formatCurrency(calculatedData?.phoneActionPrice ?? data.action_price_phone))
+  safeReplace('ACTION_PRICE_PHONE', hasActionPricing ? formatCurrency(calculatedData?.phoneActionPrice ?? data.action_price_phone) : '')
   safeReplace('PROMO_PRICE_PHONE', formatCurrency(calculatedData?.phonePromoPrice ?? (data as any).promo_price_phone))
   safeReplace('CONTRACT_PRICE_PHONE', formatCurrency(calculatedData?.phonePromoPrice ?? (data as any).contract_price_phone))
   safeReplace('REGULAR_PRICE_PHONE', formatCurrency(calculatedData?.phoneRegularPrice ?? (data as any).regular_price_phone))
   
   // Calculate and set total prices (moved to end to include all additional services)
-  safeReplace('TOTAL_ACTION_PRICE', formatCurrency(calculateTotalPrice(data, 'action', calculatedData, extraTelefonPackages, additionalTvDevices)))
+  safeReplace('TOTAL_ACTION_PRICE', hasActionPricing ? formatCurrency(calculateTotalPrice(data, 'action', calculatedData, extraTelefonPackages, additionalTvDevices)) : '')
   safeReplace('TOTAL_PROMO_PRICE', formatCurrency(calculateTotalPrice(data, 'promo', calculatedData, extraTelefonPackages, additionalTvDevices)))
   safeReplace('TOTAL_CONTRACT_PRICE', formatCurrency(calculateTotalPrice(data, 'contract', calculatedData, extraTelefonPackages, additionalTvDevices)))
   safeReplace('TOTAL_REGULAR_PRICE', formatCurrency(calculateTotalPrice(data, 'regular', calculatedData, extraTelefonPackages, additionalTvDevices)))
@@ -1295,7 +1438,9 @@ function calculateTotalPrice(
 export async function generateOperatorChangePDF(
   data: ContractData,
   userInfo?: UserInformation,
-  operatorChangeData?: OperatorChangeData
+  operatorChangeData?: OperatorChangeData,
+  returnBlob?: boolean,
+  onPdfGenerated?: (pdfFile: File) => void
 ) {
   // Make sure html2pdf is available
   if (typeof window === "undefined" || !window.html2pdf) {
@@ -1568,7 +1713,20 @@ export async function generateOperatorChangePDF(
     }
 
     // Use window.html2pdf instead of importing the library
-    await window.html2pdf().from(container).set(pdfOptions).save()
+    if (returnBlob && onPdfGenerated) {
+      console.log("DEBUG: [OperatorChange] Generating PDF as blob for email attachment, Timestamp:", Date.now())
+      // Generate PDF as blob and trigger callback, then also download
+      const pdfBlob = await window.html2pdf().from(container).set(pdfOptions).outputPdf('blob')
+      const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' })
+      console.log("DEBUG: [OperatorChange] PDF blob generated, calling callback, Timestamp:", Date.now())
+      onPdfGenerated(pdfFile)
+      
+      // Also download the PDF for the user
+      await window.html2pdf().from(container).set(pdfOptions).save()
+    } else {
+      // Normal download behavior only
+      await window.html2pdf().from(container).set(pdfOptions).save()
+    }
     
     return true
   } catch (error) {

@@ -600,6 +600,46 @@ export default function ContractTableEditor({
     }
   }, [formData.tel_dodatne_usluge, extraTelefonPackages])
 
+  // Effect to append "Dodatne fiksne usluge" content to "Fiksna oprema"
+  useEffect(() => {
+    const dodatneUsluge = formData.fiksne_dodatne_usluge || ""
+    
+    setFormData(prev => {
+      const currentOprema = prev.fiksna_oprema || ""
+      
+      if (dodatneUsluge.trim()) {
+        // Append additional services to existing equipment, avoid duplicates
+        const existingParts = currentOprema.split(',').map(part => part.trim()).filter(part => part !== "")
+        const newParts = dodatneUsluge.split(',').map(part => part.trim()).filter(part => part !== "")
+        
+        // Combine and remove duplicates
+        const combinedParts = [...existingParts]
+        newParts.forEach(newPart => {
+          if (!existingParts.some(existing => existing.toLowerCase().includes(newPart.toLowerCase()) || newPart.toLowerCase().includes(existing.toLowerCase()))) {
+            combinedParts.push(newPart)
+          }
+        })
+        
+        return {
+          ...prev,
+          fiksna_oprema: combinedParts.join(', ')
+        }
+      } else {
+        // If no additional services, remove only mesh-related items but keep other equipment
+        const equipmentParts = currentOprema.split(',').map(part => part.trim()).filter(part => part !== "")
+        const filteredParts = equipmentParts.filter(part => 
+          !part.toLowerCase().includes("mesh") && 
+          !part.toLowerCase().includes("najam")
+        )
+        
+        return {
+          ...prev,
+          fiksna_oprema: filteredParts.join(', ')
+        }
+      }
+    })
+  }, [formData.fiksne_dodatne_usluge])
+
   return (
     <div className="space-y-6">
       {fieldGroups.map((group) => (
@@ -707,6 +747,18 @@ export default function ContractTableEditor({
                                   }}
                                 />
                                 <Label htmlFor="access_method_infra" className="font-normal">INFRA</Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id="access_method_aeronet"
+                                  checked={(formData as any)[field.key] === "AERONET"}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      handleChange({ target: { name: field.key, value: "AERONET" } } as any)
+                                    }
+                                  }}
+                                />
+                                <Label htmlFor="access_method_aeronet" className="font-normal">AERONET</Label>
                               </div>
                             </div>
                           ) : field.type === "checkbox" ? (

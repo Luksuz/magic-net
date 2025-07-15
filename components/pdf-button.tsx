@@ -21,6 +21,7 @@ interface PdfButtonProps {
   operatorChangeData?: OperatorChangeData
   extraTelefonPackages?: any[]
   additionalTvDevices?: any[]
+  onPdfGenerated?: (pdfFile: File) => void
   calculatedData?: {
     phoneServices?: string
     phonePromoPrice?: number
@@ -44,7 +45,7 @@ interface PdfButtonProps {
   }
 }
 
-export default function PdfButton({ formData, userInfo, setActiveTab, terminalEquipment, buttonRef, contractConcludedOnPremises, operatorChangeData, extraTelefonPackages, additionalTvDevices, calculatedData }: PdfButtonProps) {
+export default function PdfButton({ formData, userInfo, setActiveTab, terminalEquipment, buttonRef, contractConcludedOnPremises, operatorChangeData, extraTelefonPackages, additionalTvDevices, onPdfGenerated, calculatedData }: PdfButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGeneratingOperatorChange, setIsGeneratingOperatorChange] = useState(false)
   const [isLibraryLoaded, setIsLibraryLoaded] = useState(false)
@@ -115,6 +116,8 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
       return
     }
     
+    console.log("DEBUG: handleExport called, onPdfGenerated:", !!onPdfGenerated, "Timestamp:", Date.now())
+    
     // Switch to basic tab before generating PDF
     setActiveTab("basic")
     
@@ -148,7 +151,9 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
           safeOperatorChangeData,
           calculatedData,
           extraTelefonPackages,
-          additionalTvDevices
+          additionalTvDevices,
+          !!onPdfGenerated,
+          onPdfGenerated
         )
       } else {
         console.error("Korisnički ID nije dostupan.")
@@ -212,7 +217,9 @@ export default function PdfButton({ formData, userInfo, setActiveTab, terminalEq
         success = await generateOperatorChangePDF(
           safeFormData, 
           safeUserInfo, 
-          safeOperatorChangeData
+          safeOperatorChangeData,
+          !!onPdfGenerated,
+          onPdfGenerated
         )
       } else {
         console.error("Korisnički ID nije dostupan.")

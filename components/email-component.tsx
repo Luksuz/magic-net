@@ -18,6 +18,7 @@ interface SendEmailPageProps {
   recipientEmail?: string | null;
   recipientName?: string | null;
   userInfo?: UserInformation;
+  onComponentReady?: (addAttachment: (file: File) => void) => void;
 }
 
 // Email template definitions
@@ -188,7 +189,8 @@ export default function SendEmailPage({
   serviceName,
   recipientEmail,
   recipientName,
-  userInfo 
+  userInfo,
+  onComponentReady
 }: SendEmailPageProps) {
   const [subject, setSubject] = useState("")
   const [recipient, setRecipient] = useState("")
@@ -200,6 +202,37 @@ export default function SendEmailPage({
   const [templateFields, setTemplateFields] = useState<Record<string, string>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dropZoneRef = useRef<HTMLDivElement>(null)
+
+  // Expose addAttachment function to parent component
+  useEffect(() => {
+    if (onComponentReady) {
+      const addAttachment = (file: File) => {
+        console.log("DEBUG: addAttachment called with file:", file.name, "Current timestamp:", Date.now())
+        // Check for duplicate files by name
+        setAttachments(prev => {
+          console.log("DEBUG: setAttachments callback running, current attachments count:", prev.length)
+          const isDuplicate = prev.some(existingFile => existingFile.name === file.name)
+          if (!isDuplicate) {
+            console.log("DEBUG: File is new, adding to attachments and showing toast")
+            // Schedule toast to run after state update
+            setTimeout(() => {
+              toast({
+                title: "📎 Prilog automatski dodan",
+                description: `PDF ugovor "${file.name}" je automatski dodan u priloge.`,
+                duration: 3000,
+              })
+            }, 0)
+            return [...prev, file]
+          } else {
+            console.log("DEBUG: File already exists, skipping duplicate")
+            return prev
+          }
+        })
+      }
+      console.log("DEBUG: Registering addAttachment function with parent")
+      onComponentReady(addAttachment)
+    }
+  }, []) // Empty dependency array - only run once on mount
 
   useEffect(() => {
     if (recipientEmail) {

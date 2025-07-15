@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -59,6 +59,9 @@ export default function EditContractPageClient({ contract, profile }: Props) {
     sellerDate: "",
     changeOperator: false,
   });
+
+  // State for email attachment integration
+  const [addEmailAttachment, setAddEmailAttachment] = useState<((file: File) => void) | null>(null);
 
   // Operator change data state
   const [operatorChangeData, setOperatorChangeData] = useState<OperatorChangeData>({
@@ -197,6 +200,23 @@ export default function EditContractPageClient({ contract, profile }: Props) {
     setUserInfo(data);
   };
 
+  // Handle PDF generation and automatically add to email attachments
+  const handlePdfGenerated = (pdfFile: File) => {
+    console.log("DEBUG: handlePdfGenerated called with file:", pdfFile.name, "Timestamp:", Date.now());
+    if (addEmailAttachment) {
+      console.log("DEBUG: Calling addEmailAttachment");
+      addEmailAttachment(pdfFile);
+    } else {
+      console.log("DEBUG: addEmailAttachment not available yet");
+    }
+  };
+
+  // Handle email component ready callback
+  const handleEmailComponentReady = useCallback((addAttachment: (file: File) => void) => {
+    console.log("DEBUG: Email component ready, setting addEmailAttachment");
+    setAddEmailAttachment(() => addAttachment);
+  }, []);
+
   const handleOperatorChangeDataChange = (data: OperatorChangeData) => {
     setOperatorChangeData(data);
   };
@@ -304,6 +324,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
             contractNumber={contractData?.broj_ugovora}
             operatorChangeDataInitial={operatorChangeData}
             onOperatorChangeDataChange={handleOperatorChangeDataChange}
+            onPdfGenerated={handlePdfGenerated}
           />
         )}
       </div>
@@ -316,6 +337,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
           recipientEmail={userInfo?.email}
           recipientName={userInfo?.userName}
           userInfo={userInfo}
+          onComponentReady={handleEmailComponentReady}
         />
       </div>
     </main>
