@@ -62,7 +62,7 @@ DISCLAIMER This message may contain confidential information and is intended onl
 `
   },
   template2: {
-    name: "Predložak 2 - Mailom vlasniku", 
+    name: "Predložak 2 - Mailom vlasniku",
     fields: ["Titula-Ime-Prezime", "Datum"],
     template: `Poštovani [Titula-Ime-Prezime],
 nastavno na telefonski razgovor kojeg smo obavili dana [Datum] i prihvaćenu Magic NET ponudu, te s obzirom da smo tom prilikom dogovorili sklapanje ugovora na daljinu, dostavljamo Vam Sažetak ugovora i Obavijest o sklopljenom ugovoru te zahtjev za promjenu operatora.
@@ -184,7 +184,7 @@ DISCLAIMER This message may contain confidential information and is intended onl
   }
 }
 
-export default function SendEmailPage({ 
+export default function SendEmailPage({
   contractNumber,
   serviceName,
   recipientEmail,
@@ -249,39 +249,54 @@ export default function SendEmailPage({
     }
   }, [contractNumber, serviceName, recipientEmail, recipientName]);
 
-  // Auto-populate template based on invoice delivery method
+  // Auto-populate template based on invoice delivery method and operator change status
   useEffect(() => {
     if (userInfo && userInfo.invoiceDeliveryMethod) {
       const deliveryMethod = userInfo.invoiceDeliveryMethod;
-      
+      const hasOperatorChange = userInfo.changeOperator;
+
       // Check for contactEmail first (more specific)
       if (deliveryMethod.includes('contactEmail')) {
-        // "Mailom kontakt osobi" - use template3
-        setSelectedTemplate('template3');
+        // "Mailom kontakt osobi" 
+        if (hasOperatorChange) {
+          // With operator change - use template4
+          setSelectedTemplate('template4');
+        } else {
+          // Without operator change - use template3
+          setSelectedTemplate('template3');
+        }
+        
         const contactPersonTitleName = `${userInfo.contactPersonTitle || 'g.'} ${userInfo.contactPersonName}`;
         const userTitleName = `${userInfo.userTitle || 'g.'} ${userInfo.userName}`;
         const possessivePronoun = userInfo.userTitle === 'gđa.' ? 'njezine' : 'njegove';
-        
+
         setTemplateFields({
           "Kontakt-Osoba": contactPersonTitleName,
           "Datum": '', // Leave empty for user to input
           "Vlasnik-Ugovora": userTitleName,
           "Posvojni-Zamjenica": possessivePronoun
         });
-        
+
         // Set recipient to contact person's email
         if (userInfo.contactPersonEmail) {
           setRecipient(userInfo.contactPersonEmail);
         }
       } else if (deliveryMethod.includes('email')) {
-        // "Mailom vlasniku" - use template1
-        setSelectedTemplate('template1');
+        // "Mailom vlasniku"
+        if (hasOperatorChange) {
+          // With operator change - use template2
+          setSelectedTemplate('template2');
+        } else {
+          // Without operator change - use template1
+          setSelectedTemplate('template1');
+        }
+        
         const userTitleName = `${userInfo.userTitle || 'g.'} ${userInfo.userName}`;
         setTemplateFields({
           "Titula-Ime-Prezime": userTitleName,
           "Datum": '' // Leave empty for user to input
         });
-        
+
         // Set recipient to user's email
         if (userInfo.email) {
           setRecipient(userInfo.email);
@@ -296,7 +311,7 @@ export default function SendEmailPage({
     if (templateKey && EMAIL_TEMPLATES[templateKey as keyof typeof EMAIL_TEMPLATES]) {
       const template = EMAIL_TEMPLATES[templateKey as keyof typeof EMAIL_TEMPLATES];
       setMessage(template.template);
-      
+
       // Reset template fields
       const initialFields: Record<string, string> = {};
       template.fields.forEach(field => {
@@ -321,19 +336,19 @@ export default function SendEmailPage({
   useEffect(() => {
     if (selectedTemplate && EMAIL_TEMPLATES[selectedTemplate as keyof typeof EMAIL_TEMPLATES]) {
       let updatedMessage = EMAIL_TEMPLATES[selectedTemplate as keyof typeof EMAIL_TEMPLATES].template;
-      
+
       // Replace placeholders with actual values
       Object.entries(templateFields).forEach(([field, value]) => {
         updatedMessage = updatedMessage.replace(new RegExp(`\\[${field}\\]`, 'g'), value);
       });
-      
+
       setMessage(updatedMessage);
     }
   }, [templateFields, selectedTemplate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Validate form fields
     if (!recipient.trim()) {
       toast({
@@ -352,23 +367,23 @@ export default function SendEmailPage({
       })
       return
     }
-    
+
     setIsSending(true)
-    
+
     // Show starting toast
     toast({
       title: "📤 Šalje se email...",
       description: "Molimo pričekajte dok se email obrađuje i šalje.",
       duration: 3000,
     })
-    
+
     try {
       // Create FormData for file uploads
       const formData = new FormData()
-      
+
       // First convert files to Base64 strings
       const filePromises = attachments.map(async (file) => {
-        return new Promise<{name: string, content: string}>((resolve) => {
+        return new Promise<{ name: string, content: string }>((resolve) => {
           const reader = new FileReader()
           reader.onloadend = () => {
             resolve({
@@ -379,10 +394,10 @@ export default function SendEmailPage({
           reader.readAsDataURL(file)
         })
       })
-      
+
       // Wait for all files to be converted
       const fileContents = await Promise.all(filePromises)
-      
+
       const response = await fetch('/api/sendEmail', {
         method: 'POST',
         headers: {
@@ -411,7 +426,7 @@ export default function SendEmailPage({
         description: `Poruka je poslana na ${recipient}${attachments.length ? ` s ${attachments.length} prilogom(a)` : ''}${responseData.additionalAttachmentsCount > 0 ? ` i ${responseData.additionalAttachmentsCount} dodatnim dokumentom(a)` : ''}.`,
         duration: 5000,
       })
-      
+
       // Reset form
       setSubject("")
       setRecipient("")
@@ -430,30 +445,30 @@ export default function SendEmailPage({
       setIsSending(false)
     }
   }
-  
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       // Convert FileList to array and append to existing attachments
       const newFiles = Array.from(e.target.files)
       addNewFiles(newFiles)
-      
+
       // Reset the file input so the same file can be selected again if needed
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
       }
     }
   }
-  
+
   const addNewFiles = (files: File[]) => {
     // Check for duplicate files by name
-    const newFiles = files.filter(file => 
+    const newFiles = files.filter(file =>
       !attachments.some(existingFile => existingFile.name === file.name)
     )
-    
+
     if (newFiles.length > 0) {
       setAttachments(prev => [...prev, ...newFiles])
     }
-    
+
     if (newFiles.length !== files.length) {
       toast({
         title: "Napomena",
@@ -461,50 +476,50 @@ export default function SendEmailPage({
       })
     }
   }
-  
+
   const removeAttachment = (index: number) => {
     setAttachments(attachments.filter((_, i) => i !== index))
   }
-  
+
   // Calculate total size of attachments
   const totalSize = attachments.reduce((total, file) => total + file.size, 0)
   const formattedTotalSize = formatFileSize(totalSize)
-  
+
   function formatFileSize(bytes: number): string {
     if (bytes === 0) return "0 Bytes"
-    
+
     const sizes = ["Bytes", "KB", "MB", "GB"]
     const i = Math.floor(Math.log(bytes) / Math.log(1024))
     return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + " " + sizes[i]
   }
-  
+
   // Drag and drop handlers
   const handleDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
     setIsDragging(true)
   }, [])
-  
+
   const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     // Only set isDragging to false if we're leaving the dropzone and not entering a child element
     if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
       setIsDragging(false)
     }
   }, [])
-  
+
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
   }, [])
-  
+
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
     setIsDragging(false)
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const newFiles = Array.from(e.dataTransfer.files)
       addNewFiles(newFiles)
@@ -514,7 +529,7 @@ export default function SendEmailPage({
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-8 text-center">Slanje Email Poruke</h1>
-      
+
       <div className="max-w-2xl mx-auto">
         <Card>
           <CardHeader>
@@ -525,10 +540,10 @@ export default function SendEmailPage({
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="recipient">Primatelj</Label>
-                <Input 
-                  id="recipient" 
-                  type="email" 
-                  placeholder="email@example.com" 
+                <Input
+                  id="recipient"
+                  type="email"
+                  placeholder="email@example.com"
                   value={recipient}
                   onChange={(e) => setRecipient(e.target.value)}
                   required
@@ -536,9 +551,9 @@ export default function SendEmailPage({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="subject">Predmet</Label>
-                <Input 
-                  id="subject" 
-                  placeholder="Unesite predmet poruke" 
+                <Input
+                  id="subject"
+                  placeholder="Unesite predmet poruke"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   required
@@ -586,20 +601,20 @@ export default function SendEmailPage({
 
               <div className="space-y-2">
                 <Label htmlFor="message">Poruka</Label>
-                <Textarea 
-                  id="message" 
-                  placeholder="Unesite tekst poruke..." 
+                <Textarea
+                  id="message"
+                  placeholder="Unesite tekst poruke..."
                   rows={8}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   required
                 />
               </div>
-              
+
               {/* File attachments section */}
               <div className="space-y-2">
                 <Label>Prilozi</Label>
-                <div 
+                <div
                   ref={dropZoneRef}
                   className={cn(
                     "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
@@ -627,7 +642,7 @@ export default function SendEmailPage({
                   <p className="text-xs text-gray-500">
                     Podržani formati: PDF, DOC, DOCX, JPG, PNG (maks. 25MB ukupno)
                   </p>
-                  
+
                   {attachments.length > 0 && (
                     <div className="mt-4 text-left">
                       <p className="text-sm font-semibold mb-2">Dodane datoteke ({formattedTotalSize}):</p>
@@ -653,7 +668,7 @@ export default function SendEmailPage({
                       </ul>
                     </div>
                   )}
-                  
+
                   <div className="mt-2 flex justify-end">
                     <Input
                       id="attachments"
@@ -681,8 +696,8 @@ export default function SendEmailPage({
               </div>
             </CardContent>
             <CardFooter>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full"
                 disabled={isSending}
               >
