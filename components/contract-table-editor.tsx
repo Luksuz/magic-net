@@ -983,7 +983,7 @@ export default function ContractTableEditor({
         <Button 
           onClick={handleGeneratePdf} 
           size="lg" 
-          className="min-w-[200px]"
+          className="min-w-[200px] "
         >
           <FileText className="mr-2 h-4 w-4" />
           Izvezi u PDF

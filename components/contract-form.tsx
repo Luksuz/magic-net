@@ -50,11 +50,9 @@ export default function ContractForm({
   const { profile } = useAuth()
   
   const [formData, setFormData] = useState<ContractData>(() => {
-    // Clean contract number by removing UG prefix if it exists
-
     return {
       ...initialData,
-      broj_ugovora: profile?.contract_number || ""
+      broj_ugovora: initialData.broj_ugovora || profile?.contract_number || ""
     };
   })
   const [userInfo, setUserInfo] = useState<UserInformation>(userInfoInitial || {
@@ -117,7 +115,7 @@ export default function ContractForm({
   const [actionItemsLoading, setActionItemsLoading] = useState(true)
   const [operatorChangeData, setOperatorChangeData] = useState<OperatorChangeData>(operatorChangeDataInitial || {
     existingOperatorName: "",
-    contractOnDistance: true,
+    contractOnDistance: false,
     agreeToPayDebts: true,
     numberTransfer: true,
     notificationAgreement: true,
@@ -826,35 +824,35 @@ export default function ContractForm({
     pdfButtonRef.current = el
   }
 
-  // Update contract number when user name or access method changes
+  // Initialize contract number from profile if empty
   useEffect(() => {
-    if (profile?.contract_number) {
-      const baseContractNumber = profile.contract_number;
-      
-      // Build the new format: BROJ ime prezime - način_pristupa
-      let finalContractNumber = baseContractNumber;
-      
-      if (userInfo?.userName) {
-        // Add user name (keep spaces)
-        const cleanUserName = userInfo.userName.trim();
-        finalContractNumber = `${baseContractNumber} ${cleanUserName}`;
-      }
-      
-      if (formData.access_method) {
-        // Add access method
-        finalContractNumber = `${finalContractNumber} - ${formData.access_method.toUpperCase()}`;
-      }
-      
-      // Only update if the current contract number is different
-      const currentNumber = formData.broj_ugovora || '';
-      if (currentNumber !== finalContractNumber) {
-        setFormData(prev => ({
-          ...prev,
-          broj_ugovora: finalContractNumber
-        }));
-      }
+    if (profile?.contract_number && !formData.broj_ugovora) {
+      setFormData(prev => ({
+        ...prev,
+        broj_ugovora: profile.contract_number
+      }));
     }
-  }, [userInfo?.userName, formData.access_method, profile?.contract_number]);
+  }, [profile?.contract_number]);
+
+  // Always append access method to current contract number when selected
+  useEffect(() => {
+    if (formData.access_method) {
+      const currentNumber = formData.broj_ugovora || '';
+      
+      // Remove existing access method if present (anything after ' - ')
+      const baseNumber = currentNumber.includes(' - ') 
+        ? currentNumber.split(' - ')[0] 
+        : currentNumber;
+      
+      // Always append the selected access method
+      const updatedNumber = `${baseNumber} - ${formData.access_method.toUpperCase()}`;
+      
+      setFormData(prev => ({
+        ...prev,
+        broj_ugovora: updatedNumber
+      }));
+    }
+  }, [formData.access_method]);
 
   // Debug operator change data
   useEffect(() => {
@@ -990,10 +988,10 @@ export default function ContractForm({
           <TabsTrigger className="flex-1" value="telephone">Telefon</TabsTrigger>
           <TabsTrigger className="flex-1" value="equipment">Oprema</TabsTrigger>
           <TabsTrigger className="flex-1" value="pricing">Cijene</TabsTrigger>
+          <TabsTrigger className="flex-1" value="user">Podaci korisnika</TabsTrigger>
           {userInfo.changeOperator && (
             <TabsTrigger className="flex-1" value="operator-change">Promjena operatera</TabsTrigger>
           )}
-          <TabsTrigger className="flex-1" value="user">Podaci korisnika</TabsTrigger>
         </TabsList>
 
         <div className="pdf-content">
@@ -2106,6 +2104,51 @@ export default function ContractForm({
             </Button>
           </div>
         </div>
+        
+        {/* Tab Navigation Controls */}
+        <div className="flex items-center space-x-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const tabs = ["basic", "internet", "tv", "telephone", "equipment", "pricing", "user"];
+              if (userInfo.changeOperator) tabs.push("operator-change");
+              const currentIndex = tabs.indexOf(activeTab);
+              if (currentIndex > 0) {
+                setActiveTab(tabs[currentIndex - 1]);
+              }
+            }}
+            disabled={activeTab === "basic"}
+            className="flex items-center space-x-1"
+          >
+            <span>←</span>
+            <span>Prethodni</span>
+          </Button>
+          
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const tabs = ["basic", "internet", "tv", "telephone", "equipment", "pricing", "user"];
+              if (userInfo.changeOperator) tabs.push("operator-change");
+              const currentIndex = tabs.indexOf(activeTab);
+              if (currentIndex < tabs.length - 1) {
+                setActiveTab(tabs[currentIndex + 1]);
+              }
+            }}
+            disabled={activeTab === (userInfo.changeOperator ? "operator-change" : "user")}
+            className="flex items-center space-x-1"
+          >
+            <span>Sljedeći</span>
+            <span>→</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* PDF Export and Operator Change Section */}
+      <div className="mt-4 flex justify-start">
         <div className="pdf-button-container">
           <PdfButton 
             formData={formData} 

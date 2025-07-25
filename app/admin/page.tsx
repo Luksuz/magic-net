@@ -88,6 +88,25 @@ export default function AdminDashboard() {
             </Card>
           </Link>
 
+          <Link href="/admin/manage-email-templates" className="block h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <FileText className="mr-2 h-5 w-5 text-primary" />
+                  Email Predlošci
+                </CardTitle>
+                <CardDescription>
+                  Upravljajte predlošcima za email poruke.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground">
+                  Dodajte, uredite ili obrišite email predloške koji se koriste za slanje poruka korisnicima.
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
           <Link href="/admin/manage-documents" className="block h-full">
             <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
               <CardHeader>

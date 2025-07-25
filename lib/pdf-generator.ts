@@ -548,9 +548,13 @@ export async function generatePDF(
     
     if (data.broj_ugovora && userInfo?.userName) {
       try {
-        // Extract components from contract number and user data
-        const contractParts = data.broj_ugovora.split(' ');
-        const baseNumber = contractParts[0]; // e.g., "2025-10-09-001"
+        // Extract base number from contract number - handle different formats
+        let baseNumber = data.broj_ugovora;
+        
+        // If contract number contains " - " (access method), extract base part
+        if (baseNumber.includes(' - ')) {
+          baseNumber = baseNumber.split(' - ')[0];
+        }
         
         // Get access method from form data
         const accessMethod = data.access_method || '';
@@ -569,7 +573,7 @@ export async function generatePDF(
           formattedName = userInfo.userName.toUpperCase();
         }
         
-        // Build filename: 2025-10-09-001-[nacin pristupa] PREZIME IME
+        // Build filename: baseNumber-[access_method] PREZIME IME
         filename = `${baseNumber}`;
         if (accessMethod) {
           filename += `-${accessMethod}`;

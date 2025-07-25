@@ -28,6 +28,9 @@ export function ProfileEditorClient({ profile }: Props) {
     contract_number: profile.contract_number ?? "",
     user_number: profile.user_number ?? "",
     seller_location: profile.seller_location ?? "",
+    full_name: profile.full_name ?? "",
+    phone_number: profile.phone_number ?? "",
+    telephone_number: profile.telephone_number ?? "",
   });
 
   useEffect(() => {
@@ -36,6 +39,9 @@ export function ProfileEditorClient({ profile }: Props) {
       contract_number: profile.contract_number ?? "",
       user_number: profile.user_number ?? "",
       seller_location: profile.seller_location ?? "",
+      full_name: profile.full_name ?? "",
+      phone_number: profile.phone_number ?? "",
+      telephone_number: profile.telephone_number ?? "",
     });
   }, [profile]);
 
@@ -111,6 +117,66 @@ export function ProfileEditorClient({ profile }: Props) {
               {form.seller_location || "Nije postavljen"}
             </div>
           )}
+        </div>
+
+        {/* Full Name */}
+        <div className="space-y-2">
+          <Label>Ime i prezime</Label>
+          {isEditing ? (
+            <Input
+              type="text"
+              value={form.full_name}
+              onChange={(e) => handleInput("full_name", e.target.value)}
+              placeholder="Unesite ime i prezime"
+            />
+          ) : (
+            <div className="p-2 border rounded">
+              {form.full_name || "Nije postavljen"}
+            </div>
+          )}
+          <p className="text-sm text-muted-foreground">
+            Ime će se koristiti u email predlošcima kao [Operater-Ime].
+          </p>
+        </div>
+
+        {/* Phone Number */}
+        <div className="space-y-2">
+          <Label>Broj mobitela</Label>
+          {isEditing ? (
+            <Input
+              type="tel"
+              value={form.phone_number}
+              onChange={(e) => handleInput("phone_number", e.target.value)}
+              placeholder="Unesite broj mobitela"
+            />
+          ) : (
+            <div className="p-2 border rounded">
+              {form.phone_number || "Nije postavljen"}
+            </div>
+          )}
+          <p className="text-sm text-muted-foreground">
+            Broj će se koristiti u email predlošcima kao [Mob].
+          </p>
+        </div>
+
+        {/* Telephone Number */}
+        <div className="space-y-2">
+          <Label>Broj telefona</Label>
+          {isEditing ? (
+            <Input
+              type="tel"
+              value={form.telephone_number}
+              onChange={(e) => handleInput("telephone_number", e.target.value)}
+              placeholder="Unesite broj telefona"
+            />
+          ) : (
+            <div className="p-2 border rounded">
+              {form.telephone_number || "Nije postavljen"}
+            </div>
+          )}
+          <p className="text-sm text-muted-foreground">
+            Broj će se koristiti u email predlošcima kao [Tel].
+          </p>
         </div>
 
         {/* Agreement Number

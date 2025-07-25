@@ -11,6 +11,8 @@ import { toast } from "@/components/ui/use-toast"
 import { FileText, X, Paperclip, Upload } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { UserInformation } from "@/components/user-information-form"
+import { getEmailTemplates, type MagicEmailTemplate } from "@/lib/supabase"
+import { useAuth } from "@/app/contexts/authContext"
 
 interface SendEmailPageProps {
   contractNumber?: string | null;
@@ -21,168 +23,6 @@ interface SendEmailPageProps {
   onComponentReady?: (addAttachment: (file: File) => void) => void;
 }
 
-// Email template definitions
-const EMAIL_TEMPLATES = {
-  template1: {
-    name: "Predložak 1 - Mailom vlasniku",
-    fields: ["Titula-Ime-Prezime", "Datum"],
-    template: `Poštovani [Titula-Ime-Prezime],
-nastavno na telefonski razgovor kojeg smo obavili dana [Datum] i prihvaćenu Magic NET ponudu, te s obzirom da smo tom prilikom dogovorili sklapanje ugovora na daljinu, dostavljamo Vam Sažetak ugovora i Obavijest o sklopljenom ugovoru.
-U skladu s odredbama članka 9. Pravilnika o načinu i uvjetima obavljanja djelatnosti elektroničkih komunikacijskih mreža i usluga, ugovor se smatra sklopljenim na daljinu kada potvrdite svoju suglasnost za sklapanje istog. Svoju suglasnost za sklapanje ugovora možete dati na jedan od sljedećih načina:
-·         potpisom Obavijesti o sklopljenom ugovoru u privitku ovog emaila koju trebate uručiti našem dostavljaču/predstavniku MAGIC NET – d.o.o.,
-·         potpisom Obavijesti o sklopljenom ugovoru i slanjem poštom na adresu: MAGIC NET- d.o.o., Kratka 2, 42000 Varaždin, Hrvatska,
-·         potpisom Obavijesti o sklopljenom ugovoru u privitku ovog emaila i odgovorom kako dajete suglasnost na sklapanje ugovora na ovu adresu elektroničke pošte, ili
-·         plaćanjem prvog mjesečnog računa.
- 
-S obzirom da ste se odlučili na sklapanje ugovora davanjem suglasnosti na dokumentaciju koju smo Vam poslali putem emaila te i dalje želite ponudu koju ste dogovorili putem telefona, molimo Vas da potpišete Obavijest o sklopljenom ugovoru u privitku ovog emaila, pošaljete presliku osobne iskaznice  i odgovorite kako dajete suglasnost na sklapanje ugovora na ovu adresu elektroničke pošte.
- 
-Budući ćete Ugovor sklopiti kanalima daljinske komunikacije i dalje zadržavate pravo, ne navodeći razloge, na raskid ugovora bez plaćanja naknade u roku 14 dana od dana davanja svoje suglasnosti na jedan od navedenih načina.
-Više informacija o detaljima ponude možete pronaći u priloženoj dokumentaciji koja sadrži Sažetak ugovora i Obavijest o sklopljenom ugovoru. Uz to, u prilogu Vam šaljemo Opće uvjete poslovanja te aktualni cjenik.
-Hvala Vam što ste se odlučili za naše usluge. U slučaju da imate bilo kakvo pitanje ili nedoumice uz sadržaj ugovorne dokumentacije, Usluga koje ugovarate ili samog postupka ugovaranja, dostupni smo za Vas na niže navedene kontakte.
- 
-Želimo Vam ugodan dan.
-Vaš MAGIC NET
-Srdačan pozdrav,
-Matija Kučar
-Marketing i prodaja
- 
-MAGIC NET d.o.o.
- 
-Sjedište:
-Koprivnička 17c
-42230 Ludbreg
-Hrvatska
- 
-Tel:  +385 42 420 441
-Mob: +385 95 309 2404
-
-IZJAVA O ODRICANJU ODGOVORNOSTI Ova elektronička pošta može sadržavati povjerljive informacije i namijenjena je samo osobama na koje je naslovljena. Ukoliko Vi niste navedeni primatelj nije Vam dopušteno njen sadržaj koristiti, kopirati ili dalje prosljeđivati. Molimo Vas da ako ste greškom primili ovu elektroničku poštu o tome odmah obavijestite pošiljatelja i izbrišete ovu poruku.
- 
-DISCLAIMER This message may contain confidential information and is intended only for the individual named. If you are not the named addressee you should not disseminate, distribute or copy this e-mail. Please notify the sender immediately by e-mail if you have received this e-mail-message by mistake and delete this e-mail-message from your system.
-`
-  },
-  template2: {
-    name: "Predložak 2 - Mailom vlasniku",
-    fields: ["Titula-Ime-Prezime", "Datum"],
-    template: `Poštovani [Titula-Ime-Prezime],
-nastavno na telefonski razgovor kojeg smo obavili dana [Datum] i prihvaćenu Magic NET ponudu, te s obzirom da smo tom prilikom dogovorili sklapanje ugovora na daljinu, dostavljamo Vam Sažetak ugovora i Obavijest o sklopljenom ugovoru te zahtjev za promjenu operatora.
-U skladu s odredbama članka 9. Pravilnika o načinu i uvjetima obavljanja djelatnosti elektroničkih komunikacijskih mreža i usluga, ugovor se smatra sklopljenim na daljinu kada potvrdite svoju suglasnost za sklapanje istog. Svoju suglasnost za sklapanje ugovora možete dati na jedan od sljedećih načina:
-·         potpisom Obavijesti o sklopljenom ugovoru u privitku ovog emaila koju trebate uručiti našem dostavljaču/predstavniku MAGIC NET – d.o.o.,
-·         potpisom Obavijesti o sklopljenom ugovoru i slanjem poštom na adresu: MAGIC NET- d.o.o., Kratka 2, 42000 Varaždin, Hrvatska,
-·         potpisom Obavijesti o sklopljenom ugovoru u privitku ovog emaila i odgovorom kako dajete suglasnost na sklapanje ugovora na ovu adresu elektroničke pošte, ili
-·         plaćanjem prvog mjesečnog računa.
- 
-S obzirom da ste se odlučili na sklapanje ugovora davanjem suglasnosti na dokumentaciju koju smo Vam poslali putem emaila te i dalje želite ponudu koju ste dogovorili putem telefona, molimo Vas da potpišete Obavijest o sklopljenom ugovoru u privitku ovog emaila, zahtjev za promjenu operatora, pošaljete presliku osobne iskaznice  i odgovorite kako dajete suglasnost na sklapanje ugovora na ovu adresu elektroničke pošte.
- 
-Budući ćete Ugovor sklopiti kanalima daljinske komunikacije i dalje zadržavate pravo, ne navodeći razloge, na raskid ugovora bez plaćanja naknade u roku 14 dana od dana davanja svoje suglasnosti na jedan od navedenih načina.
-Više informacija o detaljima ponude možete pronaći u priloženoj dokumentaciji koja sadrži Sažetak ugovora i Obavijest o sklopljenom ugovoru. Uz to, u prilogu Vam šaljemo Opće uvjete poslovanja te aktualni cjenik.
-Hvala Vam što ste se odlučili za naše usluge. U slučaju da imate bilo kakvo pitanje ili nedoumice uz sadržaj ugovorne dokumentacije, Usluga koje ugovarate ili samog postupka ugovaranja, dostupni smo za Vas na niže navedene kontakte.
- 
-Želimo Vam ugodan dan.
-Vaš MAGIC NET
-Srdačan pozdrav,
-Matija Kučar
-Marketing i prodaja
- 
-MAGIC NET d.o.o.
- 
-Sjedište:
-Koprivnička 17c
-42230 Ludbreg
-Hrvatska
- 
-Tel:  +385 42 420 441
-Mob: +385 95 309 2404
- 
-
- 
-IZJAVA O ODRICANJU ODGOVORNOSTI Ova elektronička pošta može sadržavati povjerljive informacije i namijenjena je samo osobama na koje je naslovljena. Ukoliko Vi niste navedeni primatelj nije Vam dopušteno njen sadržaj koristiti, kopirati ili dalje prosljeđivati. Molimo Vas da ako ste greškom primili ovu elektroničku poštu o tome odmah obavijestite pošiljatelja i izbrišete ovu poruku.
- 
-DISCLAIMER This message may contain confidential information and is intended only for the individual named. If you are not the named addressee you should not disseminate, distribute or copy this e-mail. Please notify the sender immediately by e-mail if you have received this e-mail-message by mistake and delete this e-mail-message from your system.
-`
-  },
-  template3: {
-    name: "Predložak 3 - Mailom kontakt osobi",
-    fields: ["Kontakt-Osoba", "Datum", "Vlasnik-Ugovora", "Posvojni-Zamjenica"],
-    template: `Poštovana [Kontakt-Osoba],
-nastavno na telefonski razgovor kojeg smo obavili dana [Datum] i prihvaćenu Magic NET ponudu, te s obzirom da smo tom prilikom dogovorili sklapanje ugovora na daljinu, dostavljamo Vam Sažetak ugovora i Obavijest o sklopljenom ugovoru.
-U skladu s odredbama članka 9. Pravilnika o načinu i uvjetima obavljanja djelatnosti elektroničkih komunikacijskih mreža i usluga, ugovor se smatra sklopljenim na daljinu kada potvrdite svoju suglasnost za sklapanje istog. Svoju suglasnost za sklapanje ugovora možete dati na jedan od sljedećih načina:
-·         potpisom Obavijesti o sklopljenom ugovoru u privitku ovog emaila koju trebate uručiti našem dostavljaču/predstavniku MAGIC NET – d.o.o.,
-·         potpisom Obavijesti o sklopljenom ugovoru i slanjem poštom na adresu: MAGIC NET- d.o.o., Kratka 2, 42000 Varaždin, Hrvatska,
-·         potpisom Obavijesti o sklopljenom ugovoru u privitku ovog emaila i odgovorom kako dajete suglasnost na sklapanje ugovora na ovu adresu elektroničke pošte, ili
-·         plaćanjem prvog mjesečnog računa.
- 
-S obzirom da ste se odlučili na sklapanje ugovora davanjem suglasnosti na dokumentaciju koju smo Vam poslali putem emaila te i dalje želite ponudu koju ste dogovorili putem telefona, molimo Vas da [Vlasnik-Ugovora] potpiše Obavijest o sklopljenom ugovoru u privitku ovog emaila, pošaljete presliku [Posvojni-Zamjenica] osobne iskaznice  i odgovorite kako dajete suglasnost na sklapanje ugovora na ovu adresu elektroničke pošte.
- 
-Budući ćete Ugovor sklopiti kanalima daljinske komunikacije i dalje zadržavate pravo, ne navodeći razloge, na raskid ugovora bez plaćanja naknade u roku 14 dana od dana davanja svoje suglasnosti na jedan od navedenih načina.
-Više informacija o detaljima ponude možete pronaći u priloženoj dokumentaciji koja sadrži Sažetak ugovora i Obavijest o sklopljenom ugovoru. Uz to, u prilogu Vam šaljemo Opće uvjete poslovanja te aktualni cjenik.
-Hvala Vam što ste se odlučili za naše usluge. U slučaju da imate bilo kakvo pitanje ili nedoumice uz sadržaj ugovorne dokumentacije, Usluga koje ugovarate ili samog postupka ugovaranja, dostupni smo za Vas na niže navedene kontakte.
- 
-Želimo Vam ugodan dan.
-Vaš MAGIC NET
-Srdačan pozdrav,
-Matija Kučar
-Marketing i prodaja
- 
-MAGIC NET d.o.o.
- 
-Sjedište:
-Koprivnička 17c
-42230 Ludbreg
-Hrvatska
- 
-Tel:  +385 42 420 441
-Mob: +385 95 309 2404
- 
-
- 
-IZJAVA O ODRICANJU ODGOVORNOSTI Ova elektronička pošta može sadržavati povjerljive informacije i namijenjena je samo osobama na koje je naslovljena. Ukoliko Vi niste navedeni primatelj nije Vam dopušteno njen sadržaj koristiti, kopirati ili dalje prosljeđivati. Molimo Vas da ako ste greškom primili ovu elektroničku poštu o tome odmah obavijestite pošiljatelja i izbrišete ovu poruku.
- 
-DISCLAIMER This message may contain confidential information and is intended only for the individual named. If you are not the named addressee you should not disseminate, distribute or copy this e-mail. Please notify the sender immediately by e-mail if you have received this e-mail-message by mistake and delete this e-mail-message from your system.
-`
-  },
-  template4: {
-    name: "Predložak 4 - Mailom kontakt osobi",
-    fields: ["Kontakt-Osoba", "Datum", "Vlasnik-Ugovora", "Posvojni-Zamjenica"],
-    template: `Poštovana gđo. [Kontakt-Osoba],
-nastavno na telefonski razgovor kojeg smo obavili dana [Datum] i prihvaćenu Magic NET ponudu, te s obzirom da smo tom prilikom dogovorili sklapanje ugovora na daljinu, dostavljamo Vam Sažetak ugovora i Obavijest o sklopljenom ugovoru te zahtjev za promjenu operatora.
-U skladu s odredbama članka 9. Pravilnika o načinu i uvjetima obavljanja djelatnosti elektroničkih komunikacijskih mreža i usluga, ugovor se smatra sklopljenim na daljinu kada potvrdite svoju suglasnost za sklapanje istog. Svoju suglasnost za sklapanje ugovora možete dati na jedan od sljedećih načina:
-·         potpisom Obavijesti o sklopljenom ugovoru u privitku ovog emaila koju trebate uručiti našem dostavljaču/predstavniku MAGIC NET – d.o.o.,
-·         potpisom Obavijesti o sklopljenom ugovoru i slanjem poštom na adresu: MAGIC NET- d.o.o., Kratka 2, 42000 Varaždin, Hrvatska,
-·         potpisom Obavijesti o sklopljenom ugovoru u privitku ovog emaila i odgovorom kako dajete suglasnost na sklapanje ugovora na ovu adresu elektroničke pošte, ili
-·         plaćanjem prvog mjesečnog računa.
- 
-S obzirom da ste se odlučili na sklapanje ugovora davanjem suglasnosti na dokumentaciju koju smo Vam poslali putem emaila te i dalje želite ponudu koju ste dogovorili putem telefona, molimo Vas da [Vlasnik-Ugovora] potpiše Obavijest o sklopljenom ugovoru u privitku ovog emaila, zahtjev za promjenu operatora, pošaljete presliku [Posvojni-Zamjenica] osobne iskaznice  i odgovorite kako dajete suglasnost na sklapanje ugovora na ovu adresu elektroničke pošte.
- 
-Budući ćete Ugovor sklopiti kanalima daljinske komunikacije i dalje zadržavate pravo, ne navodeći razloge, na raskid ugovora bez plaćanja naknade u roku 14 dana od dana davanja svoje suglasnosti na jedan od navedenih načina.
-Više informacija o detaljima ponude možete pronaći u priloženoj dokumentaciji koja sadrži Sažetak ugovora i Obavijest o sklopljenom ugovoru. Uz to, u prilogu Vam šaljemo Opće uvjete poslovanja te aktualni cjenik.
-Hvala Vam što ste se odlučili za naše usluge. U slučaju da imate bilo kakvo pitanje ili nedoumice uz sadržaj ugovorne dokumentacije, Usluga koje ugovarate ili samog postupka ugovaranja, dostupni smo za Vas na niže navedene kontakte.
- 
-Želimo Vam ugodan dan.
-Vaš MAGIC NET
-Srdačan pozdrav,
-Matija Kučar
-Marketing i prodaja
- 
-MAGIC NET d.o.o.
- 
-Sjedište:
-Koprivnička 17c
-42230 Ludbreg
-Hrvatska
- 
-Tel:  +385 42 420 441
-Mob: +385 95 309 2404
- 
-
- 
-IZJAVA O ODRICANJU ODGOVORNOSTI Ova elektronička pošta može sadržavati povjerljive informacije i namijenjena je samo osobama na koje je naslovljena. Ukoliko Vi niste navedeni primatelj nije Vam dopušteno njen sadržaj koristiti, kopirati ili dalje prosljeđivati. Molimo Vas da ako ste greškom primili ovu elektroničku poštu o tome odmah obavijestite pošiljatelja i izbrišete ovu poruku.
- 
-DISCLAIMER This message may contain confidential information and is intended only for the individual named. If you are not the named addressee you should not disseminate, distribute or copy this e-mail. Please notify the sender immediately by e-mail if you have received this e-mail-message by mistake and delete this e-mail-message from your system.
-
-`
-  }
-}
 
 export default function SendEmailPage({
   contractNumber,
@@ -192,16 +32,46 @@ export default function SendEmailPage({
   userInfo,
   onComponentReady
 }: SendEmailPageProps) {
+  const { profile } = useAuth()
   const [subject, setSubject] = useState("")
   const [recipient, setRecipient] = useState("")
   const [message, setMessage] = useState("")
+  
+
   const [isSending, setIsSending] = useState(false)
   const [attachments, setAttachments] = useState<File[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<string>("")
   const [templateFields, setTemplateFields] = useState<Record<string, string>>({})
+  const [emailTemplates, setEmailTemplates] = useState<MagicEmailTemplate[]>([])
+  const [templatesLoading, setTemplatesLoading] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dropZoneRef = useRef<HTMLDivElement>(null)
+
+  // Fetch email templates from database
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const result = await getEmailTemplates()
+        if (result.success) {
+          setEmailTemplates(result.data)
+        } else {
+          console.error("Error fetching email templates:", result.error)
+          toast({
+            title: "Greška",
+            description: "Nije moguće dohvatiti email predloške.",
+            variant: "destructive"
+          })
+        }
+      } catch (error) {
+        console.error("Error fetching email templates:", error)
+      } finally {
+        setTemplatesLoading(false)
+      }
+    }
+    
+    fetchTemplates()
+  }, [])
 
   // Expose addAttachment function to parent component
   useEffect(() => {
@@ -306,18 +176,29 @@ export default function SendEmailPage({
   }, [userInfo]);
 
   // Handle template selection
-  const handleTemplateChange = (templateKey: string) => {
-    setSelectedTemplate(templateKey);
-    if (templateKey && EMAIL_TEMPLATES[templateKey as keyof typeof EMAIL_TEMPLATES]) {
-      const template = EMAIL_TEMPLATES[templateKey as keyof typeof EMAIL_TEMPLATES];
-      setMessage(template.template);
-
-      // Reset template fields
-      const initialFields: Record<string, string> = {};
-      template.fields.forEach(field => {
-        initialFields[field] = '';
-      });
-      setTemplateFields(initialFields);
+  const handleTemplateChange = (templateId: string) => {
+    setSelectedTemplate(templateId);
+    if (templateId) {
+      const template = emailTemplates.find(t => t.id.toString() === templateId);
+      if (template && template.content) {
+        setMessage(template.content);
+        
+        // Extract placeholders from template content
+        const placeholderRegex = /\[([^\]]+)\]/g;
+        const placeholders = Array.from(template.content.matchAll(placeholderRegex), match => match[1]);
+        
+        // Auto-populated placeholders that should not be included in templateFields
+        const autoPopulatedPlaceholders = ['Tel', 'Mob', 'Operater-Ime'];
+        
+        const initialFields: Record<string, string> = {};
+        placeholders.forEach(placeholder => {
+          // Only add placeholders that are NOT auto-populated
+          if (!autoPopulatedPlaceholders.includes(placeholder)) {
+            initialFields[placeholder] = '';
+          }
+        });
+        setTemplateFields(initialFields);
+      }
     } else {
       setMessage("");
       setTemplateFields({});
@@ -334,17 +215,38 @@ export default function SendEmailPage({
 
   // Update message when template fields change
   useEffect(() => {
-    if (selectedTemplate && EMAIL_TEMPLATES[selectedTemplate as keyof typeof EMAIL_TEMPLATES]) {
-      let updatedMessage = EMAIL_TEMPLATES[selectedTemplate as keyof typeof EMAIL_TEMPLATES].template;
+    if (selectedTemplate && emailTemplates.length > 0) {
+      const template = emailTemplates.find(t => t.id.toString() === selectedTemplate);
+      if (template && template.content) {
+        let updatedMessage = template.content;
 
-      // Replace placeholders with actual values
-      Object.entries(templateFields).forEach(([field, value]) => {
-        updatedMessage = updatedMessage.replace(new RegExp(`\\[${field}\\]`, 'g'), value);
-      });
+        // Replace user-entered placeholders with actual values
+        Object.entries(templateFields).forEach(([field, value]) => {
+          updatedMessage = updatedMessage.replace(new RegExp(`\\[${field}\\]`, 'g'), value);
+        });
 
-      setMessage(updatedMessage);
+        // Auto-populate Tel:, Mob:, and Operater-Ime placeholders from profile
+        if (profile) {
+          // Replace [Tel] with profile telephone_number
+          if (profile.telephone_number) {
+            updatedMessage = updatedMessage.replace(/\[Tel\]/g, profile.telephone_number);
+          }
+          
+          // Replace [Mob] with profile phone_number  
+          if (profile.phone_number) {
+            updatedMessage = updatedMessage.replace(/\[Mob\]/g, profile.phone_number);
+          }
+          
+          // Replace [Operater-Ime] with profile full_name
+          if (profile.full_name) {
+            updatedMessage = updatedMessage.replace(/\[Operater-Ime\]/g, profile.full_name);
+          }
+        }
+
+        setMessage(updatedMessage);
+      }
     }
-  }, [templateFields, selectedTemplate]);
+  }, [templateFields, selectedTemplate, emailTemplates, profile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -568,21 +470,25 @@ export default function SendEmailPage({
                     <SelectValue placeholder="Odaberite predložak poruke" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(EMAIL_TEMPLATES).map(([key, template]) => (
-                      <SelectItem key={key} value={key}>
-                        {template.name}
-                      </SelectItem>
-                    ))}
+                    {templatesLoading ? (
+                      <SelectItem value="loading" disabled>Učitavanje predložaka...</SelectItem>
+                    ) : (
+                      emailTemplates.map((template) => (
+                        <SelectItem key={template.id} value={template.id.toString()}>
+                          {template.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Template Fields */}
-              {selectedTemplate && EMAIL_TEMPLATES[selectedTemplate as keyof typeof EMAIL_TEMPLATES] && (
+              {selectedTemplate && Object.keys(templateFields).length > 0 && (
                 <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
                   <Label className="text-sm font-semibold">Podaci za predložak:</Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {EMAIL_TEMPLATES[selectedTemplate as keyof typeof EMAIL_TEMPLATES].fields.map((field) => (
+                    {Object.keys(templateFields).map((field) => (
                       <div key={field} className="space-y-2">
                         <Label htmlFor={field} className="text-sm">
                           {field}

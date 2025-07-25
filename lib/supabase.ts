@@ -92,6 +92,13 @@ export type MagicAdditionalTvDevice = {
   price: number | null
 }
 
+export type MagicEmailTemplate = {
+  id: number
+  created_at: string
+  name: string | null
+  content: string | null
+}
+
 export type OperatorChangeData = {
   existingOperatorName: string
   contractOnDistance: boolean
@@ -841,6 +848,74 @@ export async function deleteActionItem(id: number) {
     return { success: true }
   } catch (error) {
     console.error('Error deleting action item:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+  }
+}
+
+// Email Templates Management Functions
+export async function getEmailTemplates() {
+  try {
+    const { data, error } = await supabase
+      .from('magic_email_templates')
+      .select('*')
+      .order('created_at', { ascending: true })
+    
+    if (error) throw error
+    
+    return { success: true, data: data as MagicEmailTemplate[] }
+  } catch (error) {
+    console.error('Error fetching email templates:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error', data: [] }
+  }
+}
+
+export async function createEmailTemplate(templateData: { name: string; content: string }) {
+  try {
+    const { data, error } = await supabase
+      .from('magic_email_templates')
+      .insert([templateData])
+      .select()
+      .single()
+    
+    if (error) throw error
+    
+    return { success: true, data: data as MagicEmailTemplate }
+  } catch (error) {
+    console.error('Error creating email template:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+  }
+}
+
+export async function updateEmailTemplate(id: number, templateData: { name?: string; content?: string }) {
+  try {
+    const { data, error } = await supabase
+      .from('magic_email_templates')
+      .update(templateData)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    
+    return { success: true, data: data as MagicEmailTemplate }
+  } catch (error) {
+    console.error('Error updating email template:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+  }
+}
+
+export async function deleteEmailTemplate(id: number) {
+  try {
+    const { error } = await supabase
+      .from('magic_email_templates')
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+    
+    return { success: true }
+  } catch (error) {
+    console.error('Error deleting email template:', error)
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
   }
 }

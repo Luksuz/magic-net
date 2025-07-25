@@ -3,10 +3,9 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Header } from "@/components/header";
-import { DebugWindow } from "@/components/debug-window";
+// import { DebugWindow } from "@/components/debug-window";
 import { AuthProvider } from "./contexts/authContext";
 import { createClient } from "@/utils/supabase/server";
-import MainNavigation from "@/components/navigation/MainNavigation";
 import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -45,11 +44,10 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <Header />
-            {user && <MainNavigation />}
-            <main className="md:ml-0 transition-all duration-300">
+            <main className="transition-all duration-300">
               {children}
             </main>
-            <DebugWindow />
+            {/* <DebugWindow /> */}
             <Toaster />
           </ThemeProvider>
         </AuthProvider>

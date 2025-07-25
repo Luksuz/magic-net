@@ -379,11 +379,12 @@ export default function UserInformationForm({
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <div className="flex items-center space-x-2 pt-2">
+            <div className={`flex items-center space-x-2 pt-2 p-3 rounded-md transition-colors border-2 border-yellow-400 bg-yellow-50`}>
               <Checkbox
                 id="changeOperator"
                 checked={userInfo.changeOperator}
                 onCheckedChange={(checked) => handleChange("changeOperator", Boolean(checked))}
+                className={userInfo.changeOperator ? 'border-yellow-400' : ''}
               />
               <Label htmlFor="changeOperator" className="font-normal">
                 Želim podnijeti zahtjev za promjenu operatera

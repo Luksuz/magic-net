@@ -33,7 +33,7 @@ export default async function EditContractLoader({ contractId }: Props) {
   const month = String(now.getMonth() + 1).padStart(2, "0");
 
   if (profile.agreement_number) {
-    contract.broj_ugovora = `UG-${year}-${month}-${profile.agreement_number}`;
+    contract.broj_ugovora = `${year}-${month}-${profile.agreement_number}`;
   }
 
   return <EditContractPageClient contract={contract} profile={profile} />;
