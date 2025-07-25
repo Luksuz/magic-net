@@ -40,7 +40,8 @@ export default function ContractTableEditor({
   onContractConcludedOnPremisesChange,
   contractNumber,
   operatorChangeDataInitial,
-  onOperatorChangeDataChange
+  onOperatorChangeDataChange,
+  onContractDataChange
 }: { 
   initialData: ContractData
   userInfo: UserInformation
@@ -53,6 +54,7 @@ export default function ContractTableEditor({
   contractNumber?: string | null
   operatorChangeDataInitial?: OperatorChangeData
   onOperatorChangeDataChange?: (data: OperatorChangeData) => void
+  onContractDataChange?: (data: ContractData) => void
 }) {
   const [formData, setFormData] = useState<ContractData>(() => {
     // Clean contract number by removing UG prefix if it exists
@@ -145,6 +147,13 @@ export default function ContractTableEditor({
       }
     }
   }, [userInfo?.userName, formData.access_method, contractNumber]);
+
+  // Notify parent when contract data changes
+  useEffect(() => {
+    if (onContractDataChange) {
+      onContractDataChange(formData);
+    }
+  }, [formData, onContractDataChange]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target

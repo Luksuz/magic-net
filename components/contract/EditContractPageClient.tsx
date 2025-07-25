@@ -221,6 +221,11 @@ export default function EditContractPageClient({ contract, profile }: Props) {
     setOperatorChangeData(data);
   };
 
+  const handleContractDataChange = (data: ContractData) => {
+    console.log("🔄 DEBUG: Contract data changed:", { access_method: data.access_method });
+    setContractData(data);
+  };
+
   const handleTerminalEquipmentChange = (updatedEquipment: TerminalEquipment[]) => {
     setTerminalEquipment(updatedEquipment); // Update local state for rendering
     formTerminalEquipmentRef.current = updatedEquipment; // Update ref for view switching
@@ -310,6 +315,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
             contractNumber={contractData?.broj_ugovora}
             operatorChangeDataInitial={operatorChangeData}
             onOperatorChangeDataChange={handleOperatorChangeDataChange}
+            onContractDataChange={handleContractDataChange}
           />
         ) : (
           <ContractForm
@@ -325,6 +331,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
             operatorChangeDataInitial={operatorChangeData}
             onOperatorChangeDataChange={handleOperatorChangeDataChange}
             onPdfGenerated={handlePdfGenerated}
+            onContractDataChange={handleContractDataChange}
           />
         )}
       </div>
@@ -337,6 +344,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
           recipientEmail={userInfo?.email}
           recipientName={userInfo?.userName}
           userInfo={userInfo}
+          accessMethod={contractData?.access_method}
           onComponentReady={handleEmailComponentReady}
         />
       </div>

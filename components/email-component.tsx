@@ -11,7 +11,7 @@ import { toast } from "@/components/ui/use-toast"
 import { FileText, X, Paperclip, Upload } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { UserInformation } from "@/components/user-information-form"
-import { getEmailTemplates, type MagicEmailTemplate } from "@/lib/supabase"
+import { getEmailTemplates, findMatchingEmailTemplate, type MagicEmailTemplate } from "@/lib/supabase"
 import { useAuth } from "@/app/contexts/authContext"
 
 interface SendEmailPageProps {
@@ -20,6 +20,7 @@ interface SendEmailPageProps {
   recipientEmail?: string | null;
   recipientName?: string | null;
   userInfo?: UserInformation;
+  accessMethod?: string | null;
   onComponentReady?: (addAttachment: (file: File) => void) => void;
 }
 
@@ -30,8 +31,10 @@ export default function SendEmailPage({
   recipientEmail,
   recipientName,
   userInfo,
+  accessMethod,
   onComponentReady
 }: SendEmailPageProps) {
+  console.log("📧 DEBUG: SendEmailPage received accessMethod:", accessMethod);
   const { profile } = useAuth()
   const [subject, setSubject] = useState("")
   const [recipient, setRecipient] = useState("")
@@ -72,6 +75,70 @@ export default function SendEmailPage({
     
     fetchTemplates()
   }, [])
+
+  // Auto-select template based on user conditions
+  useEffect(() => {
+    if (userInfo && emailTemplates.length > 0 && !selectedTemplate) {
+      const userConditions = {
+        invoiceDeliveryMethod: userInfo.invoiceDeliveryMethod || [],
+        changeOperator: userInfo.changeOperator || false,
+        accessMethod: accessMethod || undefined
+      }
+
+      console.log("🔍 DEBUG: Auto-selecting template with conditions:", userConditions)
+      console.log("🔍 DEBUG: userInfo detailed:", {
+        invoiceDeliveryMethod: userInfo.invoiceDeliveryMethod,
+        changeOperator: userInfo.changeOperator,
+        accessMethod: accessMethod
+      })
+      console.log("🔍 DEBUG: Available templates:", emailTemplates.map(t => ({ 
+        id: t.id, 
+        name: t.name, 
+        conditions: t.conditions 
+      })))
+
+      const matchingTemplate = findMatchingEmailTemplate(userConditions, emailTemplates)
+      
+      if (matchingTemplate) {
+        console.log("✅ DEBUG: Auto-selected template:", matchingTemplate.name)
+        handleTemplateChange(matchingTemplate.id.toString())
+        
+        // Auto-populate specific fields based on delivery method
+        if (userInfo.invoiceDeliveryMethod?.includes('contactEmail')) {
+          // "Mailom kontakt osobi" 
+          const contactPersonTitleName = `${userInfo.contactPersonTitle || 'g.'} ${userInfo.contactPersonName}`
+          const userTitleName = `${userInfo.userTitle || 'g.'} ${userInfo.userName}`
+          const possessivePronoun = userInfo.userTitle === 'gđa.' ? 'njezine' : 'njegove'
+
+          setTemplateFields({
+            "Kontakt-Osoba": contactPersonTitleName,
+            "Datum": '', // Leave empty for user to input
+            "Vlasnik-Ugovora": userTitleName,
+            "Posvojni-Zamjenica": possessivePronoun
+          })
+
+          // Set recipient to contact person's email
+          if (userInfo.contactPersonEmail) {
+            setRecipient(userInfo.contactPersonEmail)
+          }
+        } else if (userInfo.invoiceDeliveryMethod?.includes('email')) {
+          // "Mailom vlasniku"
+          const userTitleName = `${userInfo.userTitle || 'g.'} ${userInfo.userName}`
+          setTemplateFields({
+            "Titula-Ime-Prezime": userTitleName,
+            "Datum": '' // Leave empty for user to input
+          })
+
+          // Set recipient to user's email
+          if (userInfo.email) {
+            setRecipient(userInfo.email)
+          }
+        }
+      } else {
+        console.log("❌ DEBUG: No matching template found for conditions:", userConditions)
+      }
+    }
+  }, [userInfo, emailTemplates, selectedTemplate, accessMethod])
 
   // Expose addAttachment function to parent component
   useEffect(() => {
@@ -119,61 +186,7 @@ export default function SendEmailPage({
     }
   }, [contractNumber, serviceName, recipientEmail, recipientName]);
 
-  // Auto-populate template based on invoice delivery method and operator change status
-  useEffect(() => {
-    if (userInfo && userInfo.invoiceDeliveryMethod) {
-      const deliveryMethod = userInfo.invoiceDeliveryMethod;
-      const hasOperatorChange = userInfo.changeOperator;
 
-      // Check for contactEmail first (more specific)
-      if (deliveryMethod.includes('contactEmail')) {
-        // "Mailom kontakt osobi" 
-        if (hasOperatorChange) {
-          // With operator change - use template4
-          setSelectedTemplate('template4');
-        } else {
-          // Without operator change - use template3
-          setSelectedTemplate('template3');
-        }
-        
-        const contactPersonTitleName = `${userInfo.contactPersonTitle || 'g.'} ${userInfo.contactPersonName}`;
-        const userTitleName = `${userInfo.userTitle || 'g.'} ${userInfo.userName}`;
-        const possessivePronoun = userInfo.userTitle === 'gđa.' ? 'njezine' : 'njegove';
-
-        setTemplateFields({
-          "Kontakt-Osoba": contactPersonTitleName,
-          "Datum": '', // Leave empty for user to input
-          "Vlasnik-Ugovora": userTitleName,
-          "Posvojni-Zamjenica": possessivePronoun
-        });
-
-        // Set recipient to contact person's email
-        if (userInfo.contactPersonEmail) {
-          setRecipient(userInfo.contactPersonEmail);
-        }
-      } else if (deliveryMethod.includes('email')) {
-        // "Mailom vlasniku"
-        if (hasOperatorChange) {
-          // With operator change - use template2
-          setSelectedTemplate('template2');
-        } else {
-          // Without operator change - use template1
-          setSelectedTemplate('template1');
-        }
-        
-        const userTitleName = `${userInfo.userTitle || 'g.'} ${userInfo.userName}`;
-        setTemplateFields({
-          "Titula-Ime-Prezime": userTitleName,
-          "Datum": '' // Leave empty for user to input
-        });
-
-        // Set recipient to user's email
-        if (userInfo.email) {
-          setRecipient(userInfo.email);
-        }
-      }
-    }
-  }, [userInfo]);
 
   // Handle template selection
   const handleTemplateChange = (templateId: string) => {

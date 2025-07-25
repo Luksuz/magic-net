@@ -31,6 +31,7 @@ interface ContractFormProps {
   onOperatorChangeDataChange?: (data: OperatorChangeData) => void
   contractNumber?: string | null
   onPdfGenerated?: (pdfFile: File) => void
+  onContractDataChange?: (data: ContractData) => void
 }
 
 export default function ContractForm({ 
@@ -45,7 +46,8 @@ export default function ContractForm({
   operatorChangeDataInitial,
   onOperatorChangeDataChange,
   contractNumber,
-  onPdfGenerated
+  onPdfGenerated,
+  onContractDataChange
 }: ContractFormProps) {
   const { profile } = useAuth()
   
@@ -859,6 +861,13 @@ export default function ContractForm({
     console.log('DEBUG: operatorChangeData state:', operatorChangeData);
   }, [operatorChangeData]);
 
+  // Notify parent when contract data changes
+  useEffect(() => {
+    if (onContractDataChange) {
+      onContractDataChange(formData);
+    }
+  }, [formData, onContractDataChange]);
+
   // Sync operator change data with user data changes (only if not manually modified)
   useEffect(() => {
     if (userInfo.changeOperator) {
@@ -990,7 +999,7 @@ export default function ContractForm({
           <TabsTrigger className="flex-1" value="pricing">Cijene</TabsTrigger>
           <TabsTrigger className="flex-1" value="user">Podaci korisnika</TabsTrigger>
           {userInfo.changeOperator && (
-            <TabsTrigger className="flex-1" value="operator-change">Promjena operatera</TabsTrigger>
+            <TabsTrigger className="flex-1 bg-orange-200" value="operator-change">Promjena operatera</TabsTrigger>
           )}
         </TabsList>
 

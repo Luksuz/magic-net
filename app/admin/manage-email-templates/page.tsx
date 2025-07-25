@@ -7,11 +7,56 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "@/components/ui/use-toast"
 import { Pencil, Trash2, Plus } from "lucide-react"
 import { getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, type MagicEmailTemplate } from "@/lib/supabase"
 import { useAuth } from "@/app/contexts/authContext"
 import { redirect } from "next/navigation"
+
+// Available conditions for email templates
+const AVAILABLE_CONDITIONS = [
+  {
+    id: "invoiceDeliveryMethod:email",
+    label: "Dostava računa: Mailom vlasniku",
+    category: "Dostava računa"
+  },
+  {
+    id: "invoiceDeliveryMethod:contactEmail", 
+    label: "Dostava računa: Mailom kontakt osobi",
+    category: "Dostava računa"
+  },
+  {
+    id: "changeOperator:true",
+    label: "Promjena operatera: DA",
+    category: "Promjena operatera"
+  },
+  {
+    id: "changeOperator:false",
+    label: "Promjena operatera: NE", 
+    category: "Promjena operatera"
+  },
+  {
+    id: "accessMethod:BS",
+    label: "Način pristupa: BS",
+    category: "Način pristupa"
+  },
+  {
+    id: "accessMethod:FA",
+    label: "Način pristupa: FA",
+    category: "Način pristupa"
+  },
+  {
+    id: "accessMethod:AERONET",
+    label: "Način pristupa: AERONET",
+    category: "Način pristupa"
+  },
+  {
+    id: "accessMethod:INFRA",
+    label: "Način pristupa: INFRA",
+    category: "Način pristupa"
+  }
+]
 
 export default function ManageEmailTemplatesPage() {
   const { isAdmin, loading } = useAuth()
@@ -21,7 +66,8 @@ export default function ManageEmailTemplatesPage() {
   const [editingTemplate, setEditingTemplate] = useState<MagicEmailTemplate | null>(null)
   const [formData, setFormData] = useState({
     name: "",
-    content: ""
+    content: "",
+    conditions: [] as string[]
   })
 
   // Fetch email templates
@@ -67,10 +113,20 @@ export default function ManageEmailTemplatesPage() {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  const handleConditionChange = (conditionId: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      conditions: checked 
+        ? [...prev.conditions, conditionId]
+        : prev.conditions.filter(c => c !== conditionId)
+    }))
+  }
+
   const resetForm = () => {
     setFormData({
       name: "",
-      content: ""
+      content: "",
+      conditions: []
     })
     setEditingTemplate(null)
   }
@@ -84,7 +140,8 @@ export default function ManageEmailTemplatesPage() {
     setEditingTemplate(template)
     setFormData({
       name: template.name || "",
-      content: template.content || ""
+      content: template.content || "",
+      conditions: template.conditions || []
     })
     setDialogOpen(true)
   }
@@ -195,9 +252,28 @@ export default function ManageEmailTemplatesPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground line-clamp-3">
+              <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
                 {template.content?.substring(0, 150)}...
               </p>
+              {template.conditions && template.conditions.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-xs font-semibold text-muted-foreground mb-1">Uvjeti:</p>
+                  <div className="space-y-1">
+                    {template.conditions.map((condition, index) => {
+                      const conditionInfo = AVAILABLE_CONDITIONS.find(c => c.id === condition)
+                      return (
+                        <span
+                          key={index}
+                          className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1"
+                          title={condition} // Show raw condition on hover
+                        >
+                          {conditionInfo?.label || condition}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </CardContent>
             <CardFooter className="flex justify-end space-x-2">
               <Button
@@ -261,6 +337,62 @@ export default function ManageEmailTemplatesPage() {
                 rows={20}
                 className="font-mono text-sm"
               />
+            </div>
+            
+            <div className="grid gap-4">
+              <Label>Uvjeti za automatski odabir predloška</Label>
+              <div className="text-sm text-muted-foreground mb-4">
+                Označite uvjete koji se moraju poklapati da bi se ovaj predložak automatski odabrao. 
+                <strong> Svi označeni uvjeti se moraju poklapati.</strong>
+              </div>
+              
+              {/* Group conditions by category */}
+              {["Dostava računa", "Promjena operatera", "Način pristupa"].map(category => (
+                <div key={category} className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-700">{category}</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-4">
+                    {AVAILABLE_CONDITIONS
+                      .filter(condition => condition.category === category)
+                      .map(condition => (
+                        <div key={condition.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={condition.id}
+                            checked={formData.conditions.includes(condition.id)}
+                            onCheckedChange={(checked) => 
+                              handleConditionChange(condition.id, Boolean(checked))
+                            }
+                          />
+                          <Label
+                            htmlFor={condition.id}
+                            className="text-sm font-normal cursor-pointer"
+                          >
+                            {condition.label}
+                          </Label>
+                        </div>
+                      ))
+                    }
+                  </div>
+                </div>
+              ))}
+              
+              {formData.conditions.length > 0 && (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm font-semibold text-blue-800 mb-2">Odabrani uvjeti:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {formData.conditions.map(condition => {
+                      const conditionInfo = AVAILABLE_CONDITIONS.find(c => c.id === condition)
+                      return (
+                        <span
+                          key={condition}
+                          className="inline-block bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded"
+                        >
+                          {conditionInfo?.label || condition}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
             
             <div className="text-sm text-muted-foreground">
