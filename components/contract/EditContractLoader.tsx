@@ -18,7 +18,7 @@ export default async function EditContractLoader({ contractId }: Props) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("agreement_number, user_number")
+    .select("agreement_number, user_number, contract_number")
     .eq("user_id", user.id)
     .single();
 
@@ -28,12 +28,9 @@ export default async function EditContractLoader({ contractId }: Props) {
 
   if (!contract) return notFound();
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-
-  if (profile.agreement_number) {
-    contract.broj_ugovora = `${year}-${month}-${profile.agreement_number}`;
+  // Use contract_number template from profile
+  if (profile.contract_number) {
+    contract.broj_ugovora = profile.contract_number;
   }
 
   return <EditContractPageClient contract={contract} profile={profile} />;

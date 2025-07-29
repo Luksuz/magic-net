@@ -935,7 +935,7 @@ export function findMatchingEmailTemplate(
   },
   templates: MagicEmailTemplate[]
 ): MagicEmailTemplate | null {
-  console.log("🔍 DEBUG: findMatchingEmailTemplate called with:", userConditions)
+
   
   let bestMatch: MagicEmailTemplate | null = null
   let highestScore = 0
@@ -945,7 +945,7 @@ export function findMatchingEmailTemplate(
       continue // Skip templates without conditions
     }
 
-    console.log(`🔄 DEBUG: Checking template "${template.name}" with conditions:`, template.conditions)
+
     
     let score = 0
     let allConditionsMet = true
@@ -956,7 +956,7 @@ export function findMatchingEmailTemplate(
       switch (key) {
         case 'invoiceDeliveryMethod':
           const hasDeliveryMatch = userConditions.invoiceDeliveryMethod?.includes(value)
-          console.log(`    📧 DeliveryMethod: user[${userConditions.invoiceDeliveryMethod?.join(', ')}] vs "${value}" = ${hasDeliveryMatch}`)
+
           if (hasDeliveryMatch) {
             score += 10 // High priority for delivery method match
           } else {
@@ -967,7 +967,7 @@ export function findMatchingEmailTemplate(
         case 'changeOperator':
           const changeOperatorBool = value === 'true'
           const hasOperatorMatch = userConditions.changeOperator === changeOperatorBool
-          console.log(`    🔄 ChangeOperator: user[${userConditions.changeOperator}] vs ${changeOperatorBool} = ${hasOperatorMatch}`)
+
           if (hasOperatorMatch) {
             score += 8 // High priority for operator change match
           } else {
@@ -977,7 +977,7 @@ export function findMatchingEmailTemplate(
           
         case 'accessMethod':
           const hasAccessMatch = userConditions.accessMethod === value
-          console.log(`    🔗 AccessMethod: user["${userConditions.accessMethod}"] vs "${value}" = ${hasAccessMatch}`)
+
           if (hasAccessMatch) {
             score += 5 // Medium priority for access method
           } else {
@@ -986,21 +986,21 @@ export function findMatchingEmailTemplate(
           break
           
         default:
-          console.log(`    ❓ Unknown condition: ${key}`)
+
           break
       }
     }
 
-    console.log(`  📊 "${template.name}": allMet=${allConditionsMet}, score=${score}`)
+
 
     // Only consider templates where ALL conditions are met
     if (allConditionsMet && score > highestScore) {
       bestMatch = template
       highestScore = score
-      console.log(`  ✅ New best match: "${template.name}" (score: ${score})`)
+
     }
   }
 
-  console.log(`🎯 Final result: ${bestMatch ? `"${bestMatch.name}"` : 'No match found'}`)
+
   return bestMatch
 }

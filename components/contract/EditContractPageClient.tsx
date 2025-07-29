@@ -50,7 +50,7 @@ export default function EditContractPageClient({ contract, profile }: Props) {
     additionalServices: "",
     activationCost: "",
     externalWorksCost: "",
-    invoiceDeliveryMethod: [],
+    invoiceDeliveryMethod: "mail",
     marketingContact: [],
     generalTermsDelivery: "provided",
     paymentMethod: "oneTime",
@@ -222,7 +222,6 @@ export default function EditContractPageClient({ contract, profile }: Props) {
   };
 
   const handleContractDataChange = (data: ContractData) => {
-    console.log("🔄 DEBUG: Contract data changed:", { access_method: data.access_method });
     setContractData(data);
   };
 

@@ -29,7 +29,7 @@ export interface UserInformation {
   additionalServices: string
   activationCost: string
   externalWorksCost: string
-  invoiceDeliveryMethod: string[]
+  invoiceDeliveryMethod: string
   marketingContact: string[]
   generalTermsDelivery: "provided" | "selfDownload"
   paymentMethod: "oneTime" | "installments" | "noDevice"
@@ -81,7 +81,7 @@ const defaultUserInfo: UserInformation = {
   additionalServices: "",
   activationCost: "",
   externalWorksCost: "",
-  invoiceDeliveryMethod: ["mail"],
+  invoiceDeliveryMethod: "mail",
   marketingContact: ["email", "sms", "phone"],
   generalTermsDelivery: "provided",
   paymentMethod: "oneTime",
@@ -246,6 +246,10 @@ export default function UserInformationForm({
     }
 
     handleChange(field, newValues)
+  }
+
+  const handleRadioChange = (field: keyof UserInformation, value: string) => {
+    handleChange(field, value)
   }
 
   useEffect(() => {
@@ -452,60 +456,36 @@ export default function UserInformationForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-3">
               <Label>Način dostave računa</Label>
-              <div className="space-y-2">
+              <RadioGroup
+                value={userInfo.invoiceDeliveryMethod}
+                onValueChange={(value) => handleRadioChange("invoiceDeliveryMethod", value)}
+                className="space-y-2"
+              >
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="invoiceMail"
-                    checked={userInfo.invoiceDeliveryMethod.includes("mail")}
-                    onCheckedChange={(checked) => {
-                      if (checked) handleCheckboxChange("invoiceDeliveryMethod", "mail")
-                      else handleCheckboxChange("invoiceDeliveryMethod", "mail")
-                    }}
-                  />
+                  <RadioGroupItem value="mail" id="invoiceMail" />
                   <Label htmlFor="invoiceMail" className="font-normal">
                     Poštom
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="invoiceEInvoice"
-                    checked={userInfo.invoiceDeliveryMethod.includes("eInvoice")}
-                    onCheckedChange={(checked) => {
-                      if (checked) handleCheckboxChange("invoiceDeliveryMethod", "eInvoice")
-                      else handleCheckboxChange("invoiceDeliveryMethod", "eInvoice")
-                    }}
-                  />
+                  <RadioGroupItem value="eInvoice" id="invoiceEInvoice" />
                   <Label htmlFor="invoiceEInvoice" className="font-normal">
                     eRačun
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="invoiceEmail"
-                    checked={userInfo.invoiceDeliveryMethod.includes("email")}
-                    onCheckedChange={(checked) => {
-                      if (checked) handleCheckboxChange("invoiceDeliveryMethod", "email")
-                      else handleCheckboxChange("invoiceDeliveryMethod", "email")
-                    }}
-                  />
+                  <RadioGroupItem value="email" id="invoiceEmail" />
                   <Label htmlFor="invoiceEmail" className="font-normal">
                     Mailom vlasniku
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="invoiceContactEmail"
-                    checked={userInfo.invoiceDeliveryMethod.includes("contactEmail")}
-                    onCheckedChange={(checked) => {
-                      if (checked) handleCheckboxChange("invoiceDeliveryMethod", "contactEmail")
-                      else handleCheckboxChange("invoiceDeliveryMethod", "contactEmail")
-                    }}
-                  />
+                  <RadioGroupItem value="contactEmail" id="invoiceContactEmail" />
                   <Label htmlFor="invoiceContactEmail" className="font-normal">
                     Mailom kontakt osobi
                   </Label>
                 </div>
-              </div>
+              </RadioGroup>
             </div>
 
             <div className="space-y-3">

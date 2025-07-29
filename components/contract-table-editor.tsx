@@ -57,22 +57,9 @@ export default function ContractTableEditor({
   onContractDataChange?: (data: ContractData) => void
 }) {
   const [formData, setFormData] = useState<ContractData>(() => {
-    // Clean contract number by removing UG prefix if it exists
-    const cleanContractNumber = contractNumber ? contractNumber.replace(/^UG\s*/, '') : '';
-    
-    // Use contract_number from profile if available and no contract number provided
-    let finalContractNumber = '';
-    if (cleanContractNumber) {
-      // New format: BROJ ime prezime - način_pristupa
-      finalContractNumber = cleanContractNumber; // Start with the base number
-    } else if (profile?.contract_number) {
-      // If no contract number but we have a template, use it
-      finalContractNumber = profile.contract_number;
-    }
-    
     return {
       ...initialData,
-      broj_ugovora: finalContractNumber || initialData.broj_ugovora || ""
+      broj_ugovora: ""
     };
   })
   const [terminalEquipment, setTerminalEquipment] = useState<TerminalEquipment[]>(initialTerminalEquipment)
@@ -85,6 +72,16 @@ export default function ContractTableEditor({
   const [extraTelefonLoading, setExtraTelefonLoading] = useState(true)
   const [selectedTelefonPackages, setSelectedTelefonPackages] = useState<{ [key: number]: boolean }>({})
   const { profile } = useAuth()
+  
+  // Set contract number from profile
+  useEffect(() => {
+    if (profile?.contract_number) {
+      setFormData(prev => ({
+        ...prev,
+        broj_ugovora: profile.contract_number
+      }));
+    }
+  }, [profile?.contract_number]);
   
   // Operator change data state
   const [operatorChangeData, setOperatorChangeData] = useState<OperatorChangeData>(operatorChangeDataInitial || {

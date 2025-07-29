@@ -1295,10 +1295,10 @@ function formatHtml(
     safeReplace('CONTACT_PERSON_EMAIL', userInfo.contactPersonEmail)
     
     // Invoice delivery method checkboxes
-    safeReplace('INVOICE_DELIVERY_METHOD_MAIL', userInfo.invoiceDeliveryMethod.includes('mail') ? '☑' : '☐')
-    safeReplace('INVOICE_DELIVERY_METHOD_EINVOICE', userInfo.invoiceDeliveryMethod.includes('eInvoice') ? '☑' : '☐')
-    safeReplace('INVOICE_DELIVERY_METHOD_EMAIL', userInfo.invoiceDeliveryMethod.includes('email') ? '☑' : '☐')
-    safeReplace('INVOICE_DELIVERY_METHOD_CONTACT_EMAIL', userInfo.invoiceDeliveryMethod.includes('contactEmail') ? '☑' : '☐')
+    safeReplace('INVOICE_DELIVERY_METHOD_MAIL', userInfo.invoiceDeliveryMethod === 'mail' ? '☑' : '☐')
+    safeReplace('INVOICE_DELIVERY_METHOD_EINVOICE', userInfo.invoiceDeliveryMethod === 'eInvoice' ? '☑' : '☐')
+    safeReplace('INVOICE_DELIVERY_METHOD_EMAIL', userInfo.invoiceDeliveryMethod === 'email' ? '☑' : '☐')
+    safeReplace('INVOICE_DELIVERY_METHOD_CONTACT_EMAIL', userInfo.invoiceDeliveryMethod === 'contactEmail' ? '☑' : '☐')
     
     // Marketing contact checkboxes
     safeReplace('MARKETING_CONTACT_PHONE', userInfo.marketingContact?.includes('phone') ? '☑' : '☐')
@@ -1331,7 +1331,7 @@ function formatHtml(
     }
     
     safeReplace('INVOICE_DELIVERY_METHOD_FORMATTED', 
-      userInfo.invoiceDeliveryMethod ? invoiceMethodMap[userInfo.invoiceDeliveryMethod[0]] || userInfo.invoiceDeliveryMethod[0] : '')
+      userInfo.invoiceDeliveryMethod ? invoiceMethodMap[userInfo.invoiceDeliveryMethod] || userInfo.invoiceDeliveryMethod : '')
     
     const marketingContactText = userInfo.marketingContact?.map(method => {
       if (method === 'phone') return 'telefonom'

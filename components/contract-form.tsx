@@ -54,9 +54,19 @@ export default function ContractForm({
   const [formData, setFormData] = useState<ContractData>(() => {
     return {
       ...initialData,
-      broj_ugovora: initialData.broj_ugovora || profile?.contract_number || ""
+      broj_ugovora: profile?.contract_number || ""
     };
   })
+
+  // Update contract number from profile when profile loads
+  useEffect(() => {
+    if (profile?.contract_number && formData.broj_ugovora !== profile.contract_number) {
+      setFormData(prev => ({
+        ...prev,
+        broj_ugovora: profile.contract_number
+      }));
+    }
+  }, [profile?.contract_number]);
   const [userInfo, setUserInfo] = useState<UserInformation>(userInfoInitial || {
     userId: "",
     userName: "",
@@ -75,7 +85,7 @@ export default function ContractForm({
     additionalServices: "",
     activationCost: "",
     externalWorksCost: "",
-    invoiceDeliveryMethod: [],
+    invoiceDeliveryMethod: "mail",
     marketingContact: [],
     generalTermsDelivery: "provided",
     paymentMethod: "oneTime",
@@ -826,19 +836,11 @@ export default function ContractForm({
     pdfButtonRef.current = el
   }
 
-  // Initialize contract number from profile if empty
-  useEffect(() => {
-    if (profile?.contract_number && !formData.broj_ugovora) {
-      setFormData(prev => ({
-        ...prev,
-        broj_ugovora: profile.contract_number
-      }));
-    }
-  }, [profile?.contract_number]);
+
 
   // Always append access method to current contract number when selected
   useEffect(() => {
-    if (formData.access_method) {
+      if (formData.access_method) {
       const currentNumber = formData.broj_ugovora || '';
       
       // Remove existing access method if present (anything after ' - ')
@@ -849,11 +851,11 @@ export default function ContractForm({
       // Always append the selected access method
       const updatedNumber = `${baseNumber} - ${formData.access_method.toUpperCase()}`;
       
-      setFormData(prev => ({
-        ...prev,
+        setFormData(prev => ({
+          ...prev,
         broj_ugovora: updatedNumber
-      }));
-    }
+        }));
+      }
   }, [formData.access_method]);
 
   // Debug operator change data

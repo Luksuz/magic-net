@@ -34,7 +34,6 @@ export default function SendEmailPage({
   accessMethod,
   onComponentReady
 }: SendEmailPageProps) {
-  console.log("📧 DEBUG: SendEmailPage received accessMethod:", accessMethod);
   const { profile } = useAuth()
   const [subject, setSubject] = useState("")
   const [recipient, setRecipient] = useState("")
@@ -78,33 +77,20 @@ export default function SendEmailPage({
 
   // Auto-select template based on user conditions
   useEffect(() => {
-    if (userInfo && emailTemplates.length > 0 && !selectedTemplate) {
+    if (userInfo && emailTemplates.length > 0) {
       const userConditions = {
-        invoiceDeliveryMethod: userInfo.invoiceDeliveryMethod || [],
+        invoiceDeliveryMethod: userInfo.invoiceDeliveryMethod ? [userInfo.invoiceDeliveryMethod] : [],
         changeOperator: userInfo.changeOperator || false,
         accessMethod: accessMethod || undefined
       }
 
-      console.log("🔍 DEBUG: Auto-selecting template with conditions:", userConditions)
-      console.log("🔍 DEBUG: userInfo detailed:", {
-        invoiceDeliveryMethod: userInfo.invoiceDeliveryMethod,
-        changeOperator: userInfo.changeOperator,
-        accessMethod: accessMethod
-      })
-      console.log("🔍 DEBUG: Available templates:", emailTemplates.map(t => ({ 
-        id: t.id, 
-        name: t.name, 
-        conditions: t.conditions 
-      })))
-
       const matchingTemplate = findMatchingEmailTemplate(userConditions, emailTemplates)
       
-      if (matchingTemplate) {
-        console.log("✅ DEBUG: Auto-selected template:", matchingTemplate.name)
+      if (matchingTemplate && selectedTemplate !== matchingTemplate.id.toString()) {
         handleTemplateChange(matchingTemplate.id.toString())
         
         // Auto-populate specific fields based on delivery method
-        if (userInfo.invoiceDeliveryMethod?.includes('contactEmail')) {
+        if (userInfo.invoiceDeliveryMethod === 'contactEmail') {
           // "Mailom kontakt osobi" 
           const contactPersonTitleName = `${userInfo.contactPersonTitle || 'g.'} ${userInfo.contactPersonName}`
           const userTitleName = `${userInfo.userTitle || 'g.'} ${userInfo.userName}`
@@ -121,7 +107,7 @@ export default function SendEmailPage({
           if (userInfo.contactPersonEmail) {
             setRecipient(userInfo.contactPersonEmail)
           }
-        } else if (userInfo.invoiceDeliveryMethod?.includes('email')) {
+        } else if (userInfo.invoiceDeliveryMethod === 'email') {
           // "Mailom vlasniku"
           const userTitleName = `${userInfo.userTitle || 'g.'} ${userInfo.userName}`
           setTemplateFields({
@@ -134,11 +120,33 @@ export default function SendEmailPage({
             setRecipient(userInfo.email)
           }
         }
-      } else {
-        console.log("❌ DEBUG: No matching template found for conditions:", userConditions)
       }
     }
-  }, [userInfo, emailTemplates, selectedTemplate, accessMethod])
+  }, [userInfo?.invoiceDeliveryMethod, userInfo?.changeOperator, accessMethod, emailTemplates])
+
+  // Update template fields when user title changes
+  useEffect(() => {
+    if (selectedTemplate && userInfo) {
+      if (userInfo.invoiceDeliveryMethod === 'contactEmail') {
+        const contactPersonTitleName = `${userInfo.contactPersonTitle || 'g.'} ${userInfo.contactPersonName}`
+        const userTitleName = `${userInfo.userTitle || 'g.'} ${userInfo.userName}`
+        const possessivePronoun = userInfo.userTitle === 'gđa.' ? 'njezine' : 'njegove'
+
+        setTemplateFields(prev => ({
+          ...prev,
+          "Kontakt-Osoba": contactPersonTitleName,
+          "Vlasnik-Ugovora": userTitleName,
+          "Posvojni-Zamjenica": possessivePronoun
+        }))
+      } else if (userInfo.invoiceDeliveryMethod === 'email') {
+        const userTitleName = `${userInfo.userTitle || 'g.'} ${userInfo.userName}`
+        setTemplateFields(prev => ({
+          ...prev,
+          "Titula-Ime-Prezime": userTitleName
+        }))
+      }
+    }
+  }, [userInfo?.userTitle, userInfo?.userName, userInfo?.contactPersonTitle, userInfo?.contactPersonName, selectedTemplate])
 
   // Expose addAttachment function to parent component
   useEffect(() => {
@@ -209,8 +217,8 @@ export default function SendEmailPage({
           if (!autoPopulatedPlaceholders.includes(placeholder)) {
             initialFields[placeholder] = '';
           }
-        });
-        setTemplateFields(initialFields);
+      });
+      setTemplateFields(initialFields);
       }
     } else {
       setMessage("");
@@ -234,9 +242,9 @@ export default function SendEmailPage({
         let updatedMessage = template.content;
 
         // Replace user-entered placeholders with actual values
-        Object.entries(templateFields).forEach(([field, value]) => {
-          updatedMessage = updatedMessage.replace(new RegExp(`\\[${field}\\]`, 'g'), value);
-        });
+      Object.entries(templateFields).forEach(([field, value]) => {
+        updatedMessage = updatedMessage.replace(new RegExp(`\\[${field}\\]`, 'g'), value);
+      });
 
         // Auto-populate Tel:, Mob:, and Operater-Ime placeholders from profile
         if (profile) {
@@ -256,7 +264,7 @@ export default function SendEmailPage({
           }
         }
 
-        setMessage(updatedMessage);
+      setMessage(updatedMessage);
       }
     }
   }, [templateFields, selectedTemplate, emailTemplates, profile]);
@@ -488,8 +496,8 @@ export default function SendEmailPage({
                     ) : (
                       emailTemplates.map((template) => (
                         <SelectItem key={template.id} value={template.id.toString()}>
-                          {template.name}
-                        </SelectItem>
+                        {template.name}
+                      </SelectItem>
                       ))
                     )}
                   </SelectContent>
