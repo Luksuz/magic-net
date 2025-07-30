@@ -1001,7 +1001,7 @@ export default function ContractForm({
           <TabsTrigger className="flex-1" value="pricing">Cijene</TabsTrigger>
           <TabsTrigger className="flex-1" value="user">Podaci korisnika</TabsTrigger>
           {userInfo.changeOperator && (
-            <TabsTrigger className="flex-1 bg-orange-200" value="operator-change">Promjena operatera</TabsTrigger>
+            <TabsTrigger className="flex-1 bg-orange-100" value="operator-change">Promjena operatera</TabsTrigger>
           )}
         </TabsList>
 
@@ -1017,7 +1017,7 @@ export default function ContractForm({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="broj_ugovora">Broj ugovora</Label>
-                    <Input id="broj_ugovora" name="broj_ugovora" value={formData.broj_ugovora || ""} onChange={handleChange} />
+                    <Input id="broj_ugovora" name="broj_ugovora" value={formData.broj_ugovora || ""} onChange={handleChange} className="bg-orange-100"/>
                   </div>
 
                   <div className="space-y-2">
@@ -1027,7 +1027,7 @@ export default function ContractForm({
                       name="contract_duration"
                       value={formData.contract_duration || ""}
                       onChange={handleChange}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-10 w-full bg-orange-100 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <option value="">Odaberite trajanje</option>
                       <option value="Neodređeno, s obveznim trajanjem - 1 mjesec">Neodređeno, s obveznim trajanjem - 1 mjesec</option>
@@ -1044,6 +1044,7 @@ export default function ContractForm({
                       value={formData.contract_date || ""}
                       onChange={handleChange}
                       placeholder="Ostavite prazno za automatski datum"
+                      className="bg-orange-100"
                     />
                     <p className="text-sm text-muted-foreground">
                       Ako se ostavi prazno, datum neće biti prikazan u ugovoru. U većini slučajeva se ostavlja prazno.
@@ -1052,7 +1053,7 @@ export default function ContractForm({
 
                   <div className="space-y-2">
                     <Label>Način pristupa</Label>
-                    <div className="flex flex-col space-y-2">
+                    <div className="flex flex-col space-y-2 bg-orange-100">
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           id="access_method_bs"
@@ -1170,10 +1171,10 @@ export default function ContractForm({
                       rows={3}
                     />
                   </div>
-                  <div className="space-y-4 md:col-span-2">
+                  <div className="space-y-4 md:col-span-2 bg-orange-100">
                     <h4 className="text-md font-medium">MESH uređaji</h4>
                     <div className="flex flex-col space-y-3">
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 ">
                         <Checkbox
                           id="freeMesh"
                           checked={freeMeshEnabled}
@@ -1350,7 +1351,7 @@ export default function ContractForm({
                     />
                   </div>
                   
-                  <div className="space-y-4 md:col-span-2">
+                  <div className="space-y-4 md:col-span-2 bg-orange-100">
                     <h4 className="text-md font-medium">Dodatni TV paketi</h4>
                     {additionalTvLoading ? (
                       <div className="text-center py-4">Učitavanje TV paketa...</div>
@@ -1723,6 +1724,7 @@ export default function ContractForm({
                       step="1"
                       value={formData.cijena_prikljucenja_popust || ""}
                       onChange={handleNumberChange}
+                      className="bg-orange-100"
                     />
                   </div>
 
@@ -1773,6 +1775,7 @@ export default function ContractForm({
                       step="0.01"
                       value={formData.cijena_aktivacije_popust || ""}
                       onChange={handleNumberChange}
+                      className="bg-orange-100"
                     />
                   </div>
 

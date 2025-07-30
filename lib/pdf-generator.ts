@@ -1166,18 +1166,18 @@ function formatHtml(
   // --- Additional template variables ---
   
   // Check access method and handle connection fees accordingly
-  const shouldHideConnectionFees = data.access_method === 'BS' || data.access_method === 'FA' || data.access_method === 'INFRA';
-  const isAeronet = data.access_method === 'AERONET';
+  const shouldHideConnectionFees = data.access_method === 'BS' || data.access_method === 'FA' || data.access_method === 'AERONET';
+  const isInfra = data.access_method === 'INFRA';
 
-  console.log('DEBUG: should hide connection fees:', shouldHideConnectionFees, 'is aeronet:', isAeronet, 'access method:', data.access_method)
-  
+  console.log('DEBUG: should hide connection fees:', shouldHideConnectionFees, 'is infra:', isInfra, 'access method:', data.access_method)
+
   // Connection & Activation Fees - handle different access methods
   if (shouldHideConnectionFees) {
     // For BS, FA, INFRA: show "-"
     safeReplace('CONNECTION_FEE', '-')
     safeReplace('CONNECTION_DISCOUNT_PERCENT', '-')
     safeReplace('CONNECTION_FEE_TOTAL', '-')
-  } else if (isAeronet) {
+  } else if (isInfra) {
     // For AERONET: specific values
     safeReplace('CONNECTION_FEE', formatCurrency(40.00))
     safeReplace('CONNECTION_DISCOUNT_PERCENT', '100')
@@ -1215,7 +1215,7 @@ function formatHtml(
      <p style="margin-top: 4px; margin-bottom: 8px; font-size: 8px;"><strong>*Napomena:</strong> U slučaju trajnog isključenja Usluge pružane preko infrastrukture drugog operatora i raskida Ugovora, bit će Vam naplaćena naknada za deaktivaciju usluge pružane preko infrastrukture drugog operatora u iznosu navedenom u tablici Cijena deaktivacije usluge. U navedenom slučaju, naknada za deaktivaciju usluge pružane preko infrastrukture drugog operatora naplaćuje se neovisno o tome postoji li ugovorna obveza ili ne. Naplata naknade za deaktivaciju usluge pružane preko infrastrukture drugog operatora ne isključuje naplatu naknade za prijevremeni raskid ugovora ukoliko postoji ugovorna obveza koja nije istekla. Također, u slučaju da odustanete od zatražene usluge prije uključenja usluge pružane preko infrastrukture drugog operatora, zadržavamo pravo naplatiti Vam naknadu u istom iznosu kao i deaktivaciju iz ovog stavka.
     </div>
    `;
-  } else if (data.access_method === 'INFRA') {
+  } else if (data.access_method === 'AERONET') {
     // For INFRA: show "-" values
     deactivationFeeTableHtml = `
    <div style="margin-bottom: 4px;">
