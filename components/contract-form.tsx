@@ -1051,9 +1051,9 @@ export default function ContractForm({
                     </p>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 bg-orange-100 p-1 rounded-md">
                     <Label>Način pristupa</Label>
-                    <div className="flex flex-col space-y-2 bg-orange-100">
+                    <div className="flex flex-col space-y-2">
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           id="access_method_bs"
@@ -1171,7 +1171,7 @@ export default function ContractForm({
                       rows={3}
                     />
                   </div>
-                  <div className="space-y-4 md:col-span-2 bg-orange-100">
+                  <div className="space-y-4 md:col-span-2 bg-orange-100 p-1 rounded-md">
                     <h4 className="text-md font-medium">MESH uređaji</h4>
                     <div className="flex flex-col space-y-3">
                       <div className="flex items-center space-x-2 ">
@@ -1351,7 +1351,7 @@ export default function ContractForm({
                     />
                   </div>
                   
-                  <div className="space-y-4 md:col-span-2 bg-orange-100">
+                  <div className="space-y-4 md:col-span-2 bg-orange-100 p-1 rounded-md">
                     <h4 className="text-md font-medium">Dodatni TV paketi</h4>
                     {additionalTvLoading ? (
                       <div className="text-center py-4">Učitavanje TV paketa...</div>
@@ -1427,6 +1427,7 @@ export default function ContractForm({
                       name="pretplatnicki_broj"
                       value={formData.pretplatnicki_broj || ""}
                       onChange={handleChange}
+                      className="bg-orange-100"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1455,7 +1456,7 @@ export default function ContractForm({
                     />
                   </div>
                   
-                  <div className="space-y-4 md:col-span-2">
+                  <div className="space-y-4 md:col-span-2 bg-orange-100 p-1 rounded-md">
                     <h4 className="text-md font-medium">Dodatne telefonske usluge</h4>
                     {extraTelefonLoading ? (
                       <div className="text-center py-4">Učitavanje telefonskih paketa...</div>
@@ -1899,7 +1900,7 @@ export default function ContractForm({
                         <select
                           value={selectedOperatorType}
                           onChange={(e) => handleOperatorSelection(e.target.value)}
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex h-10 bg-orange-100 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <option value="Hrvatski telekom d.d.">Hrvatski telekom d.d.</option>
                           <option value="Telemach Hrvatska d.o.o.">Telemach Hrvatska d.o.o.</option>

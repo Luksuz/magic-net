@@ -11,7 +11,7 @@ import { toast } from "@/components/ui/use-toast"
 import { FileText, X, Paperclip, Upload } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { UserInformation } from "@/components/user-information-form"
-import { getEmailTemplates, findMatchingEmailTemplate, type MagicEmailTemplate } from "@/lib/supabase"
+import { getEmailTemplates, findMatchingEmailTemplate, type MagicEmailTemplate, getDocuments, downloadDocument } from "@/lib/supabase"
 import { useAuth } from "@/app/contexts/authContext"
 
 interface SendEmailPageProps {
@@ -22,6 +22,11 @@ interface SendEmailPageProps {
   userInfo?: UserInformation;
   accessMethod?: string | null;
   onComponentReady?: (addAttachment: (file: File) => void) => void;
+}
+
+interface AdditionalDocument {
+  name: string;
+  file: File;
 }
 
 
@@ -42,6 +47,8 @@ export default function SendEmailPage({
 
   const [isSending, setIsSending] = useState(false)
   const [attachments, setAttachments] = useState<File[]>([])
+  const [additionalDocuments, setAdditionalDocuments] = useState<AdditionalDocument[]>([])
+  const [additionalDocsLoading, setAdditionalDocsLoading] = useState(true)
   const [isDragging, setIsDragging] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<string>("")
   const [templateFields, setTemplateFields] = useState<Record<string, string>>({})
@@ -73,6 +80,42 @@ export default function SendEmailPage({
     }
     
     fetchTemplates()
+  }, [])
+
+  // Fetch additional documents that will be automatically attached
+  useEffect(() => {
+    const fetchAdditionalDocuments = async () => {
+      try {
+        const documentsResult = await getDocuments()
+        if (documentsResult.success && documentsResult.data.length > 0) {
+          const documents: AdditionalDocument[] = []
+          
+          for (const doc of documentsResult.data) {
+            try {
+              const downloadResult = await downloadDocument(doc.name)
+              if (downloadResult.success && downloadResult.data) {
+                // Convert blob to File object
+                const file = new File([downloadResult.data], doc.name, {
+                  type: doc.metadata?.mimetype || 'application/octet-stream'
+                })
+                documents.push({ name: doc.name, file })
+              }
+            } catch (docError) {
+              console.warn(`Failed to download document ${doc.name}:`, docError)
+              // Continue with other documents even if one fails
+            }
+          }
+          
+          setAdditionalDocuments(documents)
+        }
+      } catch (error) {
+        console.warn("Failed to fetch additional documents:", error)
+      } finally {
+        setAdditionalDocsLoading(false)
+      }
+    }
+    
+    fetchAdditionalDocuments()
   }, [])
 
   // Auto-select template based on user conditions
@@ -304,8 +347,11 @@ export default function SendEmailPage({
       // Create FormData for file uploads
       const formData = new FormData()
 
+      // Combine user attachments with additional documents
+      const allAttachments = [...attachments, ...additionalDocuments.map(doc => doc.file)]
+
       // First convert files to Base64 strings
-      const filePromises = attachments.map(async (file) => {
+      const filePromises = allAttachments.map(async (file) => {
         return new Promise<{ name: string, content: string }>((resolve) => {
           const reader = new FileReader()
           reader.onloadend = () => {
@@ -344,9 +390,10 @@ export default function SendEmailPage({
 
       const responseData = await response.json()
 
+      const totalAttachments = attachments.length + additionalDocuments.length
       toast({
         title: "📧 Email uspješno poslan!",
-        description: `Poruka je poslana na ${recipient}${attachments.length ? ` s ${attachments.length} prilogom(a)` : ''}${responseData.additionalAttachmentsCount > 0 ? ` i ${responseData.additionalAttachmentsCount} dodatnim dokumentom(a)` : ''}.`,
+        description: `Poruka je poslana na ${recipient}${totalAttachments > 0 ? ` s ${totalAttachments} prilogom(a)` : ''}.`,
         duration: 5000,
       })
 
@@ -593,6 +640,35 @@ export default function SendEmailPage({
                           </li>
                         ))}
                       </ul>
+                    </div>
+                  )}
+
+                  {/* Additional documents section */}
+                  {additionalDocuments.length > 0 && (
+                    <div className="mt-4 text-left">
+                      <p className="text-sm font-semibold mb-2 text-blue-600">
+                        Dodatne datoteke (automatski dodane):
+                      </p>
+                      <ul className="space-y-1">
+                        {additionalDocuments.map((doc, index) => (
+                          <li key={index} className="flex items-center text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-blue-500" />
+                              <span className="text-blue-700">{doc.name}</span>
+                              <span className="text-xs text-blue-500">({formatFileSize(doc.file.size)})</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-xs text-blue-600 mt-2">
+                        Ove datoteke su automatski dodane od strane administratora i bit će uključene u email.
+                      </p>
+                    </div>
+                  )}
+
+                  {additionalDocsLoading && (
+                    <div className="mt-4 text-center">
+                      <p className="text-sm text-gray-500">Učitavam dodatne datoteke...</p>
                     </div>
                   )}
 

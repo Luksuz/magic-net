@@ -1,6 +1,5 @@
 import nodemailer from 'nodemailer';
 import { NextResponse } from 'next/server';
-import { getDocuments, downloadDocument } from '@/lib/supabase';
 
 // Function to create simple HTML email template
 function createHtmlTemplate(subject: string, message: string): string {
@@ -71,39 +70,11 @@ export async function POST(req: Request) {
       },
     });
 
-    // Prepare user-provided attachments
-    const userAttachments = attachments && attachments.length > 0 ? attachments.map((file: { name: string; url: string }) => ({
+    // Prepare attachments (now includes both user attachments and additional documents from frontend)
+    const emailAttachments = attachments && attachments.length > 0 ? attachments.map((file: { name: string; url: string }) => ({
       filename: file.name,
       path: file.url,
     })) : [];
-
-    // Fetch and prepare additional documents from storage
-    const additionalAttachments: any[] = [];
-    try {
-      const documentsResult = await getDocuments();
-      if (documentsResult.success && documentsResult.data.length > 0) {
-        for (const doc of documentsResult.data) {
-          try {
-            const downloadResult = await downloadDocument(doc.name);
-            if (downloadResult.success && downloadResult.data) {
-              // Convert blob to buffer for nodemailer
-              const buffer = Buffer.from(await downloadResult.data.arrayBuffer());
-              additionalAttachments.push({
-                filename: doc.name,
-                content: buffer,
-                contentType: doc.metadata?.mimetype || 'application/octet-stream'
-              });
-            }
-          } catch (docError) {
-            console.warn(`Failed to attach document ${doc.name}:`, docError);
-            // Continue with other documents even if one fails
-          }
-        }
-      }
-    } catch (docsError) {
-      console.warn("Failed to fetch additional documents:", docsError);
-      // Continue sending email even if additional documents fail
-    }
 
     const mailOptions = {
       from: process.env.EMAIL || process.env.GOOGLE_EMAIL,
@@ -111,14 +82,13 @@ export async function POST(req: Request) {
       subject: subject,
       text: message, // Plain text fallback
       html: createHtmlTemplate(subject, message), // HTML version with branding
-      attachments: [...userAttachments, ...additionalAttachments],
+      attachments: emailAttachments,
     };
 
     await transporter.sendMail(mailOptions);
     
     return NextResponse.json({ 
-      message: 'Email sent successfully',
-      additionalAttachmentsCount: additionalAttachments.length
+      message: 'Email sent successfully'
     }, { status: 200 });
   } catch (error) {
     console.error('Error sending email:', error);

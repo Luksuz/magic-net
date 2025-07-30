@@ -1167,9 +1167,6 @@ function formatHtml(
   
   // Check access method and handle connection fees accordingly
   const shouldHideConnectionFees = data.access_method === 'BS' || data.access_method === 'FA' || data.access_method === 'AERONET';
-  const isInfra = data.access_method === 'INFRA';
-
-  console.log('DEBUG: should hide connection fees:', shouldHideConnectionFees, 'is infra:', isInfra, 'access method:', data.access_method)
 
   // Connection & Activation Fees - handle different access methods
   if (shouldHideConnectionFees) {
@@ -1177,11 +1174,6 @@ function formatHtml(
     safeReplace('CONNECTION_FEE', '-')
     safeReplace('CONNECTION_DISCOUNT_PERCENT', '-')
     safeReplace('CONNECTION_FEE_TOTAL', '-')
-  } else if (isInfra) {
-    // For AERONET: specific values
-    safeReplace('CONNECTION_FEE', formatCurrency(40.00))
-    safeReplace('CONNECTION_DISCOUNT_PERCENT', '100')
-    safeReplace('CONNECTION_FEE_TOTAL', formatCurrency(0.00))
   } else {
     // For all other access methods: use form data or defaults
     safeReplace('CONNECTION_FEE', formatCurrency(connectionFee))
@@ -1847,6 +1839,15 @@ function formatOperatorChangeHtml(
     
     // Basic operator information
     html = html.replace(/____________________/g, operatorChangeData.existingOperatorName || '____________________');
+    
+    // Handle email address replacement for "adrese elektroničke pošte" checkbox
+    if (operatorChangeData.userAccountsToKeep.includes('adrese elektroničke pošte')) {
+      const emailToUse = operatorChangeData.contactEmail || operatorChangeData.email || (userInfo?.email || '');
+      html = html.replace(/\[EMAIL_ADDRESS\]/g, emailToUse);
+    } else {
+      // If checkbox is not checked, remove the placeholder
+      html = html.replace(/\[EMAIL_ADDRESS\]/g, '');
+    }
     
     // Checkboxes for boolean values - use more robust patterns
     console.log('DEBUG: Contract on distance:', operatorChangeData.contractOnDistance);
