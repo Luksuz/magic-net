@@ -352,16 +352,6 @@ export default function UserInformationForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="idCardNumber">Broj osobne iskaznice</Label>
-            <Input
-              id="idCardNumber"
-              value={userInfo.idCardNumber}
-              onChange={(e) => handleChange("idCardNumber", e.target.value)}
-              placeholder="npr. 123456789"
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="contactPhone">Kontakt telefon/mobitel</Label>
             <Input
               id="contactPhone"

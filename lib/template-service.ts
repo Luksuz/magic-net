@@ -157,7 +157,7 @@ export async function generatePdfFromTemplate(
     const processedHtml = processTemplateVariables(templateData.html, data, userInfo, terminalEquipment);
     
     // Generate PDF with the processed HTML
-    return await generatePDF(data, userInfo, undefined, terminalEquipment, processedHtml);
+    return await generatePDF(data, userInfo, terminalEquipment, processedHtml);
   } catch (error) {
     console.error('Error generating PDF from template:', error);
     return false;
@@ -285,6 +285,175 @@ export async function resetToOriginalTemplate(): Promise<boolean> {
   } catch (error) {
     console.error('Error resetting to original template:', error);
     throw new Error('Failed to reset to original template');
+  }
+}
+
+// Operator Change Template Functions
+export async function getOriginalOperatorChangeTemplate(): Promise<{ html: string }> {
+  const { data, error } = await supabase
+    .from('magic_originalna_ugovorna_spranca_promjena_operatera')
+    .select('*')
+    .eq('id', 1)
+    .single()
+  
+  if (error) {
+    console.error('Error getting original operator change template:', error)
+    throw new Error('Failed to get original operator change template')
+  }
+
+  return data
+}
+
+export async function saveOriginalOperatorChangeTemplate(html: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('magic_originalna_ugovorna_spranca_promjena_operatera')
+    .insert({
+      html: html,
+      updated_at: new Date().toISOString(),
+    })
+  
+  if (error) {
+    console.error('Error saving original operator change template:', error)
+    throw new Error('Failed to save original operator change template')
+  }
+
+  return true
+}
+
+export async function getEditableOperatorChangeTemplate(): Promise<{ html: string }> {
+  const { data, error } = await supabase
+    .from('magic_promjenjiva_ugovorna_spranca_promjena_operatera')
+    .select('*')
+    .eq('id', 1)
+    .single()
+
+  if (error) {
+    console.error('Error getting editable operator change template:', error)
+    // If no template found, return the static HTML from public folder
+    try {
+      const response = await fetch('/promjena_operatera.html')
+      const html = await response.text()
+      return { html }
+    } catch (fetchError) {
+      console.error('Error fetching static operator change template:', fetchError)
+      throw new Error('Failed to get editable operator change template')
+    }
+  }
+
+  return data
+}
+
+export async function saveEditableOperatorChangeTemplate(html: string): Promise<boolean> {
+  // Ensure the HTML is properly formatted with styles preserved
+  let templateToSave = html;
+  
+  // Make sure the template has the basic structure with pdf-container
+  if (!templateToSave.includes('<div class="pdf-container"')) {
+    // Extract style tag if present
+    let styleTag = '';
+    const styleTagMatch = templateToSave.match(/<style[\s\S]*?>([\s\S]*?)<\/style>/i);
+    if (styleTagMatch) {
+      styleTag = styleTagMatch[0];
+      // Remove from content temporarily for proper wrapping
+      templateToSave = templateToSave.replace(styleTag, '');
+    }
+    
+    // Create proper template structure like the original
+    if (styleTag) {
+      templateToSave = `${styleTag}
+      
+      <div class="pdf-container" style="font-family: Arial, sans-serif;
+        font-size: 10px;
+        color: #333;
+        margin: 2px auto;
+        padding: 2px;
+        width: 210mm;
+        max-width: 100%;
+        box-sizing: border-box;
+        position: relative;
+        background-color: white;">
+        <div class="pdf-content">
+          ${templateToSave}
+        </div>
+      </div>`;
+    }
+  }
+
+  const { error } = await supabase
+    .from('magic_promjenjiva_ugovorna_spranca_promjena_operatera')
+    .upsert({
+      id: 1,
+      html: templateToSave,
+      updated_at: new Date().toISOString(),
+    })
+
+  if (error) {
+    console.error('Error saving editable operator change template:', error)
+    throw new Error('Failed to save editable operator change template')
+  }
+
+  return true
+}
+
+export async function resetToOriginalOperatorChangeTemplate(): Promise<boolean> {
+  try {
+    // Get the original operator change template from database
+    const originalTemplate = await getOriginalOperatorChangeTemplate();
+    
+    // Save it as the editable template
+    const success = await saveEditableOperatorChangeTemplate(originalTemplate.html);
+    
+    return success;
+  } catch (error) {
+    console.error('Error resetting to original operator change template:', error);
+    throw new Error('Failed to reset to original operator change template');
+  }
+}
+
+// Initialize operator change templates in database
+export async function initializeOperatorChangeTemplates(): Promise<boolean> {
+  try {
+    // First, get the static HTML file
+    const response = await fetch('/promjena_operatera.html');
+    if (!response.ok) {
+      throw new Error('Failed to fetch operator change template file');
+    }
+    const htmlContent = await response.text();
+    
+    // Check if original template already exists
+    let originalExists = false;
+    try {
+      await getOriginalOperatorChangeTemplate();
+      originalExists = true;
+    } catch {
+      // Original doesn't exist, we'll create it
+    }
+    
+    // Save as original template if it doesn't exist
+    if (!originalExists) {
+      await saveOriginalOperatorChangeTemplate(htmlContent);
+    }
+    
+    // Check if editable template already exists
+    let editableExists = false;
+    try {
+      const editable = await getEditableOperatorChangeTemplate();
+      if (editable && editable.html && !editable.html.includes('/promjena_operatera.html')) {
+        editableExists = true;
+      }
+    } catch {
+      // Editable doesn't exist, we'll create it
+    }
+    
+    // Save as editable template if it doesn't exist
+    if (!editableExists) {
+      await saveEditableOperatorChangeTemplate(htmlContent);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error initializing operator change templates:', error);
+    throw new Error('Failed to initialize operator change templates');
   }
 }
 

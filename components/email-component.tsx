@@ -451,8 +451,23 @@ export default function SendEmailPage({
     setAttachments(attachments.filter((_, i) => i !== index))
   }
 
+  const removeAdditionalDocument = (index: number) => {
+    const documentName = additionalDocuments[index]?.name
+    setAdditionalDocuments(additionalDocuments.filter((_, i) => i !== index))
+    
+    if (documentName) {
+      toast({
+        title: "🗑️ Dodatna datoteka uklonjena",
+        description: `Datoteka "${documentName}" je uklonjena iz priloga.`,
+        duration: 2000,
+      })
+    }
+  }
+
   // Calculate total size of attachments
-  const totalSize = attachments.reduce((total, file) => total + file.size, 0)
+  const userAttachmentsSize = attachments.reduce((total, file) => total + file.size, 0)
+  const additionalDocumentsSize = additionalDocuments.reduce((total, doc) => total + doc.file.size, 0)
+  const totalSize = userAttachmentsSize + additionalDocumentsSize
   const formattedTotalSize = formatFileSize(totalSize)
 
   function formatFileSize(bytes: number): string {
@@ -651,17 +666,26 @@ export default function SendEmailPage({
                       </p>
                       <ul className="space-y-1">
                         {additionalDocuments.map((doc, index) => (
-                          <li key={index} className="flex items-center text-sm bg-blue-50 p-2 rounded border border-blue-200">
+                          <li key={index} className="flex items-center justify-between text-sm bg-blue-50 p-2 rounded border border-blue-200">
                             <div className="flex items-center gap-2">
                               <FileText className="h-4 w-4 text-blue-500" />
                               <span className="text-blue-700">{doc.name}</span>
                               <span className="text-xs text-blue-500">({formatFileSize(doc.file.size)})</span>
                             </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeAdditionalDocument(index)}
+                              className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
                           </li>
                         ))}
                       </ul>
                       <p className="text-xs text-blue-600 mt-2">
-                        Ove datoteke su automatski dodane od strane administratora i bit će uključene u email.
+                        Ove datoteke su automatski dodane od strane administratora. Možete ih ukloniti ako ne želite da se šalju.
                       </p>
                     </div>
                   )}

@@ -546,7 +546,7 @@ export async function generatePDF(
     // Create filename using the format: 2025-10-09-001-[nacin pristupa] PREZIME IME
     let filename = 'contract.pdf'; // fallback
     
-    if (data.broj_ugovora && userInfo?.userName) {
+    if (data.broj_ugovora && (userInfo?.userName || userInfo?.legalEntity)) {
       try {
         // Extract base number from contract number - handle different formats
         let baseNumber = data.broj_ugovora;
@@ -559,33 +559,44 @@ export async function generatePDF(
         // Get access method from form data
         const accessMethod = data.access_method || '';
         
-        // Format user name: split and put last name first
-        const nameParts = userInfo.userName.trim().split(' ');
-        let formattedName = userInfo.userName;
+        // Determine display name: use legal entity if available, otherwise format user name
+        let formattedName = '';
         
-        if (nameParts.length >= 2) {
-          // Put last name first: "Marko Petrić" -> "PETRIĆ MARKO"
-          const lastName = nameParts[nameParts.length - 1].toUpperCase();
-          const firstNames = nameParts.slice(0, -1).join(' ').toUpperCase();
-          formattedName = `${lastName} ${firstNames}`;
-        } else {
-          // Single name, just uppercase
-          formattedName = userInfo.userName.toUpperCase();
+        if (userInfo.legalEntity && userInfo.legalEntity.trim() !== '') {
+          // Use legal entity name as is, but uppercase
+          formattedName = userInfo.legalEntity.toUpperCase();
+        } else if (userInfo.userName && userInfo.userName.trim() !== '') {
+          // Format user name: split and put last name first
+          const nameParts = userInfo.userName.trim().split(' ');
+          
+          if (nameParts.length >= 2) {
+            // Put last name first: "Marko Petrić" -> "PETRIĆ MARKO"
+            const lastName = nameParts[nameParts.length - 1].toUpperCase();
+            const firstNames = nameParts.slice(0, -1).join(' ').toUpperCase();
+            formattedName = `${lastName} ${firstNames}`;
+          } else {
+            // Single name, just uppercase
+            formattedName = userInfo.userName.toUpperCase();
+          }
         }
         
-        // Build filename: baseNumber-[access_method] PREZIME IME
+        // Build filename: baseNumber-[access_method] PREZIME IME / PRAVNA OSOBA
         filename = `${baseNumber}`;
         if (accessMethod) {
           filename += `-${accessMethod}`;
         }
-        filename += ` ${formattedName}.pdf`;
+        if (formattedName) {
+          filename += ` ${formattedName}.pdf`;
+        } else {
+          filename += '.pdf';
+        }
       } catch (error) {
         console.error('Error formatting filename:', error);
         // Fallback to simple format
         filename = `${data.broj_ugovora}.pdf`;
       }
     } else if (data.broj_ugovora) {
-      // Fallback if no user name available
+      // Fallback if no user info available
       filename = `${data.broj_ugovora}.pdf`;
     } else {
       // Final fallback

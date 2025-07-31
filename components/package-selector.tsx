@@ -155,7 +155,7 @@ export default function PackageSelector({ packages }: { packages: Package[] }) {
             className="sm:w-64"
           />
           {isAdmin && (
-            <Link href="/add-package" className="w-full sm:w-auto">
+            <Link href="/admin/add-package" className="w-full sm:w-auto">
               <Button className="w-full sm:w-auto">
                 <PlusIcon className="mr-2 h-4 w-4" />
                 Dodaj Novi Paket
@@ -248,7 +248,7 @@ export default function PackageSelector({ packages }: { packages: Package[] }) {
              {isAdmin && " Kreirajte svoj prvi paket za početak."}
            </p>
            {isAdmin && (
-             <Link href="/add-package">
+             <Link href="/admin/add-package">
                <Button>
                  <PlusIcon className="mr-2 h-4 w-4" />
                  Dodaj Novi Paket

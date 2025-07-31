@@ -423,7 +423,6 @@ export default function ContractTableEditor({
         { key: "residenceAddress", label: "Adresa prebivališta", type: "text" },
         { key: "connectionAddress", label: "Adresa priključka", type: "text" },
         { key: "oib", label: "OIB", type: "text" },
-        { key: "idCardNumber", label: "Broj osobne iskaznice", type: "text" },
         { key: "contactPhone", label: "Kontakt telefon", type: "text" },
         { key: "email", label: "Email", type: "text" }
       ]

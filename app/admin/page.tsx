@@ -88,6 +88,25 @@ export default function AdminDashboard() {
             </Card>
           </Link>
 
+          <Link href="/admin/operator-change-templates" className="block h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <FileText className="mr-2 h-5 w-5 text-primary" />
+                  Promjena operatera
+                </CardTitle>
+                <CardDescription>
+                  Uredi predloške za promjenu operatera.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground">
+                  Prilagodite HTML predložak koji se koristi za dokumente promjene operatera.
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
           <Link href="/admin/manage-email-templates" className="block h-full">
             <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
               <CardHeader>
