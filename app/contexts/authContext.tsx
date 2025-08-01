@@ -56,7 +56,7 @@ export const AuthProvider = ({
     if (currentUser) {
       const profileData = await fetchProfileServer(currentUser.id);
       
-      // Ensure user_id is setin profile data for PDF generation
+      // Ensure user_id is setin profile ata for PDF generation
       if (profileData && !profileData.user_id) {
         profileData.user_id = currentUser.id;
       }
