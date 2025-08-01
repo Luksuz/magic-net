@@ -355,8 +355,9 @@ export async function generatePDF(
       // Don't fail the entire operation if tracking fails
     }
 
-    const response = await fetch('/promjena_operatera.html');
-    const promjenaOperateraHtmlContent = await response.text();
+    const { getEditableOperatorChangeTemplate } = await import('./template-service');
+    const operatorChangeTemplateData = await getEditableOperatorChangeTemplate();
+    const promjenaOperateraHtmlContent = operatorChangeTemplateData?.html || '';
     
     // Process template variables with actual data, passing the contractNumber to formatHtml
     const processedHtml = formatHtml(
@@ -1520,13 +1521,15 @@ export async function generateOperatorChangePDF(
     // Hide UI elements before generating PDF
     originalStyles = hideUIForPdfGeneration();
 
-    // Get the operator change HTML template
-    const response = await fetch('/promjena_operatera.html');
-    const promjenaOperateraHtmlContent = await response.text();
+    // Get the operator change HTML template from database
+    const { getEditableOperatorChangeTemplate } = await import('./template-service');
+    const templateData = await getEditableOperatorChangeTemplate();
     
-    if (!promjenaOperateraHtmlContent) {
+    if (!templateData || !templateData.html) {
       throw new Error('No operator change template found');
     }
+    
+    const promjenaOperateraHtmlContent = templateData.html;
     
     // Track contract creation to get a proper contract number
     let contractNumber = '';
