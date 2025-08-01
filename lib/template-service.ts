@@ -8,7 +8,7 @@ import { generatePDF } from './pdf-generator'
 export async function getOriginalTemplate(): Promise<PdfTemplateContent> {
   
   const { data, error } = await supabase
-    .from('original_ugovorna_spranca_html')
+    .from('magic_original_ugovorna_spranca')
     .select('*')
     .eq('id', 1)
     .single()
@@ -25,7 +25,7 @@ export async function saveOriginalTemplate(html: string): Promise<boolean> {
 
   // Then insert new template
   const { error } = await supabase
-    .from('original_ugovorna_spranca_html')
+    .from('magic_original_ugovorna_spranca')
     .insert({
       html: html,
       updated_at: new Date().toISOString(),
@@ -44,7 +44,7 @@ export async function saveOriginalTemplate(html: string): Promise<boolean> {
 export async function getEditableTemplate(): Promise<{ html: string }> {
 
   const { data, error } = await supabase
-    .from('promjenjiva_ugovorna_spranca_html')
+    .from('magic_promjenjiva_ugovorna_spranca')
     .select('*')
     .eq('id', 1)
     .single()
@@ -124,7 +124,7 @@ export async function saveEditableTemplate(html: string): Promise<boolean> {
   }
 
   const { error } = await supabase
-    .from('promjenjiva_ugovorna_spranca_html')
+    .from('magic_promjenjiva_ugovorna_spranca')
     .update({
       html: templateToSave,
       updated_at: new Date().toISOString(),

@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useState, startTransition } from 'react';
+import { useEffect, useState } from 'react';
 import { fetchUsersAction, AuthUser } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { UserCircle, SettingsIcon } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import Link from 'next/link';
 
-const OLDEST_RECORDS_TO_HIDE = 7;
 
 export default function UserList() {
   const [allUsers, setAllUsers] = useState<AuthUser[]>([]);
@@ -24,11 +22,7 @@ export default function UserList() {
       const result = await fetchUsersAction();
       if (result.success && result.users) {
         setAllUsers(result.users);
-        if (result.users.length > OLDEST_RECORDS_TO_HIDE) {
-          setDisplayedUsers(result.users.slice(OLDEST_RECORDS_TO_HIDE));
-        } else {
-          setDisplayedUsers(result.users);
-        }
+        setDisplayedUsers(result.users); // Show all users, no hiding
       } else {
         setError(result.error || 'Failed to fetch users.');
         setAllUsers([]);
@@ -60,7 +54,7 @@ export default function UserList() {
       )}
       {displayedUsers.length === 0 && allUsers.length > 0 && !error && (
         <p className="text-muted-foreground">
-          Nema dodatnih korisnika za prikaz (prvih {OLDEST_RECORDS_TO_HIDE} najstarijih korisnika je skriveno jer ih ima više od {OLDEST_RECORDS_TO_HIDE}).
+          Nema dodatnih korisnika za prikaz.
         </p>
       )}
       {displayedUsers.length === 0 && allUsers.length === 0 && !error && (
