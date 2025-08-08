@@ -149,6 +149,13 @@ export default function ContractForm({
     connectionAddress: "", //userInfoInitial?.connectionAddress || "",
     sellerPlace: "", //userInfoInitial?.sellerPlace || "",
   })
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+    }
+  }
   
   // Track manual edits to prevent auto-sync from overriding them
   const [operatorChangeManualEdits, setOperatorChangeManualEdits] = useState({
@@ -991,7 +998,7 @@ export default function ContractForm({
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="basic" className="w-full tabs-container" onValueChange={setActiveTab} value={activeTab}>
+      <Tabs defaultValue="basic" className="w-full tabs-container" onValueChange={handleTabChange} value={activeTab}>
         <TabsList className="flex w-full">
           <TabsTrigger className="flex-1" value="basic">Osnovne informacije</TabsTrigger>
           <TabsTrigger className="flex-1" value="internet">Usluga i Internet</TabsTrigger>
@@ -2131,7 +2138,7 @@ export default function ContractForm({
               if (userInfo.changeOperator) tabs.push("operator-change");
               const currentIndex = tabs.indexOf(activeTab);
               if (currentIndex > 0) {
-                setActiveTab(tabs[currentIndex - 1]);
+                handleTabChange(tabs[currentIndex - 1]);
               }
             }}
             disabled={activeTab === "basic"}
@@ -2150,7 +2157,7 @@ export default function ContractForm({
               if (userInfo.changeOperator) tabs.push("operator-change");
               const currentIndex = tabs.indexOf(activeTab);
               if (currentIndex < tabs.length - 1) {
-                setActiveTab(tabs[currentIndex + 1]);
+                handleTabChange(tabs[currentIndex + 1]);
               }
             }}
             disabled={activeTab === (userInfo.changeOperator ? "operator-change" : "user")}

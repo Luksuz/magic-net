@@ -57,6 +57,26 @@ export default function SendEmailPage({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dropZoneRef = useRef<HTMLDivElement>(null)
 
+  // Prime Zimbra auth token on mount if missing
+  useEffect(() => {
+    const primeToken = async () => {
+      try {
+        if (typeof window === 'undefined') return
+        const existing = localStorage.getItem('zimbraAuthToken')
+        if (!existing) {
+          const authRes = await fetch('/api/zimbraAuth', { method: 'POST' })
+          if (authRes.ok) {
+            const { authToken } = await authRes.json()
+            if (authToken) localStorage.setItem('zimbraAuthToken', authToken)
+          }
+        }
+      } catch (e) {
+        console.warn('Unable to prime Zimbra token:', e)
+      }
+    }
+    primeToken()
+  }, [])
+
   // Fetch email templates from database
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -367,7 +387,46 @@ export default function SendEmailPage({
       // Wait for all files to be converted
       const fileContents = await Promise.all(filePromises)
 
-      const response = await fetch('/api/sendEmail', {
+      // Get token from localStorage
+      let zimbraToken = ''
+      if (typeof window !== 'undefined') {
+        zimbraToken = localStorage.getItem('zimbraAuthToken') || ''
+      }
+
+      const sendWithToken = async (token?: string) => {
+        return fetch('/api/sendEmailZimbra', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipient,
+            subject,
+            message,
+            authToken: token,
+            attachments: fileContents.map(file => ({ name: file.name, content: file.content }))
+          })
+        })
+      }
+
+      // Try send with existing token
+      let response = await sendWithToken(zimbraToken)
+
+      // If unauthorized, fetch new token and retry
+      if (response.status === 401) {
+        const authRes = await fetch('/api/zimbraAuth', { method: 'POST' })
+        if (authRes.ok) {
+          const { authToken } = await authRes.json()
+          if (typeof window !== 'undefined' && authToken) {
+            localStorage.setItem('zimbraAuthToken', authToken)
+          }
+          response = await sendWithToken(authToken)
+        }
+      }
+
+      // Fall back to old endpoint only if Zimbra fails (optional):
+      // if (!response.ok) { /* optionally call /api/sendEmail */ }
+
+      // Old implementation:
+      /* const response = await fetch('/api/sendEmail', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -381,7 +440,7 @@ export default function SendEmailPage({
             url: file.content, // Send Base64 string instead of URL
           })),
         }),
-      })
+      }) */
 
       if (!response.ok) {
         const errorData = await response.json()
