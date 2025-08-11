@@ -382,6 +382,11 @@ export async function generatePDF(
     allTables.forEach(table => {
       // Check if this table is inside the signature section
       const isSignatureSection = table.closest('#potpis-korisnika') !== null;
+      // Heuristic: detect purchased devices table (so that mere "DA/NE" do not keep it visible)
+      const previousHeadingText = table.previousElementSibling?.textContent?.toLowerCase() || ''
+      const tableText = table.textContent?.toLowerCase() || ''
+      const isPurchasedDevicesTable = previousHeadingText.includes('kupljenim uređajima') ||
+        tableText.includes('otplata uređaja na rate')
       
       const rows = table.querySelectorAll('tr');
       let hasVisibleRows = false;
@@ -421,8 +426,12 @@ export async function generatePDF(
             const isEmpty = trimmedCellText === '';
             const isZeroValue = trimmedCellText === '0' || trimmedCellText === '0,00' || trimmedCellText === '0.00' || trimmedCellText === '0,00 EUR' || trimmedCellText === '0.00 EUR';
             const isEmptyDash = trimmedCellText === '-' || trimmedCellText === '—' || trimmedCellText === 'N/A' || trimmedCellText === 'n/a';
+            const isYesNo = trimmedCellText === 'DA' || trimmedCellText === 'NE';
 
-            if (!isEmpty && !isLikelyStaticLabel && !isPlaceholderText && !isZeroValue && !isEmptyDash) {
+            // For purchased devices table, treat DA/NE as non-meaningful on their own
+            const treatYesNoAsEmpty = isPurchasedDevicesTable && isYesNo;
+
+            if (!isEmpty && !isLikelyStaticLabel && !isPlaceholderText && !isZeroValue && !isEmptyDash && !treatYesNoAsEmpty) {
               rowHasActualValue = true;
               hasMeaningfulContent = true;
               break; // Found a cell with meaningful data in this row
@@ -1438,6 +1447,39 @@ function calculateTotalPrice(
     total += calculatedData?.phonePromoPrice ?? (data as any).contract_price_phone ?? 0
   } else if (type === 'regular') {
     total += calculatedData?.phoneRegularPrice ?? (data as any).regular_price_phone ?? 0
+  }
+
+  // Add extra telephone packages
+  if (extraTelefonPackages && extraTelefonPackages.length > 0) {
+    const selectedPhoneServices = calculatedData?.phoneServices || data.tel_dodatne_usluge || ''
+    extraTelefonPackages.forEach((pkg: any) => {
+      if (!pkg) return
+      const isSelectedByName = selectedPhoneServices.toLowerCase().includes((pkg.name || '').toLowerCase())
+      const isSelectedByFullFormat = pkg.description && 
+        selectedPhoneServices.toLowerCase().includes(`${(pkg.name || '').toLowerCase()} - ${(pkg.description || '').toLowerCase()}`)
+      if (isSelectedByName || isSelectedByFullFormat) {
+        const price = Number(pkg.price) || 0
+        if (type === 'action') {
+          total += price
+        } else if (type === 'promo') {
+          total += price
+        } else if (type === 'contract') {
+          total += price
+        } else if (type === 'regular') {
+          total += price
+        }
+      }
+    })
+  }
+
+  // Add additional TV devices monthly charges
+  if (additionalTvDevices && additionalTvDevices.length > 0) {
+    additionalTvDevices.forEach((device: any) => {
+      if (!device) return
+      const price = Number(device.price) || 0
+      // These are monthly, so add to all price types
+      total += price
+    })
   }
 
   return total
