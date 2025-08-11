@@ -455,26 +455,28 @@ export async function generatePDF(
         let currentElement = table.previousElementSibling;
         while (currentElement) {
           const tagName = currentElement.tagName.toLowerCase();
-          const textContent = currentElement.textContent?.trim() || '';
-          
-          // Check if this is likely a table heading (h1-h6, or div/p with heading-like content)
-          const isHeading = /^h[1-6]$/.test(tagName) || 
-                           (tagName === 'div' && textContent.length > 0 && textContent.length < 100) ||
-                           (tagName === 'p' && textContent.length > 0 && textContent.length < 100 && 
-                            /^[A-ZČĆŽŠĐ][A-ZČĆŽŠĐa-zčćžšđ\s\d(),%/€.'"-À-ÖØ-öø-ÿ]*$/.test(textContent));
-          
-          if (isHeading && currentElement instanceof HTMLElement) {
+          const textContent = (currentElement.textContent || '').trim();
+          const textLower = textContent.toLowerCase();
+
+          // Check if this is likely a table heading (h1-h6, or short div/p) or specifically the purchased devices label
+          const isGenericHeading = /^h[1-6]$/.test(tagName) ||
+            (tagName === 'div' && textContent.length > 0 && textContent.length < 100) ||
+            (tagName === 'p' && textContent.length > 0 && textContent.length < 100 &&
+              /^[A-ZČĆŽŠĐ][A-ZČĆŽŠĐa-zčćžšđ\s\d(),%/€.'"-À-ÖØ-öø-ÿ]*$/.test(textContent));
+          const isPurchasedDevicesHeading = textLower.includes('podaci o kupljenim uređajima');
+
+          if ((isGenericHeading || isPurchasedDevicesHeading) && currentElement instanceof HTMLElement) {
             currentElement.style.display = 'none';
-            break; // Only hide the immediate preceding heading
+            // Continue hiding previous small headings if any (do not break immediately)
+            currentElement = currentElement.previousElementSibling;
+            continue;
           }
-          
+
           // Stop if we encounter another table or significant content
-          if (tagName === 'table' || 
-              (textContent.length > 100) || 
-              (tagName === 'div' && currentElement.children.length > 0)) {
+          const isSignificantDiv = tagName === 'div' && currentElement.children.length > 0 && !isPurchasedDevicesHeading;
+          if (tagName === 'table' || textContent.length > 100 || isSignificantDiv) {
             break;
           }
-          
           currentElement = currentElement.previousElementSibling;
         }
       } else {
@@ -1415,38 +1417,56 @@ function calculateTotalPrice(
   additionalTvDevices?: any[]
 ): number {
   let total = 0
+  const debugItems: Array<{ label: string; amount: number }> = []
+  const add = (label: string, amount: number | undefined | null) => {
+    const value = Number(amount || 0)
+    total += value
+    debugItems.push({ label, amount: value })
+  }
 
   // Base internet/fixed line services
   if (type === 'action') {
-    total += calculatedData?.internetActionPrice ?? data.action_price_fiksni ?? 0
+    const v = calculatedData?.internetActionPrice ?? data.action_price_fiksni ?? 0
+    add('Internet (action)', v)
   } else if (type === 'promo') {
-    total += calculatedData?.internetPromoPrice ?? (data as any).promo_price_fiksni ?? 0
+    const v = calculatedData?.internetPromoPrice ?? (data as any).promo_price_fiksni ?? 0
+    add('Internet (promo)', v)
   } else if (type === 'contract') {
-    total += calculatedData?.internetPromoPrice ?? (data as any).contract_price_fiksni ?? 0
+    const v = calculatedData?.internetPromoPrice ?? (data as any).contract_price_fiksni ?? 0
+    add('Internet (contract)', v)
   } else if (type === 'regular') {
-    total += calculatedData?.internetRegularPrice ?? (data as any).regular_price_fiksni ?? 0
+    const v = calculatedData?.internetRegularPrice ?? (data as any).regular_price_fiksni ?? 0
+    add('Internet (regular)', v)
   }
 
   // TV services
   if (type === 'action') {
-    total += calculatedData?.tvActionPrice ?? data.action_price_tv ?? 0
+    const v = calculatedData?.tvActionPrice ?? data.action_price_tv ?? 0
+    add('TV (action)', v)
   } else if (type === 'promo') {
-    total += calculatedData?.tvPromoPrice ?? (data as any).promo_price_tv ?? 0
+    const v = calculatedData?.tvPromoPrice ?? (data as any).promo_price_tv ?? 0
+    add('TV (promo)', v)
   } else if (type === 'contract') {
-    total += calculatedData?.tvPromoPrice ?? (data as any).contract_price_tv ?? 0
+    const v = calculatedData?.tvPromoPrice ?? (data as any).contract_price_tv ?? 0
+    add('TV (contract)', v)
   } else if (type === 'regular') {
-    total += calculatedData?.tvRegularPrice ?? (data as any).regular_price_tv ?? 0
+    const v = calculatedData?.tvRegularPrice ?? (data as any).regular_price_tv ?? 0
+    add('TV (regular)', v)
   }
 
   // Phone services
   if (type === 'action') {
-    total += calculatedData?.phoneActionPrice ?? data.action_price_phone ?? 0
+    const v = calculatedData?.phoneActionPrice ?? data.action_price_phone ?? 0
+    add('Telefon (action)', v)
   } else if (type === 'promo') {
-    total += calculatedData?.phonePromoPrice ?? (data as any).promo_price_phone ?? 0
+    const v = calculatedData?.phonePromoPrice ?? (data as any).promo_price_phone ?? 0
+    add('Telefon (promo)', v)
   } else if (type === 'contract') {
-    total += calculatedData?.phonePromoPrice ?? (data as any).contract_price_phone ?? 0
+    const v = calculatedData?.phonePromoPrice ?? (data as any).contract_price_phone ?? 0
+    add('Telefon (contract)', v)
   } else if (type === 'regular') {
-    total += calculatedData?.phoneRegularPrice ?? (data as any).regular_price_phone ?? 0
+    const v = calculatedData?.phoneRegularPrice ?? (data as any).regular_price_phone ?? 0
+    add('Telefon (regular)', v)
   }
 
   // Add extra telephone packages
@@ -1459,27 +1479,52 @@ function calculateTotalPrice(
         selectedPhoneServices.toLowerCase().includes(`${(pkg.name || '').toLowerCase()} - ${(pkg.description || '').toLowerCase()}`)
       if (isSelectedByName || isSelectedByFullFormat) {
         const price = Number(pkg.price) || 0
-        if (type === 'action') {
-          total += price
-        } else if (type === 'promo') {
-          total += price
-        } else if (type === 'contract') {
-          total += price
-        } else if (type === 'regular') {
-          total += price
-        }
+        add(`Dodatne tel. usluge: ${pkg.name}${pkg.description ? ' - ' + pkg.description : ''}`, price)
       }
     })
   }
 
-  // Add additional TV devices monthly charges
+  // Add additional TV devices monthly charges (only if selected)
   if (additionalTvDevices && additionalTvDevices.length > 0) {
+    const selectedTvServices = (calculatedData?.tvServices || (data as any).tv_dodatne_usluge || '').toLowerCase()
     additionalTvDevices.forEach((device: any) => {
       if (!device) return
-      const price = Number(device.price) || 0
-      // These are monthly, so add to all price types
-      total += price
+      const name = String(device.name || '').toLowerCase()
+      if (name && selectedTvServices.includes(name)) {
+        const price = Number(device.price) || 0
+        add(`Dodatni TV uređaj: ${device.name}`, price)
+      }
     })
+  }
+
+  // Add MESH rental monthly (3.00 EUR per unit) if selected
+  const meshServicesStr = String(
+    (calculatedData && calculatedData.meshServices) || (data as any).fiksne_dodatne_usluge || ''
+  )
+  if (meshServicesStr) {
+    const rentalMatch = meshServicesStr.match(/extra\s+mesh\s+u\s+najam\s*\((\d+)\)/i)
+    const rentalCount = rentalMatch ? parseInt(rentalMatch[1], 10) : (
+      meshServicesStr.toLowerCase().includes('extra mesh u najam') ? 1 : 0
+    )
+    if (!Number.isNaN(rentalCount) && rentalCount > 0) {
+      add('MESH najam', rentalCount * 3.0)
+    }
+    // Free MESH: 0 EUR for promo, 3 EUR for regular
+    const hasFreeMesh = meshServicesStr.toLowerCase().includes('besplatan mesh')
+    if (hasFreeMesh) {
+      if (type === 'regular') {
+        add('Besplatan MESH (regular)', 3.0)
+      } else if (type === 'promo') {
+        add('Besplatan MESH (promo)', 0.0)
+      }
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    console.log(`[Pricing Debug][${type}]`, debugItems, 'Total:', total)
+  } else {
+    // In SSR or worker contexts
+    try { console.log(`[Pricing Debug][${type}]`, debugItems, 'Total:', total) } catch {}
   }
 
   return total
